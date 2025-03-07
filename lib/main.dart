@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resellio/features/event/event_screen.dart';
+import 'package:resellio/features/user/events/views/event_screen.dart';
 
 void main() {
   runApp(const MyApp());

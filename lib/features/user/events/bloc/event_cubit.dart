@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:resellio/features/event/event.dart';
+import 'package:resellio/features/common/model/event.dart';
 
 class EventCubit extends Cubit<EventState> {
   EventCubit() : super(EventInitial());

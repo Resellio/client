@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resellio/features/event/event.dart';
+import 'package:resellio/features/common/model/event.dart';
 
 class EventCard extends StatelessWidget {
   const EventCard({required this.event, super.key});
@@ -15,7 +15,10 @@ class EventCard extends StatelessWidget {
             constraints: const BoxConstraints(maxHeight: 200, minHeight: 200),
             child: Image.network(event.image),
           ),
-          ListTile(title: Text(event.name), subtitle: Text(event.description)),
+          ListTile(
+            title: Text(event.name),
+            subtitle: Text(event.description),
+          ),
         ],
       ),
     );
