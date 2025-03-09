@@ -15,6 +15,7 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.4.15
+  flutter_launcher_icons: ^0.14.3
   flutter_test:
     sdk: flutter
   go_router_builder: ^2.8.2
@@ -22,3 +23,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icon/icon.png"
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  windows:
+    generate: true
+    image_path: "assets/icon/icon.png"

@@ -8,9 +8,9 @@ class CustomerEventDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Event Details')),
+      appBar: AppBar(title: const Text('Wydarzenie')),
       body: Center(
-        child: Text('Event Details $eventId'),
+        child: Text('Event id: $eventId'),
       ),
     );
   }

@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       routerConfig: router,
-      title: 'Ticket Selling App',
+      title: 'Bilety na wydarzenia | Resellio',
     );
   }
 }
