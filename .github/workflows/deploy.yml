@@ -24,6 +24,10 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      # Run build_runner
+      - name: Run build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
       # Build the web app
       - name: Build Flutter Web
         run: flutter build web --release --base-href "/client/"
