@@ -4,8 +4,8 @@ A cross-platform application built with Flutter, designed for seamless reselling
 ## Getting Started
 
 ### Prerequisites
-- [Flutter SDK](https://flutter.dev/docs/get-started/install)
-- [Dart SDK](https://dart.dev/get-dart)
+- [Flutter SDK >= 3.29.0](https://flutter.dev/docs/get-started/install)
+- [Dart SDK >= 3.6.0](https://dart.dev/get-dart)
 
 ### Installation
 1. Clone the repository
