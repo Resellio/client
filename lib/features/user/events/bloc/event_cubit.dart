@@ -2,11 +2,11 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/model/event.dart';
 
-class EventCubit extends Cubit<EventState> {
-  EventCubit() : super(EventInitial());
+class EventsCubit extends Cubit<EventsState> {
+  EventsCubit() : super(EventInitial());
 
   Future<void> getEvents() async {
-    emit(EventLoading());
+    emit(EventsLoading());
     try {
       final event = Event(
         id: '1',
@@ -17,36 +17,40 @@ class EventCubit extends Cubit<EventState> {
         image:
             'https://images.pexels.com/photos/1054655/pexels-photo-1054655.jpeg',
       );
-      await Future.delayed(const Duration(seconds: 1));
-      emit(EventLoaded(event));
+
+      final events = List.generate(10, (index) => event);
+
+      await Future<void>.delayed(const Duration(seconds: 1));
+
+      emit(EventsLoaded(events));
     } catch (err) {
-      emit(EventError(err.toString()));
+      emit(EventsError(err.toString()));
     }
   }
 }
 
-sealed class EventState extends Equatable {
-  const EventState();
+sealed class EventsState extends Equatable {
+  const EventsState();
 
   @override
   List<Object> get props => [];
 }
 
-class EventInitial extends EventState {}
+class EventInitial extends EventsState {}
 
-class EventLoading extends EventState {}
+class EventsLoading extends EventsState {}
 
-class EventLoaded extends EventState {
-  const EventLoaded(this.event);
+class EventsLoaded extends EventsState {
+  const EventsLoaded(this.events);
 
-  final Event event;
+  final List<Event> events;
 
   @override
-  List<Object> get props => [event];
+  List<Object> get props => [events];
 }
 
-class EventError extends EventState {
-  const EventError(this.message);
+class EventsError extends EventsState {
+  const EventsError(this.message);
 
   final String message;
 

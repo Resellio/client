@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
-import 'package:resellio/features/user/events/views/events_screen.dart';
+import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
 import 'package:resellio/features/user/profile/views/profile_screen.dart';
 import 'package:resellio/features/user/tickets/views/ticket_screen.dart';
 import 'package:resellio/features/user/tickets/views/tickets_screen.dart';
 
-part 'routes.g.dart';
+part 'customer_routes.g.dart';
 
 @TypedStatefulShellRoute<CustomerShellRouteData>(
   branches: [
@@ -17,7 +17,6 @@ part 'routes.g.dart';
         TypedGoRoute<CustomerHomeRoute>(path: '/'),
       ],
     ),
-    // Search Branch (Events)
     TypedStatefulShellBranch<CustomerSearchBranchData>(
       routes: [
         TypedGoRoute<CustomerEventsRoute>(
@@ -28,7 +27,6 @@ part 'routes.g.dart';
         ),
       ],
     ),
-    // Tickets Branch
     TypedStatefulShellBranch<CustomerTicketsBranchData>(
       routes: [
         TypedGoRoute<CustomerTicketsRoute>(
@@ -39,7 +37,6 @@ part 'routes.g.dart';
         ),
       ],
     ),
-    // Profile Branch
     TypedStatefulShellBranch<CustomerProfileBranchData>(
       routes: [
         TypedGoRoute<CustomerProfileRoute>(path: '/profile'),
@@ -90,7 +87,7 @@ class CustomerEventsRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const CustomerEventsScreen();
+    return const CustomerSearchScreen();
   }
 }
 
@@ -144,22 +141,23 @@ class ScaffoldWithNavBar extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Colors.blue,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Główna',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
-            label: 'Search',
+            label: 'Szukaj',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.airplane_ticket),
-            label: 'Tickets',
+            icon: Icon(Icons.receipt),
+            label: 'Moje bilety',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Profile',
+            label: 'Profil',
           ),
         ],
         currentIndex: navigationShell.currentIndex,

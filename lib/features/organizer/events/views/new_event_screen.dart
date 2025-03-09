@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-class EventSearchScreen extends StatelessWidget {
-  const EventSearchScreen({super.key});
+class OrganizerNewEventScreen extends StatelessWidget {
+  const OrganizerNewEventScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

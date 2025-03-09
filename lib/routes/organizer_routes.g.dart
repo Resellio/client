@@ -1,23 +1,23 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'routes.dart';
+part of 'organizer_routes.dart';
 
 // **************************************************************************
 // GoRouterGenerator
 // **************************************************************************
 
 List<RouteBase> get $appRoutes => [
-      $customerShellRouteData,
+      $organizerShellRouteData,
     ];
 
-RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
-      factory: $CustomerShellRouteDataExtension._fromState,
+RouteBase get $organizerShellRouteData => StatefulShellRouteData.$route(
+      factory: $OrganizerShellRouteDataExtension._fromState,
       branches: [
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
               path: '/',
-              factory: $CustomerHomeRouteExtension._fromState,
+              factory: $OrganizerHomeRouteExtension._fromState,
             ),
           ],
         ),
@@ -25,25 +25,15 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
           routes: [
             GoRouteData.$route(
               path: '/events',
-              factory: $CustomerEventsRouteExtension._fromState,
+              factory: $OrganizerEventsRouteExtension._fromState,
               routes: [
                 GoRouteData.$route(
                   path: ':eventId',
-                  factory: $CustomerEventDetailRouteExtension._fromState,
+                  factory: $OrganizerEventDetailRouteExtension._fromState,
                 ),
-              ],
-            ),
-          ],
-        ),
-        StatefulShellBranchData.$branch(
-          routes: [
-            GoRouteData.$route(
-              path: '/tickets',
-              factory: $CustomerTicketsRouteExtension._fromState,
-              routes: [
                 GoRouteData.$route(
-                  path: ':ticketId',
-                  factory: $TicketDetailRouteExtension._fromState,
+                  path: 'new',
+                  factory: $OrganizerNewEventRouteExtension._fromState,
                 ),
               ],
             ),
@@ -53,21 +43,21 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
           routes: [
             GoRouteData.$route(
               path: '/profile',
-              factory: $CustomerProfileRouteExtension._fromState,
+              factory: $OrganizerProfileRouteExtension._fromState,
             ),
           ],
         ),
       ],
     );
 
-extension $CustomerShellRouteDataExtension on CustomerShellRouteData {
-  static CustomerShellRouteData _fromState(GoRouterState state) =>
-      const CustomerShellRouteData();
+extension $OrganizerShellRouteDataExtension on OrganizerShellRouteData {
+  static OrganizerShellRouteData _fromState(GoRouterState state) =>
+      const OrganizerShellRouteData();
 }
 
-extension $CustomerHomeRouteExtension on CustomerHomeRoute {
-  static CustomerHomeRoute _fromState(GoRouterState state) =>
-      const CustomerHomeRoute();
+extension $OrganizerHomeRouteExtension on OrganizerHomeRoute {
+  static OrganizerHomeRoute _fromState(GoRouterState state) =>
+      const OrganizerHomeRoute();
 
   String get location => GoRouteData.$location(
         '/',
@@ -83,9 +73,9 @@ extension $CustomerHomeRouteExtension on CustomerHomeRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $CustomerEventsRouteExtension on CustomerEventsRoute {
-  static CustomerEventsRoute _fromState(GoRouterState state) =>
-      const CustomerEventsRoute();
+extension $OrganizerEventsRouteExtension on OrganizerEventsRoute {
+  static OrganizerEventsRoute _fromState(GoRouterState state) =>
+      const OrganizerEventsRoute();
 
   String get location => GoRouteData.$location(
         '/events',
@@ -101,9 +91,9 @@ extension $CustomerEventsRouteExtension on CustomerEventsRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $CustomerEventDetailRouteExtension on CustomerEventDetailRoute {
-  static CustomerEventDetailRoute _fromState(GoRouterState state) =>
-      CustomerEventDetailRoute(
+extension $OrganizerEventDetailRouteExtension on OrganizerEventDetailRoute {
+  static OrganizerEventDetailRoute _fromState(GoRouterState state) =>
+      OrganizerEventDetailRoute(
         eventId: state.pathParameters['eventId']!,
       );
 
@@ -121,12 +111,12 @@ extension $CustomerEventDetailRouteExtension on CustomerEventDetailRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $CustomerTicketsRouteExtension on CustomerTicketsRoute {
-  static CustomerTicketsRoute _fromState(GoRouterState state) =>
-      const CustomerTicketsRoute();
+extension $OrganizerNewEventRouteExtension on OrganizerNewEventRoute {
+  static OrganizerNewEventRoute _fromState(GoRouterState state) =>
+      const OrganizerNewEventRoute();
 
   String get location => GoRouteData.$location(
-        '/tickets',
+        '/events/new',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -139,28 +129,9 @@ extension $CustomerTicketsRouteExtension on CustomerTicketsRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $TicketDetailRouteExtension on TicketDetailRoute {
-  static TicketDetailRoute _fromState(GoRouterState state) => TicketDetailRoute(
-        ticketId: state.pathParameters['ticketId']!,
-      );
-
-  String get location => GoRouteData.$location(
-        '/tickets/${Uri.encodeComponent(ticketId)}',
-      );
-
-  void go(BuildContext context) => context.go(location);
-
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  void replace(BuildContext context) => context.replace(location);
-}
-
-extension $CustomerProfileRouteExtension on CustomerProfileRoute {
-  static CustomerProfileRoute _fromState(GoRouterState state) =>
-      const CustomerProfileRoute();
+extension $OrganizerProfileRouteExtension on OrganizerProfileRoute {
+  static OrganizerProfileRoute _fromState(GoRouterState state) =>
+      const OrganizerProfileRoute();
 
   String get location => GoRouteData.$location(
         '/profile',
