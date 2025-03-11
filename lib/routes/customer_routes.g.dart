@@ -88,7 +88,7 @@ extension $CustomerEventsRouteExtension on CustomerEventsRoute {
       const CustomerEventsRoute();
 
   String get location => GoRouteData.$location(
-        '/events',
+        'events',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -108,7 +108,7 @@ extension $CustomerEventDetailRouteExtension on CustomerEventDetailRoute {
       );
 
   String get location => GoRouteData.$location(
-        '/events/${Uri.encodeComponent(eventId)}',
+        'events/${Uri.encodeComponent(eventId)}',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -126,7 +126,7 @@ extension $CustomerTicketsRouteExtension on CustomerTicketsRoute {
       const CustomerTicketsRoute();
 
   String get location => GoRouteData.$location(
-        '/tickets',
+        'tickets',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -145,7 +145,7 @@ extension $TicketDetailRouteExtension on TicketDetailRoute {
       );
 
   String get location => GoRouteData.$location(
-        '/tickets/${Uri.encodeComponent(ticketId)}',
+        'tickets/${Uri.encodeComponent(ticketId)}',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -163,7 +163,7 @@ extension $CustomerProfileRouteExtension on CustomerProfileRoute {
       const CustomerProfileRoute();
 
   String get location => GoRouteData.$location(
-        '/profile',
+        'profile',
       );
 
   void go(BuildContext context) => context.go(location);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:resellio/features/auth/views/login/login_screen.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
@@ -12,7 +14,6 @@ part 'customer_routes.g.dart';
 
 @TypedStatefulShellRoute<CustomerShellRouteData>(
   branches: [
-    // Home Branch
     TypedStatefulShellBranch<CustomerHomeBranchData>(
       routes: [
         TypedGoRoute<CustomerHomeRoute>(path: '/'),
@@ -21,7 +22,7 @@ part 'customer_routes.g.dart';
     TypedStatefulShellBranch<CustomerSearchBranchData>(
       routes: [
         TypedGoRoute<CustomerEventsRoute>(
-          path: '/events',
+          path: 'events',
           routes: [
             TypedGoRoute<CustomerEventDetailRoute>(path: ':eventId'),
           ],
@@ -31,7 +32,7 @@ part 'customer_routes.g.dart';
     TypedStatefulShellBranch<CustomerTicketsBranchData>(
       routes: [
         TypedGoRoute<CustomerTicketsRoute>(
-          path: '/tickets',
+          path: 'tickets',
           routes: [
             TypedGoRoute<TicketDetailRoute>(path: ':ticketId'),
           ],
@@ -40,13 +41,15 @@ part 'customer_routes.g.dart';
     ),
     TypedStatefulShellBranch<CustomerProfileBranchData>(
       routes: [
-        TypedGoRoute<CustomerProfileRoute>(path: '/profile'),
+        TypedGoRoute<CustomerProfileRoute>(path: 'profile'),
       ],
     ),
   ],
 )
 class CustomerShellRouteData extends StatefulShellRouteData {
   const CustomerShellRouteData();
+
+  static const String $path = '/customer';
 
   @override
   Widget builder(
@@ -55,6 +58,17 @@ class CustomerShellRouteData extends StatefulShellRouteData {
     StatefulNavigationShell navigationShell,
   ) {
     return CustomerShellScreen(navigationShell: navigationShell);
+  }
+
+  @override
+  String? redirect(BuildContext context, GoRouterState state) {
+    final role = context.read<int>();
+
+    if (role == 0) {
+      return '/login';
+    }
+
+    return null;
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:resellio/features/organizer/events/views/event_details.dart';
 import 'package:resellio/features/organizer/events/views/events_screen.dart';
 import 'package:resellio/features/organizer/events/views/new_event_screen.dart';
@@ -8,6 +9,8 @@ import 'package:resellio/features/organizer/profile/views/profile_screen.dart';
 import 'package:resellio/features/organizer/shell_screen.dart';
 
 part 'organizer_routes.g.dart';
+
+bool isLoggedIn = true;
 
 @TypedStatefulShellRoute<OrganizerShellRouteData>(
   branches: [
@@ -37,6 +40,8 @@ part 'organizer_routes.g.dart';
 class OrganizerShellRouteData extends StatefulShellRouteData {
   const OrganizerShellRouteData();
 
+  static const String $path = '/organizer';
+
   @override
   Widget builder(
     BuildContext context,
@@ -44,6 +49,17 @@ class OrganizerShellRouteData extends StatefulShellRouteData {
     StatefulNavigationShell navigationShell,
   ) {
     return OrganizerShellScreen(navigationShell: navigationShell);
+  }
+
+  @override
+  String? redirect(BuildContext context, GoRouterState state) {
+    final role = context.read<int>();
+
+    if (role == 0) {
+      return '/login';
+    }
+
+    return null;
   }
 }
 

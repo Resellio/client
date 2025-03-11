@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:resellio/features/auth/views/login/login_screen.dart';
 
 class CustomerShellScreen extends StatelessWidget {
   const CustomerShellScreen({required this.navigationShell, super.key});
@@ -9,6 +10,7 @@ class CustomerShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // body: WelcomeScreen(),
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.blue,
