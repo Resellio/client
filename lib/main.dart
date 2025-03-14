@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:resellio/routes/customer_routes.dart';
 // import 'package:resellio/routes/organizer_routes.dart';
 
 void main() {
-  runApp(const MyApp());
+  initializeDateFormatting('pl_PL').then((_) {
+    runApp(const MyApp());
+  });
 }
 
 final router = GoRouter(
