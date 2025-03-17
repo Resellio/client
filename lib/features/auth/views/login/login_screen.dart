@@ -5,33 +5,6 @@ import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  void _showLoginBottomSheet(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required void Function() onSignInWithGoogle,
-  }) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          minChildSize: 0.4,
-          maxChildSize: 0.8,
-          expand: false,
-          builder: (context, scrollController) {
-            return LoginBottomSheet(
-              title: title,
-              icon: icon,
-              onSignInWithGoogle: onSignInWithGoogle,
-            );
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,79 +29,25 @@ class WelcomeScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 32),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: Image.asset(
-                        'assets/icon/icon.png',
-                        width: 120,
-                        height: 120,
-                      ),
-                    ),
+                    _buildAppLogo(),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Resellio',
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: const Text(
-                        'Kupuj i sprzedawaj bilety na wydarzenia',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    _buildAppTitle(),
+                    _buildAppDescription(),
                     const SizedBox(height: 32),
                     const Spacer(),
-                    _buildLogInAsButton(
+                    _buildLoginButton(
                       context,
                       title: 'Chcę kupować bilety',
                       icon: Icons.person,
-                      color: const Color(0xFF1E88E5),
-                      backgroundColor: Colors.white,
-                      onPressed: () => {
-                        _showLoginBottomSheet(
-                          context,
-                          title: 'Zaloguj/zarejestruj się jako kupujący',
-                          icon: Icons.person,
-                          onSignInWithGoogle: () {
-                            context
-                                .read<AuthCubit>()
-                                .customerSignInWithGoogle();
-                          },
-                        ),
-                      },
+                      isCustomer: true,
                     ),
                     const SizedBox(height: 16),
-                    _buildLogInAsButton(
+                    _buildLoginButton(
                       context,
                       title: 'Chcę sprzedawać bilety',
                       icon: Icons.business,
-                      color: Colors.white,
-                      backgroundColor: Colors.transparent,
-                      onPressed: () => {
-                        _showLoginBottomSheet(
-                          context,
-                          title: 'Zaloguj/zarejestruj się jako sprzedawca',
-                          icon: Icons.business,
-                          onSignInWithGoogle: () {
-                            context
-                                .read<AuthCubit>()
-                                .organizerSignInWithGoogle();
-                          },
-                        ),
-                      },
+                      isCustomer: false,
+                      isOutlined: true,
                     ),
                   ],
                 ),
@@ -140,21 +59,74 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogInAsButton(
+  Widget _buildAppLogo() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: Image.asset(
+        'assets/icon/icon.png',
+        width: 120,
+        height: 120,
+      ),
+    );
+  }
+
+  Widget _buildAppTitle() {
+    return const Text(
+      'Resellio',
+      style: TextStyle(
+        fontSize: 42,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
+  Widget _buildAppDescription() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      child: const Text(
+        'Kupuj i sprzedawaj bilety na wydarzenia',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(
     BuildContext context, {
     required String title,
     required IconData icon,
-    required Color color,
-    required Color backgroundColor,
-    required void Function() onPressed,
+    required bool isCustomer,
+    bool isOutlined = false,
   }) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: () => _showLoginBottomSheet(
+          context,
+          title: isCustomer
+              ? 'Zaloguj/zarejestruj się jako kupujący'
+              : 'Zaloguj/zarejestruj się jako sprzedawca',
+          icon: icon,
+          onSignInWithGoogle: () {
+            if (isCustomer) {
+              context.read<AuthCubit>().customerSignInWithGoogle();
+            } else {
+              context.read<AuthCubit>().organizerSignInWithGoogle();
+            }
+          },
+        ),
         style: ElevatedButton.styleFrom(
-          foregroundColor: color,
-          backgroundColor: backgroundColor,
+          foregroundColor: isOutlined ? Colors.white : const Color(0xFF1E88E5),
+          backgroundColor: isOutlined ? Colors.transparent : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -166,19 +138,47 @@ class WelcomeScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: color,
+              color: isOutlined ? Colors.white : const Color(0xFF1E88E5),
             ),
             const SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: isOutlined ? Colors.white : null,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showLoginBottomSheet(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required void Function() onSignInWithGoogle,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          minChildSize: 0.4,
+          maxChildSize: 0.8,
+          expand: false,
+          builder: (context, scrollController) {
+            return LoginBottomSheet(
+              title: title,
+              icon: icon,
+              onSignInWithGoogle: onSignInWithGoogle,
+            );
+          },
+        );
+      },
     );
   }
 }
