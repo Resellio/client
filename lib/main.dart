@@ -36,16 +36,18 @@ class MyApp extends StatelessWidget {
             ),
           );
         }
+
+        final cubit = context.watch<AuthCubit>();
+
         final router = GoRouter(
           routes: [
             $loginRoute,
-            if (context.watch<AuthCubit>().isCustomer) $customerShellRouteData,
-            if (context.watch<AuthCubit>().isOrganizer)
-              $organizerShellRouteData,
+            if (cubit.isCustomer) $customerShellRouteData,
+            if (cubit.isOrganizer) $organizerShellRouteData,
           ],
           redirect: (context, state) {
-            if (!context.read<AuthCubit>().isAuthenticated) {
-              return '/login';
+            if (!cubit.isAuthenticated) {
+              return const LoginRoute().location;
             }
 
             return null;

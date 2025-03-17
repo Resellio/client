@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:resellio/features/auth/views/login/login_screen.dart';
 
 class CustomerShellScreen extends StatelessWidget {
   const CustomerShellScreen({required this.navigationShell, super.key});

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
@@ -22,7 +20,7 @@ part 'customer_routes.g.dart';
     TypedStatefulShellBranch<CustomerSearchBranchData>(
       routes: [
         TypedGoRoute<CustomerEventsRoute>(
-          path: 'events',
+          path: '/events',
           routes: [
             TypedGoRoute<CustomerEventDetailRoute>(path: ':eventId'),
           ],
@@ -32,7 +30,7 @@ part 'customer_routes.g.dart';
     TypedStatefulShellBranch<CustomerTicketsBranchData>(
       routes: [
         TypedGoRoute<CustomerTicketsRoute>(
-          path: 'tickets',
+          path: '/tickets',
           routes: [
             TypedGoRoute<TicketDetailRoute>(path: ':ticketId'),
           ],
@@ -41,7 +39,7 @@ part 'customer_routes.g.dart';
     ),
     TypedStatefulShellBranch<CustomerProfileBranchData>(
       routes: [
-        TypedGoRoute<CustomerProfileRoute>(path: 'profile'),
+        TypedGoRoute<CustomerProfileRoute>(path: '/profile'),
       ],
     ),
   ],
@@ -56,15 +54,6 @@ class CustomerShellRouteData extends StatefulShellRouteData {
     StatefulNavigationShell navigationShell,
   ) {
     return CustomerShellScreen(navigationShell: navigationShell);
-  }
-
-  @override
-  String? redirect(BuildContext context, GoRouterState state) {
-    if (context.read<AuthCubit>().isCustomer) {
-      return null;
-    }
-
-    return '/login';
   }
 }
 
