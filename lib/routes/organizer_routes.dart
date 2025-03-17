@@ -9,8 +9,6 @@ import 'package:resellio/features/organizer/shell_screen.dart';
 
 part 'organizer_routes.g.dart';
 
-bool isLoggedIn = true;
-
 @TypedStatefulShellRoute<OrganizerShellRouteData>(
   branches: [
     TypedStatefulShellBranch<OrganizerHomeBranchData>(
