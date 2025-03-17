@@ -9,7 +9,6 @@ class CustomerShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // body: WelcomeScreen(),
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.blue,

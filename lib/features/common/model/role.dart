@@ -1,1 +1,5 @@
-enum Role { customer, organizer, admin }
+enum Role {
+  customer,
+  organizer,
+  admin,
+}
