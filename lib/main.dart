@@ -1,52 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/routes/auth_routes.dart';
 import 'package:resellio/routes/customer_routes.dart';
 import 'package:resellio/routes/organizer_routes.dart';
 
 void main() {
   runApp(
-    Provider<int>(
-      create: (_) => 2,
+    MultiProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create: (context) => AuthCubit(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
 }
-
-// final router = GoRouter(
-//   initialLocation: '/',
-//   routes: [
-//     // TODO: Use auth to determine which shell route to use
-//     $customerShellRouteData,
-//     // $organizerShellRouteData,
-//   ],
-// );
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final role = context.watch<int>();
-    final GoRouter router = GoRouter(
-      routes: [
-        // Login route
-        $loginRoute,
-        // Customer shell at '/customer'
-        if (role == 1) $customerShellRouteData,
-        // Organizer shell at '/organizer'
-        if (role == 2) $organizerShellRouteData,
-      ],
-      initialLocation: '/login', // Start at login if not authenticated
-    );
-    return MaterialApp.router(
-      routerConfig: router,
-      title: 'Bilety na wydarzenia | Resellio',
-      theme: ThemeData(
-        fontFamily: 'Roboto',
-        primarySwatch: Colors.blue,
-      ),
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        if (state is AuthLoading) {
+          return const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
+        final router = GoRouter(
+          routes: [
+            $loginRoute,
+            if (context.watch<AuthCubit>().isCustomer) $customerShellRouteData,
+            if (context.watch<AuthCubit>().isOrganizer)
+              $organizerShellRouteData,
+          ],
+          redirect: (context, state) {
+            if (!context.read<AuthCubit>().isAuthenticated) {
+              return '/login';
+            }
+
+            return null;
+          },
+        );
+
+        return MaterialApp.router(
+          routerConfig: router,
+          title: 'Bilety na wydarzenia | Resellio',
+          theme: ThemeData(
+            fontFamily: 'Roboto',
+            primarySwatch: Colors.blue,
+          ),
+        );
+      },
     );
   }
 }

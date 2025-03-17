@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resellio/features/auth/views/login/login_screen.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
@@ -49,8 +49,6 @@ part 'customer_routes.g.dart';
 class CustomerShellRouteData extends StatefulShellRouteData {
   const CustomerShellRouteData();
 
-  static const String $path = '/customer';
-
   @override
   Widget builder(
     BuildContext context,
@@ -62,13 +60,11 @@ class CustomerShellRouteData extends StatefulShellRouteData {
 
   @override
   String? redirect(BuildContext context, GoRouterState state) {
-    final role = context.read<int>();
-
-    if (role == 0) {
-      return '/login';
+    if (context.read<AuthCubit>().isCustomer) {
+      return null;
     }
 
-    return null;
+    return '/login';
   }
 }
 

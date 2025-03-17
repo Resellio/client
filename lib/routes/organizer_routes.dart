@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/organizer/events/views/event_details.dart';
 import 'package:resellio/features/organizer/events/views/events_screen.dart';
 import 'package:resellio/features/organizer/events/views/new_event_screen.dart';
@@ -40,8 +41,6 @@ bool isLoggedIn = true;
 class OrganizerShellRouteData extends StatefulShellRouteData {
   const OrganizerShellRouteData();
 
-  static const String $path = '/organizer';
-
   @override
   Widget builder(
     BuildContext context,
@@ -53,13 +52,11 @@ class OrganizerShellRouteData extends StatefulShellRouteData {
 
   @override
   String? redirect(BuildContext context, GoRouterState state) {
-    final role = context.read<int>();
-
-    if (role == 0) {
-      return '/login';
+    if (context.read<AuthCubit>().isOrganizer) {
+      return null;
     }
 
-    return null;
+    return '/login';
   }
 }
 
