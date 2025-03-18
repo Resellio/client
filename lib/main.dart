@@ -1,31 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:provider/provider.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/routes/auth_routes.dart';
 import 'package:resellio/routes/customer_routes.dart';
-// import 'package:resellio/routes/organizer_routes.dart';
+import 'package:resellio/routes/organizer_routes.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create: (context) => AuthCubit(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
-
-final router = GoRouter(
-  initialLocation: '/',
-  routes: [
-    // TODO: Use auth to determine which shell route to use
-    $customerShellRouteData,
-    // $organizerShellRouteData,
-  ],
-  errorBuilder: (context, state) => const Text('error'),
-);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: router,
-      title: 'Bilety na wydarzenia | Resellio',
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        if (state is AuthLoading) {
+          return const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
+
+        final cubit = context.watch<AuthCubit>();
+
+        final router = GoRouter(
+          routes: [
+            $loginRoute,
+            if (cubit.isCustomer) $customerShellRouteData,
+            if (cubit.isOrganizer) $organizerShellRouteData,
+          ],
+          redirect: (context, state) {
+            if (!cubit.isAuthenticated) {
+              return const LoginRoute().location;
+            }
+
+            return null;
+          },
+        );
+
+        return MaterialApp.router(
+          routerConfig: router,
+          title: 'Bilety na wydarzenia | Resellio',
+          theme: ThemeData(
+            fontFamily: 'Roboto',
+            primarySwatch: Colors.blue,
+          ),
+        );
+      },
     );
   }
 }

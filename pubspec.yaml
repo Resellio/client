@@ -23,6 +23,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/google.png
+    - assets/icon/icon.png
 
 flutter_launcher_icons:
   android: true
