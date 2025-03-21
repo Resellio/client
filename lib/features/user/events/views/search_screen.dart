@@ -50,7 +50,7 @@ class _CustomerSearchScreenState extends State<_CustomerSearchScreen> {
                   child: TextField(
                     controller: _searchController,
                     decoration: const InputDecoration(
-                      hintText: 'Search events...',
+                      hintText: 'Szukam wydarzeń...',
                       border: InputBorder.none,
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -60,42 +60,40 @@ class _CustomerSearchScreenState extends State<_CustomerSearchScreen> {
                   ),
                 ),
               ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(context)
-                      .copyWith(scrollbars: false),
-                  child: SingleChildScrollView(
+              ScrollConfiguration(
+                behavior:
+                    ScrollConfiguration.of(context).copyWith(scrollbars: false),
+                child: SizedBox(
+                  height: 40,
+                  child: ListView(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text('Button 1'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text('Button 2'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text('Button 3'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text('Button 4'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text('Button 5'),
-                        ),
-                      ],
-                    ),
+                    padding: const EdgeInsets.all(4),
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {},
+                        child: const Text('Button 1'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {},
+                        child: const Text('Button 2'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {},
+                        child: const Text('Button 3'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {},
+                        child: const Text('Button 4'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {},
+                        child: const Text('Button 5'),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -105,22 +103,18 @@ class _CustomerSearchScreenState extends State<_CustomerSearchScreen> {
                     const Center(child: CircularProgressIndicator()),
                   EventsLoading() =>
                     const Center(child: CircularProgressIndicator()),
-                  EventsLoaded(:final events) => SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: events
-                              .map(
-                                (event) => EventCard(
-                                  event: event,
-                                  onTap: () => CustomerEventDetailRoute(
-                                    eventId: event.id,
-                                  ).go(context),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
+                  EventsLoaded(:final events) => ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        return EventCard(
+                          event: event,
+                          onTap: () => CustomerEventDetailRoute(
+                            eventId: event.id,
+                          ).go(context),
+                        );
+                      },
                     ),
                   EventsError(:final message) => Center(child: Text(message)),
                 },
