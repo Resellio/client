@@ -13,6 +13,9 @@ class AuthCubit extends Cubit<AuthState> {
       isAuthenticated && (state as AuthSuccess).user.role == Role.organizer;
   bool get isAdmin =>
       isAuthenticated && (state as AuthSuccess).user.role == Role.admin;
+  bool get isOrganizerRegistrationNeeded =>
+      isAuthenticated &&
+      (state as AuthSuccess).user.role == Role.organizerRegistration;
 
   Future<void> customerSignInWithGoogle() async {
     emit(AuthLoading());
@@ -36,7 +39,31 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> organizerSignInWithGoogle() async {
     emit(AuthLoading());
     try {
+      // await Future.delayed(Duration(seconds: 1));
+      emit(
+        const AuthSuccess(
+          // temp
+          User(
+            id: '1',
+            email: '',
+            role: Role.organizerRegistration,
+          ),
+        ),
+      );
+    } catch (err) {
+      emit(AuthError(err.toString()));
+    }
+  }
+
+  Future<void> completeOrganizerRegistration({
+    required String firstName,
+    required String lastName,
+    required String displayName,
+  }) async {
+    // emit(AuthLoading());
+    try {
       await Future.delayed(Duration(seconds: 1));
+      throw Exception('Not implemented');
       emit(
         const AuthSuccess(
           // temp
@@ -48,6 +75,7 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     } catch (err) {
+      throw Exception('Not implemented');
       emit(AuthError(err.toString()));
     }
   }
