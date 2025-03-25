@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/common/style/colors.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -8,53 +9,94 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF1E88E5), // A rich blue
-              Color(0xFF0D47A1), // A deeper blue
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 32),
-                    _buildAppLogo(),
-                    const SizedBox(height: 16),
-                    _buildAppTitle(),
-                    _buildAppDescription(),
-                    const SizedBox(height: 32),
-                    const Spacer(),
-                    _buildLoginButton(
-                      context,
-                      title: 'Chcę kupować bilety',
-                      icon: Icons.person,
-                      isCustomer: true,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildLoginButton(
-                      context,
-                      title: 'Chcę sprzedawać bilety',
-                      icon: Icons.business,
-                      isCustomer: false,
-                      isOutlined: true,
-                    ),
-                  ],
+      body: Stack(
+        children: [
+          const SizedBox.expand(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, AppColors.primaryDark],
                 ),
               ),
             ),
           ),
-        ),
+
+          // Background decorative elements
+          const Positioned(
+            top: -50,
+            right: -50,
+            child: Opacity(
+              opacity: 0.1,
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Positioned(
+            bottom: -100,
+            left: -50,
+            child: Opacity(
+              opacity: 0.08,
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          SingleChildScrollView(
+            child: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 32),
+                        _buildAppLogo(),
+                        const SizedBox(height: 16),
+                        _buildAppTitle(),
+                        _buildAppDescription(),
+                        const SizedBox(height: 120),
+                        _buildLoginButton(
+                          context,
+                          title: 'Chcę kupować bilety',
+                          icon: Icons.person,
+                          isCustomer: true,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLoginButton(
+                          context,
+                          title: 'Chcę sprzedawać bilety',
+                          icon: Icons.business,
+                          isCustomer: false,
+                          isOutlined: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
