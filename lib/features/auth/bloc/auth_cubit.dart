@@ -1,25 +1,22 @@
 import 'package:bloc_presentation/bloc_presentation.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:resellio/features/common/model/role.dart';
-import 'package:resellio/features/common/model/user.dart';
+import 'package:resellio/features/common/model/Users/customer.dart';
+import 'package:resellio/features/common/model/Users/organizer.dart';
+import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
+import 'package:resellio/features/common/model/Users/user.dart';
 
 class AuthCubit extends Cubit<AuthState>
     with BlocPresentationMixin<AuthState, AuthCubitEvent> {
   AuthCubit() : super(Unauthorized());
 
-  bool get isAuthenticated => state is Authorized;
-  bool get isCustomer =>
-      isAuthenticated && (state as Authorized).user.role == Role.customer;
-  bool get isOrganizer =>
-      isAuthenticated && (state as Authorized).user.role == Role.organizer;
-  bool get isAdmin =>
-      isAuthenticated && (state as Authorized).user.role == Role.admin;
+  bool get isAuthenticated => state is! Unauthorized;
+  bool get isCustomer => state is AuthorizedCustomer;
+  bool get isOrganizer => state is AuthorizedOrganizer;
   bool get isOrganizerRegistrationNeeded =>
-      isAuthenticated &&
-      (state as Authorized).user.role == Role.organizerRegistration;
+      state is AuthorizedOrganizerRegistrationNeeded;
 
-  User get user => (state as Authorized).user;
+  User get user => (state as AuthorizedCustomer).user;
 
   Future<void> customerSignInWithGoogle() async {
     try {
@@ -29,13 +26,12 @@ class AuthCubit extends Cubit<AuthState>
         throw Exception('50% failed');
       }
 
-      const user = User(
+      const user = Customer(
         id: '1',
         email: 'klient@pl.pl',
-        role: Role.customer,
       );
 
-      emit(const Authorized(user));
+      emit(const AuthorizedCustomer(user));
     } catch (err) {
       emitPresentation(FailedToSignIn(err.toString()));
     }
@@ -49,13 +45,12 @@ class AuthCubit extends Cubit<AuthState>
         throw Exception('50% failed');
       }
 
-      const user = User(
+      const user = OrganizerRegistrationNeeded(
         id: '1',
         email: '',
-        role: Role.organizerRegistration,
       );
 
-      emit(const Authorized(user));
+      emit(const AuthorizedOrganizerRegistrationNeeded(user));
     } catch (err) {
       emitPresentation(FailedToSignIn(err.toString()));
     }
@@ -75,13 +70,12 @@ class AuthCubit extends Cubit<AuthState>
         throw Exception('Not implemented');
       }
 
-      const user = User(
+      const user = Organizer(
         id: '1',
         email: '',
-        role: Role.organizer,
       );
 
-      emit(const Authorized(user));
+      emit(const AuthorizedOrganizer(user));
     } catch (err) {
       emitPresentation(FailedToRegister(err.toString()));
     }
@@ -101,10 +95,28 @@ abstract class AuthState extends Equatable {
 
 class Unauthorized extends AuthState {}
 
-class Authorized extends AuthState {
-  const Authorized(this.user);
+class AuthorizedCustomer extends AuthState {
+  const AuthorizedCustomer(this.user);
 
-  final User user;
+  final Customer user;
+
+  @override
+  List<Object> get props => [user];
+}
+
+class AuthorizedOrganizer extends AuthState {
+  const AuthorizedOrganizer(this.user);
+
+  final Organizer user;
+
+  @override
+  List<Object> get props => [user];
+}
+
+class AuthorizedOrganizerRegistrationNeeded extends AuthState {
+  const AuthorizedOrganizerRegistrationNeeded(this.user);
+
+  final OrganizerRegistrationNeeded user;
 
   @override
   List<Object> get props => [user];

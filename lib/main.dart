@@ -32,8 +32,8 @@ class MyApp extends StatelessWidget {
         final router = GoRouter(
           routes: [
             ...auth_routes.$appRoutes,
-            if (cubit.isCustomer) $customerShellRouteData,
-            if (cubit.isOrganizer) $organizerShellRouteData,
+            if (state is AuthorizedCustomer) $customerShellRouteData,
+            if (state is AuthorizedOrganizer) $organizerShellRouteData,
           ],
           redirect: (context, state) {
             if (!cubit.isAuthenticated) {
