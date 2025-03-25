@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
-import 'package:resellio/features/common/model/Users/user.dart';
 
 class AuthCubit extends Cubit<AuthState>
     with BlocPresentationMixin<AuthState, AuthCubitEvent> {
@@ -16,14 +15,13 @@ class AuthCubit extends Cubit<AuthState>
   bool get isOrganizerRegistrationNeeded =>
       state is AuthorizedOrganizerRegistrationNeeded;
 
-  User get user => (state as AuthorizedCustomer).user;
-
   Future<void> customerSignInWithGoogle() async {
     try {
+      // temporary mockups
       await Future.delayed(Duration(seconds: 1));
-      // 50% chance of failing
-      if (DateTime.now().millisecondsSinceEpoch.isEven) {
-        throw Exception('50% failed');
+      // 20% chance of failing
+      if (DateTime.now().millisecondsSinceEpoch % 5 == 0) {
+        throw Exception('20% failed');
       }
 
       const user = Customer(
@@ -40,9 +38,9 @@ class AuthCubit extends Cubit<AuthState>
   Future<void> organizerSignInWithGoogle() async {
     try {
       await Future.delayed(Duration(seconds: 1));
-      // 50% chance of failing
-      if (DateTime.now().millisecondsSinceEpoch.isEven) {
-        throw Exception('50% failed');
+      // 20% chance of failing
+      if (DateTime.now().millisecondsSinceEpoch % 5 == 0) {
+        throw Exception('20% failed');
       }
 
       const user = OrganizerRegistrationNeeded(
@@ -62,12 +60,11 @@ class AuthCubit extends Cubit<AuthState>
     required String displayName,
   }) async {
     try {
-      // temporary mockup
       await Future.delayed(const Duration(seconds: 1));
 
-      // 50% chance of failing
-      if (DateTime.now().millisecondsSinceEpoch.isEven) {
-        throw Exception('Not implemented');
+      // 20% chance of failing
+      if (DateTime.now().millisecondsSinceEpoch % 5 == 0) {
+        throw Exception('20% failed');
       }
 
       const user = Organizer(

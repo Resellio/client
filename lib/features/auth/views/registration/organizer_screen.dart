@@ -180,7 +180,7 @@ class _OrganizerRegistrationScreenState
                                   backgroundColor: Colors.white,
                                   foregroundColor: AppColors.primary,
                                   disabledBackgroundColor: Colors.grey.shade300,
-                                  elevation: 3,
+                                  elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -264,11 +264,11 @@ class _OrganizerRegistrationScreenState
             : null,
         enabledBorder: buildBorder(Colors.white.withAlpha(25)),
         focusedBorder: buildBorder(Colors.white, width: 2),
-        errorBorder: buildBorder(Colors.redAccent.shade100),
-        focusedErrorBorder: buildBorder(Colors.redAccent, width: 2),
+        errorBorder: buildBorder(AppColors.redAccent),
+        focusedErrorBorder: buildBorder(AppColors.redAccent, width: 2),
         errorStyle: const TextStyle(
           fontWeight: FontWeight.bold,
-          color: Colors.redAccent,
+          color: AppColors.redAccent,
         ),
       ),
     );
