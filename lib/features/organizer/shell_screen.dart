@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:resellio/features/common/style/colors.dart';
 
 class OrganizerShellScreen extends StatelessWidget {
   const OrganizerShellScreen({required this.navigationShell, super.key});
@@ -11,6 +12,7 @@ class OrganizerShellScreen extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: AppColors.primary,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
