@@ -27,16 +27,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
-        if (state is AuthLoading) {
-          return const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          );
-        }
-
         final cubit = context.watch<AuthCubit>();
 
         final router = GoRouter(
