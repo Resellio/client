@@ -18,12 +18,14 @@ dependencies:
   provider: ^6.1.2
 
 dev_dependencies:
+  bloc_test: ^10.0.0
   build_runner: ^2.4.15
   flutter_launcher_icons: ^0.14.3
   flutter_test:
     sdk: flutter
   go_router_builder: ^2.8.2
   leancode_lint: ^15.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true

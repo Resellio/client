@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
@@ -21,6 +22,7 @@ void main() {
         BlocProvider<AuthCubit>(
           create: (context) => AuthCubit(
             apiService: context.read(),
+            googleSignIn: GoogleSignIn(),
           ),
         ),
       ],

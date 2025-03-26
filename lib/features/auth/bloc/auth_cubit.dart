@@ -12,10 +12,11 @@ class AuthCubit extends Cubit<AuthState>
     with BlocPresentationMixin<AuthState, AuthCubitEvent> {
   AuthCubit({
     required this.apiService,
+    required this.googleSignIn,
   }) : super(Unauthorized());
 
   final ApiService apiService;
-  final _googleSignIn = GoogleSignIn();
+  final GoogleSignIn googleSignIn;
 
   bool get isAuthenticated => state is! Unauthorized;
   bool get isCustomer => state is AuthorizedCustomer;
@@ -25,7 +26,7 @@ class AuthCubit extends Cubit<AuthState>
   bool get isUnverifiedOrganizer => state is AuthorizedUnverifiedOrganizer;
 
   Future<GoogleSignInAccount> _signInWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
+    final googleUser = await googleSignIn.signIn();
     if (googleUser == null) {
       throw Exception('Google Sign-In cancelled');
     }
@@ -55,35 +56,6 @@ class AuthCubit extends Cubit<AuthState>
     }
   }
 
-  AuthState _getOrganizerState(Map<String, dynamic> response) {
-    final token = response['token'] as String;
-    final isVerified = response['isVerified'] as bool;
-    final isNewOrganizer = response['isNewOrganizer'] as bool;
-
-    if (isNewOrganizer) {
-      return AuthorizedOrganizerRegistrationNeeded(
-        OrganizerRegistrationNeeded(
-          email: _googleSignIn.currentUser!.email,
-          token: token,
-        ),
-      );
-    } else if (isVerified) {
-      return AuthorizedOrganizer(
-        Organizer(
-          email: _googleSignIn.currentUser!.email,
-          token: token,
-        ),
-      );
-    } else {
-      return AuthorizedUnverifiedOrganizer(
-        Organizer(
-          email: _googleSignIn.currentUser!.email,
-          token: token,
-        ),
-      );
-    }
-  }
-
   Future<void> organizerSignInWithGoogle() async {
     try {
       final googleUser = await _signInWithGoogle();
@@ -99,32 +71,29 @@ class AuthCubit extends Cubit<AuthState>
       final isNewOrganizer = response['isNewOrganizer'] as bool;
 
       if (isNewOrganizer) {
-        final user = AuthorizedOrganizerRegistrationNeeded(
-          OrganizerRegistrationNeeded(
-            email: googleUser.email,
-            token: token,
-          ),
+        final user = OrganizerRegistrationNeeded(
+          email: googleUser.email,
+          token: token,
         );
-        emitPresentation(AuthenticatedEvent(user.user));
-        emit(user);
+
+        emitPresentation(AuthenticatedEvent(user));
+        emit(AuthorizedOrganizerRegistrationNeeded(user));
       } else if (isVerified) {
-        final user = AuthorizedOrganizer(
-          Organizer(
-            email: googleUser.email,
-            token: token,
-          ),
+        final user = Organizer(
+          email: googleUser.email,
+          token: token,
         );
-        emitPresentation(AuthenticatedEvent(user.user));
-        emit(user);
+
+        emitPresentation(AuthenticatedEvent(user));
+        emit(AuthorizedOrganizer(user));
       } else {
-        final user = AuthorizedUnverifiedOrganizer(
-          Organizer(
-            email: googleUser.email,
-            token: token,
-          ),
+        final user = Organizer(
+          email: googleUser.email,
+          token: token,
         );
-        emitPresentation(AuthenticatedEvent(user.user));
-        emit(user);
+
+        emitPresentation(AuthenticatedEvent(user));
+        emit(AuthorizedUnverifiedOrganizer(user));
       }
     } catch (err) {
       emitPresentation(AuthErrorEvent(err.toString()));
@@ -163,7 +132,7 @@ class AuthCubit extends Cubit<AuthState>
   }
 
   Future<void> logout() async {
-    await _googleSignIn.signOut();
+    await googleSignIn.signOut();
     emit(Unauthorized());
   }
 }
