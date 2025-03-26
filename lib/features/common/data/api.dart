@@ -7,19 +7,20 @@ import 'package:resellio/features/common/data/api_exceptions.dart';
 class ApiService {
   ApiService({
     required String baseUrl,
+    required this.client,
   }) : _baseUrl = baseUrl;
 
   final String _baseUrl;
-  final http.Client _client = http.Client();
+  final http.Client client;
 
-  static const Map<String, String> _defaultHeaders = {
+  static const Map<String, String> defaultHeaders = {
     'Content-Type': 'application/json',
   };
 
-  Future<Map<String, dynamic>> _makeRequest({
+  Future<Map<String, dynamic>> makeRequest({
     required String endpoint,
     required String method,
-    Map<String, String> headers = _defaultHeaders,
+    Map<String, String> headers = defaultHeaders,
     String? body,
   }) async {
     try {
@@ -27,7 +28,7 @@ class ApiService {
 
       switch (method.toUpperCase()) {
         case 'GET':
-          final response = await _client
+          final response = await client
               .get(
                 uri,
                 headers: headers,
@@ -36,7 +37,7 @@ class ApiService {
 
           return _handleResponse(response);
         case 'POST':
-          final response = await _client
+          final response = await client
               .post(
                 uri,
                 headers: headers,
@@ -67,7 +68,7 @@ class ApiService {
     required String accessToken,
     required String role,
   }) async {
-    return _makeRequest(
+    return makeRequest(
       endpoint: '$role/google-login',
       method: 'POST',
       body: jsonEncode({'accessToken': accessToken}),
@@ -80,11 +81,11 @@ class ApiService {
     required String lastName,
     required String displayName,
   }) async {
-    return _makeRequest(
+    return makeRequest(
       endpoint: 'organizer/create-organizer',
       method: 'POST',
       headers: {
-        ..._defaultHeaders,
+        ...defaultHeaders,
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
@@ -108,7 +109,7 @@ class ApiService {
       case 403:
         throw ApiException.forbidden();
       case 404:
-        throw ApiException.notFound(response.request!.url.toString());
+        throw ApiException.notFound();
       case 500:
         throw ApiException.unknown('Internal server error');
       default:
@@ -117,6 +118,6 @@ class ApiService {
   }
 
   void dispose() {
-    _client.close();
+    client.close();
   }
 }

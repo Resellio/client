@@ -29,8 +29,8 @@ class ApiException implements Exception {
     return const ApiException('Forbidden');
   }
 
-  factory ApiException.notFound(String url) {
-    return ApiException('Resource $url not found');
+  factory ApiException.notFound() {
+    return const ApiException('Resource not found');
   }
 
   factory ApiException.unknown(String message) {
