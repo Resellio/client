@@ -1,56 +1,133 @@
 import 'package:bloc_presentation/bloc_presentation.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
+import 'package:resellio/features/auth/bloc/auth_state.dart';
+import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
 
 class AuthCubit extends Cubit<AuthState>
     with BlocPresentationMixin<AuthState, AuthCubitEvent> {
-  AuthCubit() : super(Unauthorized());
+  AuthCubit({
+    required this.apiService,
+  }) : super(Unauthorized());
+
+  final ApiService apiService;
+  final _googleSignIn = GoogleSignIn();
 
   bool get isAuthenticated => state is! Unauthorized;
   bool get isCustomer => state is AuthorizedCustomer;
   bool get isOrganizer => state is AuthorizedOrganizer;
   bool get isOrganizerRegistrationNeeded =>
       state is AuthorizedOrganizerRegistrationNeeded;
+  bool get isUnverifiedOrganizer => state is AuthorizedUnverifiedOrganizer;
+
+  Future<GoogleSignInAccount> _signInWithGoogle() async {
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      throw Exception('Google Sign-In cancelled');
+    }
+
+    return googleUser;
+  }
 
   Future<void> customerSignInWithGoogle() async {
     try {
-      // temporary mockups
-      await Future.delayed(Duration(seconds: 1));
-      // 20% chance of failing
-      if (DateTime.now().millisecondsSinceEpoch % 5 == 0) {
-        throw Exception('20% failed');
-      }
+      final googleUser = await _signInWithGoogle();
+      final googleAuth = await googleUser.authentication;
 
-      const user = Customer(
-        id: '1',
-        email: 'klient@pl.pl',
+      final response = await apiService.googleLogin(
+        accessToken: googleAuth.accessToken!,
+        role: 'customer',
       );
 
-      emit(const AuthorizedCustomer(user));
+      final user = Customer(
+        email: googleUser.email,
+        token: response['token'] as String,
+      );
+
+      emitPresentation(AuthenticatedEvent(user));
+      emit(AuthorizedCustomer(user));
     } catch (err) {
-      emitPresentation(FailedToSignIn(err.toString()));
+      emitPresentation(AuthErrorEvent(err.toString()));
+    }
+  }
+
+  AuthState _getOrganizerState(Map<String, dynamic> response) {
+    final token = response['token'] as String;
+    final isVerified = response['isVerified'] as bool;
+    final isNewOrganizer = response['isNewOrganizer'] as bool;
+
+    if (isNewOrganizer) {
+      return AuthorizedOrganizerRegistrationNeeded(
+        OrganizerRegistrationNeeded(
+          email: _googleSignIn.currentUser!.email,
+          token: token,
+        ),
+      );
+    } else if (isVerified) {
+      return AuthorizedOrganizer(
+        Organizer(
+          email: _googleSignIn.currentUser!.email,
+          token: token,
+        ),
+      );
+    } else {
+      return AuthorizedUnverifiedOrganizer(
+        Organizer(
+          email: _googleSignIn.currentUser!.email,
+          token: token,
+        ),
+      );
     }
   }
 
   Future<void> organizerSignInWithGoogle() async {
     try {
-      await Future.delayed(Duration(seconds: 1));
-      // 20% chance of failing
-      if (DateTime.now().millisecondsSinceEpoch % 5 == 0) {
-        throw Exception('20% failed');
-      }
+      final googleUser = await _signInWithGoogle();
+      final googleAuth = await googleUser.authentication;
 
-      const user = OrganizerRegistrationNeeded(
-        id: '1',
-        email: '',
+      final response = await apiService.googleLogin(
+        accessToken: googleAuth.accessToken!,
+        role: 'organizer',
       );
 
-      emit(const AuthorizedOrganizerRegistrationNeeded(user));
+      final token = response['token'] as String;
+      final isVerified = response['isVerified'] as bool;
+      final isNewOrganizer = response['isNewOrganizer'] as bool;
+
+      if (isNewOrganizer) {
+        final user = AuthorizedOrganizerRegistrationNeeded(
+          OrganizerRegistrationNeeded(
+            email: googleUser.email,
+            token: token,
+          ),
+        );
+        emitPresentation(AuthenticatedEvent(user.user));
+        emit(user);
+      } else if (isVerified) {
+        final user = AuthorizedOrganizer(
+          Organizer(
+            email: googleUser.email,
+            token: token,
+          ),
+        );
+        emitPresentation(AuthenticatedEvent(user.user));
+        emit(user);
+      } else {
+        final user = AuthorizedUnverifiedOrganizer(
+          Organizer(
+            email: googleUser.email,
+            token: token,
+          ),
+        );
+        emitPresentation(AuthenticatedEvent(user.user));
+        emit(user);
+      }
     } catch (err) {
-      emitPresentation(FailedToSignIn(err.toString()));
+      emitPresentation(AuthErrorEvent(err.toString()));
     }
   }
 
@@ -60,75 +137,33 @@ class AuthCubit extends Cubit<AuthState>
     required String displayName,
   }) async {
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      // 20% chance of failing
-      if (DateTime.now().millisecondsSinceEpoch % 5 == 0) {
-        throw Exception('20% failed');
+      if (!isOrganizerRegistrationNeeded) {
+        throw Exception('Wrong state for completing organizer registration');
       }
 
-      const user = Organizer(
-        id: '1',
-        email: '',
+      final currentState = state as AuthorizedOrganizerRegistrationNeeded;
+      final response = await apiService.createOrganizer(
+        token: currentState.user.token,
+        firstName: firstName,
+        lastName: lastName,
+        displayName: displayName,
       );
 
-      emit(const AuthorizedOrganizer(user));
+      emit(
+        AuthorizedUnverifiedOrganizer(
+          Organizer(
+            email: currentState.user.email,
+            token: response['token'] as String,
+          ),
+        ),
+      );
     } catch (err) {
-      emitPresentation(FailedToRegister(err.toString()));
+      emitPresentation(AuthErrorEvent(err.toString()));
     }
   }
 
   Future<void> logout() async {
+    await _googleSignIn.signOut();
     emit(Unauthorized());
   }
-}
-
-abstract class AuthState extends Equatable {
-  const AuthState();
-
-  @override
-  List<Object> get props => [];
-}
-
-class Unauthorized extends AuthState {}
-
-class AuthorizedCustomer extends AuthState {
-  const AuthorizedCustomer(this.user);
-
-  final Customer user;
-
-  @override
-  List<Object> get props => [user];
-}
-
-class AuthorizedOrganizer extends AuthState {
-  const AuthorizedOrganizer(this.user);
-
-  final Organizer user;
-
-  @override
-  List<Object> get props => [user];
-}
-
-class AuthorizedOrganizerRegistrationNeeded extends AuthState {
-  const AuthorizedOrganizerRegistrationNeeded(this.user);
-
-  final OrganizerRegistrationNeeded user;
-
-  @override
-  List<Object> get props => [user];
-}
-
-sealed class AuthCubitEvent {}
-
-class FailedToRegister implements AuthCubitEvent {
-  const FailedToRegister(this.reason);
-
-  final String reason;
-}
-
-class FailedToSignIn implements AuthCubitEvent {
-  const FailedToSignIn(this.reason);
-
-  final String reason;
 }

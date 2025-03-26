@@ -9,6 +9,7 @@ part of 'auth_routes.dart';
 List<RouteBase> get $appRoutes => [
       $loginRoute,
       $organizerRegistrationRoute,
+      $organizerUnverifiedRoute,
     ];
 
 RouteBase get $loginRoute => GoRouteData.$route(
@@ -44,6 +45,29 @@ extension $OrganizerRegistrationRouteExtension on OrganizerRegistrationRoute {
 
   String get location => GoRouteData.$location(
         '/organizer/registration',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $organizerUnverifiedRoute => GoRouteData.$route(
+      path: '/pending',
+      factory: $OrganizerUnverifiedRouteExtension._fromState,
+    );
+
+extension $OrganizerUnverifiedRouteExtension on OrganizerUnverifiedRoute {
+  static OrganizerUnverifiedRoute _fromState(GoRouterState state) =>
+      const OrganizerUnverifiedRoute();
+
+  String get location => GoRouteData.$location(
+        '/pending',
       );
 
   void go(BuildContext context) => context.go(location);

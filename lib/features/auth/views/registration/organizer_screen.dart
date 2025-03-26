@@ -2,6 +2,7 @@ import 'package:bloc_presentation/bloc_presentation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
 import 'package:resellio/features/common/style/colors.dart';
 import 'package:resellio/features/common/widgets/app_logo.dart';
 
@@ -34,12 +35,16 @@ class _OrganizerRegistrationScreenState
     return BlocPresentationListener<AuthCubit, AuthCubitEvent>(
       listener: (context, event) {
         switch (event) {
-          case FailedToRegister():
+          case AuthErrorEvent():
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(SnackBar(content: Text(event.reason)));
-          default:
-            break;
+          case AuthenticatedEvent(:final user):
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text('Zalogowano jako ${user.email}')),
+              );
         }
       },
       child: Scaffold(

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/auth/bloc/auth_state.dart';
+import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/routes/auth_routes.dart' as auth_routes;
 import 'package:resellio/routes/customer_routes.dart';
 import 'package:resellio/routes/organizer_routes.dart';
@@ -11,8 +13,15 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
+        Provider(
+          create: (context) => ApiService(
+            baseUrl: 'http://localhost:5124/api',
+          ),
+        ),
         BlocProvider<AuthCubit>(
-          create: (context) => AuthCubit(),
+          create: (context) => AuthCubit(
+            apiService: context.read(),
+          ),
         ),
       ],
       child: const MyApp(),
@@ -32,8 +41,8 @@ class MyApp extends StatelessWidget {
         final router = GoRouter(
           routes: [
             ...auth_routes.$appRoutes,
-            if (state is AuthorizedCustomer) $customerShellRouteData,
-            if (state is AuthorizedOrganizer) $organizerShellRouteData,
+            if (cubit.isCustomer) $customerShellRouteData,
+            if (cubit.isOrganizer) $organizerShellRouteData,
           ],
           redirect: (context, state) {
             if (!cubit.isAuthenticated) {
@@ -42,6 +51,10 @@ class MyApp extends StatelessWidget {
 
             if (cubit.isOrganizerRegistrationNeeded) {
               return const auth_routes.OrganizerRegistrationRoute().location;
+            }
+
+            if (cubit.isUnverifiedOrganizer) {
+              return const auth_routes.OrganizerUnverifiedRoute().location;
             }
 
             return null;

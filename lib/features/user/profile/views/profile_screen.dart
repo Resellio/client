@@ -14,9 +14,6 @@ class CustomerProfileScreen extends StatelessWidget {
           children: [
             const Text('Jesteś zalogowany jako klient'),
             const SizedBox(height: 16),
-            Text(
-              'Twój email: ${(context.read<AuthCubit>().state as AuthorizedCustomer).user.email}',
-            ),
             ElevatedButton(
               onPressed: () {
                 context.read<AuthCubit>().logout();

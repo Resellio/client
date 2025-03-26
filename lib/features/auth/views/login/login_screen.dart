@@ -2,6 +2,7 @@ import 'package:bloc_presentation/bloc_presentation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
 import 'package:resellio/features/common/style/colors.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -12,14 +13,20 @@ class WelcomeScreen extends StatelessWidget {
     return BlocPresentationListener<AuthCubit, AuthCubitEvent>(
       listener: (context, event) {
         switch (event) {
-          case FailedToSignIn():
+          case AuthErrorEvent():
             Navigator.of(context)
                 .popUntil((route) => route is! ModalBottomSheetRoute);
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(SnackBar(content: Text(event.reason)));
-          default:
-            break;
+          case AuthenticatedEvent(:final user):
+            Navigator.of(context)
+                .popUntil((route) => route is! ModalBottomSheetRoute);
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text('Zalogowano jako ${user.email}')),
+              );
         }
       },
       child: Scaffold(
