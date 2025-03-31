@@ -10,11 +10,20 @@ class CustomerProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profil')),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            context.read<AuthCubit>().logout();
-          },
-          child: const Text('Wyloguj'),
+        child: Column(
+          children: [
+            const Text('Jesteś zalogowany jako klient'),
+            const SizedBox(height: 16),
+            Text(
+              'Twój email: ${(context.read<AuthCubit>().state as AuthorizedCustomer).user.email}',
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.read<AuthCubit>().logout();
+              },
+              child: const Text('Wyloguj'),
+            ),
+          ],
         ),
       ),
     );
