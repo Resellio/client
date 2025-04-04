@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For formatting date and time
-import 'package:flutter/foundation.dart'; // For kDebugMode
+import 'package:intl/intl.dart';
 
 class OrganizerNewEventScreen extends StatefulWidget {
   const OrganizerNewEventScreen({super.key});
@@ -15,26 +15,24 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Form field controllers
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _startDateController = TextEditingController();
-  final TextEditingController _endDateController = TextEditingController();
-  final TextEditingController _locationNameController = TextEditingController();
-  final TextEditingController _latitudeController = TextEditingController();
-  final TextEditingController _longitudeController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _zipcodeController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _countryController = TextEditingController();
-  final TextEditingController _minAgeController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _ticketNameController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _currencyController = TextEditingController();
-  final TextEditingController _ticketCountController = TextEditingController();
-  final TextEditingController _availableFromController =
-      TextEditingController();
+  final _nameController = TextEditingController();
+  final _startDateController = TextEditingController();
+  final _endDateController = TextEditingController();
+  final _locationNameController = TextEditingController();
+  final _latitudeController = TextEditingController();
+  final _longitudeController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _zipcodeController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _minAgeController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _ticketNameController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _currencyController = TextEditingController();
+  final _ticketCountController = TextEditingController();
+  final _availableFromController = TextEditingController();
 
-  // Categories
   List<String> categories = [];
 
   // Method to create the JSON
@@ -75,14 +73,12 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
     BuildContext context,
     TextEditingController controller,
   ) async {
-    final initialDate = DateTime.now();
-    final firstDate = DateTime(1900);
-    final lastDate = DateTime(2100);
+    final nowDate = DateTime.now();
+    final lastDate = DateTime(nowDate.year + 1, nowDate.month, nowDate.day);
 
     final DateTime? selectedDate = await showDatePicker(
       context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
+      firstDate: nowDate,
       lastDate: lastDate,
     );
 
@@ -166,6 +162,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Form(
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             key: _formKey,
             child: Column(
               children: [
@@ -257,7 +254,11 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
                 ),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Opis'),
+                  decoration: const InputDecoration(
+                    labelText: 'Opis',
+                  ),
+                  maxLines: null,
+                  minLines: 1,
                 ),
                 TextFormField(
                   controller: _ticketNameController,
