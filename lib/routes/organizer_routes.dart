@@ -21,10 +21,10 @@ part 'organizer_routes.g.dart';
         TypedGoRoute<OrganizerEventsRoute>(
           path: '/events',
           routes: [
-            TypedGoRoute<OrganizerNewEventRoute>(path: 'new'),
             TypedGoRoute<OrganizerEventDetailRoute>(path: ':eventId'),
           ],
         ),
+        TypedGoRoute<OrganizerNewEventRoute>(path: '/new-event'),
       ],
     ),
     TypedStatefulShellBranch<OrganizerProfileBranchData>(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'new_event_screen.dart';
+import 'package:resellio/routes/organizer_routes.dart';
 
 class OrganizerEventsScreen extends StatelessWidget {
   const OrganizerEventsScreen({super.key});
@@ -14,15 +14,9 @@ class OrganizerEventsScreen extends StatelessWidget {
         child: Text('test'),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push<Widget>(
-            context,
-            MaterialPageRoute<OrganizerNewEventScreen>(
-              builder: (context) => const OrganizerNewEventScreen(),
-            ),
-          );
-        },
+        onPressed: () => const OrganizerNewEventRoute().go(context),
         backgroundColor: Colors.blue,
+        tooltip: 'Stwórz nowe wydarzenie',
         child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

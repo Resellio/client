@@ -31,11 +31,11 @@ RouteBase get $organizerShellRouteData => StatefulShellRouteData.$route(
                   path: ':eventId',
                   factory: $OrganizerEventDetailRouteExtension._fromState,
                 ),
-                GoRouteData.$route(
-                  path: 'new',
-                  factory: $OrganizerNewEventRouteExtension._fromState,
-                ),
               ],
+            ),
+            GoRouteData.$route(
+              path: '/new-event',
+              factory: $OrganizerNewEventRouteExtension._fromState,
             ),
           ],
         ),
@@ -116,7 +116,7 @@ extension $OrganizerNewEventRouteExtension on OrganizerNewEventRoute {
       const OrganizerNewEventRoute();
 
   String get location => GoRouteData.$location(
-        '/events/new',
+        '/new-event',
       );
 
   void go(BuildContext context) => context.go(location);

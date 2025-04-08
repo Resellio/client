@@ -14,7 +14,6 @@ class OrganizerNewEventScreen extends StatefulWidget {
 class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Form field controllers
   final _nameController = TextEditingController();
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
@@ -35,7 +34,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
 
   List<String> categories = [];
 
-  // Method to create the JSON
   void _generateJson() {
     final eventData = {
       'name': _nameController.text,
@@ -68,8 +66,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
     print(jsonEncode(eventData));
   }
 
-  // Function to pick a date
-  Future<void> _selectDate(
+  Future<void> _selectDateUsingDatePicker(
     BuildContext context,
     TextEditingController controller,
   ) async {
@@ -90,19 +87,15 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
       );
 
       if (selectedTime != null) {
-        final finalDate = DateTime(
-          selectedDate.year,
-          selectedDate.month,
-          selectedDate.day,
-          selectedTime.hour,
-          selectedTime.minute,
-        );
-        controller.text = DateFormat('yyyy-MM-dd HH:mm').format(finalDate);
+        controller.text = DateFormat('yyyy-MM-dd HH:mm').format(selectedDate);
       }
     }
   }
 
-  String? _validateDateConstraints() {
+  String? _validateDateConstraints(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Wprowadź datę';
+    }
     final startDate =
         DateFormat('yyyy-MM-dd HH:mm').parse(_startDateController.text);
     final endDate =
@@ -172,7 +165,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
                       const InputDecoration(labelText: 'Nazwa wydarzenia'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Proszę wprowadzić nazwę wydarzenia';
+                      return 'Wprowadź nazwę wydarzenia';
                     }
                     return null;
                   },
@@ -183,13 +176,9 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
                     labelText: 'Data rozpoczęcia (RRRR-MM-DD GG:MM)',
                   ),
                   readOnly: true,
-                  onTap: () => _selectDate(context, _startDateController),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Proszę wprowadzić datę rozpoczęcia';
-                    }
-                    return null;
-                  },
+                  onTap: () =>
+                      _selectDateUsingDatePicker(context, _startDateController),
+                  validator: _validateDateConstraints,
                 ),
                 TextFormField(
                   controller: _endDateController,
@@ -197,13 +186,9 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
                     labelText: 'Data zakończenia (RRRR-MM-DD GG:MM)',
                   ),
                   readOnly: true,
-                  onTap: () => _selectDate(context, _endDateController),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Proszę wprowadzić datę zakończenia';
-                    }
-                    return null;
-                  },
+                  onTap: () =>
+                      _selectDateUsingDatePicker(context, _endDateController),
+                  validator: _validateDateConstraints,
                 ),
                 TextFormField(
                   controller: _locationNameController,
@@ -283,27 +268,19 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
                     labelText: 'Dostępne od (RRRR-MM-DD GG:MM)',
                   ),
                   readOnly: true,
-                  onTap: () => _selectDate(context, _availableFromController),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Proszę wprowadzić datę rozpoczęcia sprzedaży';
-                    }
-                    return null;
-                  },
+                  onTap: () => _selectDateUsingDatePicker(
+                    context,
+                    _availableFromController,
+                  ),
+                  validator: _validateDateConstraints,
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState?.validate() ?? false) {
-                      final dateValidation = _validateDateConstraints();
-                      if (dateValidation != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(dateValidation)),
-                        );
-                        return;
-                      }
-                      _generateJson();
+                      return;
                     }
+                    _generateJson();
                   },
                   child: const Text('Wyślij'),
                 ),
