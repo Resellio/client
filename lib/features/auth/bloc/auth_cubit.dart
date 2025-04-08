@@ -52,6 +52,9 @@ class AuthCubit extends Cubit<AuthState>
       emitPresentation(AuthenticatedEvent(user));
       emit(AuthorizedCustomer(user));
     } catch (err) {
+      if (err.toString() == 'popup_closed') {
+        return;
+      }
       emitPresentation(AuthErrorEvent(err.toString()));
     }
   }
