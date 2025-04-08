@@ -5,6 +5,7 @@ import 'package:resellio/features/organizer/events/views/events_screen.dart';
 import 'package:resellio/features/organizer/events/views/new_event_screen.dart';
 import 'package:resellio/features/organizer/home/views/home_screen.dart';
 import 'package:resellio/features/organizer/profile/views/profile_screen.dart';
+import 'package:resellio/features/organizer/shell_screen.dart';
 
 part 'organizer_routes.g.dart';
 
@@ -21,9 +22,9 @@ part 'organizer_routes.g.dart';
           path: '/events',
           routes: [
             TypedGoRoute<OrganizerEventDetailRoute>(path: ':eventId'),
-            TypedGoRoute<OrganizerNewEventRoute>(path: 'new'),
           ],
         ),
+        TypedGoRoute<OrganizerNewEventRoute>(path: '/new-event'),
       ],
     ),
     TypedStatefulShellBranch<OrganizerProfileBranchData>(
@@ -42,7 +43,7 @@ class OrganizerShellRouteData extends StatefulShellRouteData {
     GoRouterState state,
     StatefulNavigationShell navigationShell,
   ) {
-    return ScaffoldWithNavBar(navigationShell: navigationShell);
+    return OrganizerShellScreen(navigationShell: navigationShell);
   }
 }
 
@@ -102,37 +103,5 @@ class OrganizerProfileRoute extends GoRouteData {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return const OrganizerProfileScreen();
-  }
-}
-
-class ScaffoldWithNavBar extends StatelessWidget {
-  const ScaffoldWithNavBar({required this.navigationShell, super.key});
-
-  final StatefulNavigationShell navigationShell;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Główna',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Moje wydarzenia',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
-        currentIndex: navigationShell.currentIndex,
-        onTap: navigationShell.goBranch,
-        type: BottomNavigationBarType.fixed,
-      ),
-    );
   }
 }

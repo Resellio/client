@@ -4,6 +4,7 @@ import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
 import 'package:resellio/features/user/profile/views/profile_screen.dart';
+import 'package:resellio/features/user/shell_screen.dart';
 import 'package:resellio/features/user/tickets/views/ticket_screen.dart';
 import 'package:resellio/features/user/tickets/views/tickets_screen.dart';
 
@@ -11,7 +12,6 @@ part 'customer_routes.g.dart';
 
 @TypedStatefulShellRoute<CustomerShellRouteData>(
   branches: [
-    // Home Branch
     TypedStatefulShellBranch<CustomerHomeBranchData>(
       routes: [
         TypedGoRoute<CustomerHomeRoute>(path: '/'),
@@ -53,7 +53,7 @@ class CustomerShellRouteData extends StatefulShellRouteData {
     GoRouterState state,
     StatefulNavigationShell navigationShell,
   ) {
-    return ScaffoldWithNavBar(navigationShell: navigationShell);
+    return CustomerShellScreen(navigationShell: navigationShell);
   }
 }
 
@@ -128,42 +128,5 @@ class CustomerProfileRoute extends GoRouteData {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return const CustomerProfileScreen();
-  }
-}
-
-class ScaffoldWithNavBar extends StatelessWidget {
-  const ScaffoldWithNavBar({required this.navigationShell, super.key});
-
-  final StatefulNavigationShell navigationShell;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.blue,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Główna',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Szukaj',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt),
-            label: 'Moje bilety',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
-        currentIndex: navigationShell.currentIndex,
-        onTap: navigationShell.goBranch,
-        type: BottomNavigationBarType.fixed,
-      ),
-    );
   }
 }
