@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
@@ -61,7 +62,7 @@ void main() {
           when(
             () => mockApiService.googleLogin(
               accessToken: 'mock-access-token',
-              role: 'customer',
+              endpoint: ApiEndpoints.customerGoogleLogin,
             ),
           ).thenAnswer((_) async => {'token': 'mock-token'});
           return authCubit;
@@ -77,7 +78,7 @@ void main() {
           verify(
             () => mockApiService.googleLogin(
               accessToken: 'mock-access-token',
-              role: 'customer',
+              endpoint: ApiEndpoints.customerGoogleLogin,
             ),
           ).called(1);
         },
@@ -89,7 +90,7 @@ void main() {
           when(
             () => mockApiService.googleLogin(
               accessToken: 'mock-access-token',
-              role: 'customer',
+              endpoint: ApiEndpoints.customerGoogleLogin,
             ),
           ).thenThrow(Exception('API Error'));
           return authCubit;
@@ -106,7 +107,7 @@ void main() {
           when(
             () => mockApiService.googleLogin(
               accessToken: 'mock-access-token',
-              role: 'organizer',
+              endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
           ).thenAnswer(
             (_) async => {
@@ -120,7 +121,13 @@ void main() {
         act: (cubit) => cubit.organizerSignInWithGoogle(),
         expect: () => [
           const AuthorizedOrganizer(
-            Organizer(email: 'test@example.com', token: 'mock-token'),
+            Organizer(
+              email: 'test@example.com',
+              token: 'mock-token',
+              firstName: 'John',
+              lastName: 'Doe',
+              displayName: 'JohnD',
+            ),
           ),
         ],
       );
@@ -131,7 +138,7 @@ void main() {
           when(
             () => mockApiService.googleLogin(
               accessToken: 'mock-access-token',
-              role: 'organizer',
+              endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
           ).thenAnswer(
             (_) async => {
@@ -159,7 +166,7 @@ void main() {
           when(
             () => mockApiService.googleLogin(
               accessToken: 'mock-access-token',
-              role: 'organizer',
+              endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
           ).thenAnswer(
             (_) async => {
@@ -173,7 +180,13 @@ void main() {
         act: (cubit) => cubit.organizerSignInWithGoogle(),
         expect: () => [
           const AuthorizedUnverifiedOrganizer(
-            Organizer(email: 'test@example.com', token: 'mock-token'),
+            Organizer(
+              email: 'test@example.com',
+              token: 'mock-token',
+              firstName: 'John',
+              lastName: 'Doe',
+              displayName: 'JohnD',
+            ),
           ),
         ],
       );
@@ -184,7 +197,7 @@ void main() {
           when(
             () => mockApiService.googleLogin(
               accessToken: 'mock-access-token',
-              role: 'organizer',
+              endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
           ).thenThrow(Exception('API Error'));
           return authCubit;
@@ -223,7 +236,13 @@ void main() {
         ),
         expect: () => [
           const AuthorizedUnverifiedOrganizer(
-            Organizer(email: 'test@example.com', token: 'new-token'),
+            Organizer(
+              email: 'test@example.com',
+              token: 'new-token',
+              firstName: 'John',
+              lastName: 'Doe',
+              displayName: 'JohnD',
+            ),
           ),
         ],
       );
@@ -252,7 +271,13 @@ void main() {
         build: () {
           authCubit.emit(
             const AuthorizedOrganizer(
-              Organizer(email: 'test@example.com', token: 'mock-token'),
+              Organizer(
+                email: 'test@example.com',
+                token: 'mock-token',
+                firstName: 'John',
+                lastName: 'Doe',
+                displayName: 'JohnD',
+              ),
             ),
           );
           return authCubit;

@@ -5,16 +5,17 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
+import 'package:resellio/config.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
 
-// Create a mock class
 class MockHttpClient extends Mock implements http.Client {}
 
 void main() {
   late MockHttpClient mockHttpClient;
   late ApiService apiService;
-  const baseUrl = 'http://localhost:5124/api';
+  const baseUrl = Config.apiBaseUrl;
   const successResponse = {'token': 'jwt-token'};
 
   setUp(() {
@@ -29,12 +30,11 @@ void main() {
 
   group('googleLogin', () {
     const accessToken = 'test-access-token';
-    const role = 'user';
 
     test('successful google login returns decoded response', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse('$baseUrl/$role/google-login'),
+          Uri.parse(ApiEndpoints.customerGoogleLogin),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
@@ -44,7 +44,7 @@ void main() {
 
       final result = await apiService.googleLogin(
         accessToken: accessToken,
-        role: role,
+        endpoint: ApiEndpoints.customerGoogleLogin,
       );
 
       expect(result, successResponse);
@@ -53,14 +53,17 @@ void main() {
     test('401 response throws unauthorized exception', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse('$baseUrl/$role/google-login'),
+          Uri.parse(ApiEndpoints.customerGoogleLogin),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
       ).thenAnswer((_) async => http.Response('Unauthorized', 401));
 
       expect(
-        () => apiService.googleLogin(accessToken: accessToken, role: role),
+        () => apiService.googleLogin(
+          accessToken: accessToken,
+          endpoint: ApiEndpoints.customerGoogleLogin,
+        ),
         throwsA(
           isA<ApiException>()
               .having((e) => e.message, 'message', 'Unauthorized'),
@@ -71,14 +74,17 @@ void main() {
     test('handles invalid response format', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse('$baseUrl/$role/google-login'),
+          Uri.parse(ApiEndpoints.customerGoogleLogin),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
       ).thenAnswer((_) async => http.Response('Not a JSON', 200));
 
       expect(
-        () => apiService.googleLogin(accessToken: accessToken, role: role),
+        () => apiService.googleLogin(
+          accessToken: accessToken,
+          endpoint: ApiEndpoints.customerGoogleLogin,
+        ),
         throwsA(isA<ApiException>()),
       );
     });
@@ -86,14 +92,17 @@ void main() {
     test('handles 403 forbidden response', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse('$baseUrl/$role/google-login'),
+          Uri.parse(ApiEndpoints.customerGoogleLogin),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
       ).thenAnswer((_) async => http.Response('Forbidden', 403));
 
       expect(
-        () => apiService.googleLogin(accessToken: accessToken, role: role),
+        () => apiService.googleLogin(
+          accessToken: accessToken,
+          endpoint: ApiEndpoints.customerGoogleLogin,
+        ),
         throwsA(
           isA<ApiException>().having((e) => e.message, 'message', 'Forbidden'),
         ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
 
 class ApiService {
@@ -66,10 +67,10 @@ class ApiService {
 
   Future<Map<String, dynamic>> googleLogin({
     required String accessToken,
-    required String role,
+    required String endpoint,
   }) async {
     return makeRequest(
-      endpoint: '$role/google-login',
+      endpoint: endpoint,
       method: 'POST',
       body: jsonEncode({'accessToken': accessToken}),
     );
@@ -82,7 +83,7 @@ class ApiService {
     required String displayName,
   }) async {
     return makeRequest(
-      endpoint: 'organizer/create-organizer',
+      endpoint: ApiEndpoints.organizers,
       method: 'POST',
       headers: {
         ...defaultHeaders,

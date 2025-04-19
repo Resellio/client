@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:resellio/config.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/data/api.dart';
@@ -17,7 +18,7 @@ void main() {
       providers: [
         Provider(
           create: (context) => ApiService(
-            baseUrl: 'http://localhost:5124/api',
+            baseUrl: Config.apiBaseUrl,
             client: http.Client(),
           ),
         ),

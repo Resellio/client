@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
@@ -41,7 +42,7 @@ class AuthCubit extends Cubit<AuthState>
 
       final response = await apiService.googleLogin(
         accessToken: googleAuth.accessToken!,
-        role: 'customer',
+        endpoint: ApiEndpoints.customerGoogleLogin,
       );
 
       final user = Customer(
@@ -66,7 +67,7 @@ class AuthCubit extends Cubit<AuthState>
 
       final response = await apiService.googleLogin(
         accessToken: googleAuth.accessToken!,
-        role: 'organizer',
+        endpoint: ApiEndpoints.organizerGoogleLogin,
       );
 
       final token = response['token'] as String;
@@ -84,6 +85,9 @@ class AuthCubit extends Cubit<AuthState>
       } else if (isVerified) {
         final user = Organizer(
           email: googleUser.email,
+          firstName: 'xd',
+          lastName: 'xd2',
+          displayName: 'xd3',
           token: token,
         );
 
@@ -93,6 +97,9 @@ class AuthCubit extends Cubit<AuthState>
         final user = Organizer(
           email: googleUser.email,
           token: token,
+          firstName: 'xd',
+          lastName: 'xd2',
+          displayName: 'xd3',
         );
 
         emitPresentation(AuthenticatedEvent(user));
@@ -126,6 +133,9 @@ class AuthCubit extends Cubit<AuthState>
           Organizer(
             email: currentState.user.email,
             token: response['token'] as String,
+            firstName: firstName,
+            lastName: lastName,
+            displayName: displayName,
           ),
         ),
       );
