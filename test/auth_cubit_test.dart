@@ -52,7 +52,7 @@ void main() {
 
   group('AuthCubit', () {
     test('initial state is Unauthorized', () {
-      expect(authCubit.state, Unauthorized());
+      expect(authCubit.state, const Unauthorized());
     });
 
     group('customerSignInWithGoogle', () {
@@ -260,7 +260,7 @@ void main() {
           return authCubit;
         },
         act: (cubit) => cubit.logout(),
-        expect: () => [Unauthorized()],
+        expect: () => [const Unauthorized()],
         verify: (_) {
           verify(() => mockGoogleSignIn.signOut()).called(1);
         },
@@ -283,7 +283,7 @@ void main() {
           return authCubit;
         },
         act: (cubit) => cubit.logout(),
-        expect: () => [Unauthorized()],
+        expect: () => [const Unauthorized()],
         verify: (_) {
           verify(() => mockGoogleSignIn.signOut()).called(1);
         },

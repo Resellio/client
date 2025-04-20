@@ -1,4 +1,5 @@
 import 'package:bloc_presentation/bloc_presentation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
@@ -146,56 +147,24 @@ class AuthCubit extends HydratedCubit<AuthState>
 
   @override
   Map<String, dynamic>? toJson(AuthState state) {
-    if (state is Unauthorized) {
-      return {'type': 'Unauthorized'};
-    } else if (state is AuthorizedCustomer) {
-      return {
-        'type': 'AuthorizedCustomer',
-        'user': state.user.toJson(),
-      };
-    } else if (state is AuthorizedOrganizer) {
-      return {
-        'type': 'AuthorizedOrganizer',
-        'user': state.user.toJson(),
-      };
-    } else if (state is AuthorizedUnverifiedOrganizer) {
-      return {
-        'type': 'AuthorizedUnverifiedOrganizer',
-        'user': state.user.toJson(),
-      };
-    } else if (state is AuthorizedOrganizerRegistrationNeeded) {
-      return {
-        'type': 'AuthorizedOrganizerRegistrationNeeded',
-        'user': state.user.toJson(),
-      };
+    try {
+      return state.toJson();
+    } catch (e, stackTrace) {
+      debugPrint('Error serializing AuthState: $e');
+      debugPrint(stackTrace.toString());
+      return const Unauthorized().toJson();
     }
-    return null;
   }
 
   @override
   AuthState? fromJson(Map<String, dynamic> json) {
-    final type = json['type'] as String?;
-    if (type == 'Unauthorized') {
+    try {
+      return AuthState.fromJson(json);
+    } catch (e, stackTrace) {
+      debugPrint('Error deserializing AuthState: $e');
+      debugPrint(stackTrace.toString());
       return const Unauthorized();
-    } else if (type == 'AuthorizedCustomer') {
-      return AuthorizedCustomer(
-        Customer.fromJson(json['user'] as Map<String, dynamic>),
-      );
-    } else if (type == 'AuthorizedOrganizer') {
-      return AuthorizedOrganizer(
-        Organizer.fromJson(json['user'] as Map<String, dynamic>),
-      );
-    } else if (type == 'AuthorizedUnverifiedOrganizer') {
-      return AuthorizedUnverifiedOrganizer(
-        Organizer.fromJson(json['user'] as Map<String, dynamic>),
-      );
-    } else if (type == 'AuthorizedOrganizerRegistrationNeeded') {
-      return AuthorizedOrganizerRegistrationNeeded(
-        OrganizerRegistrationNeeded.fromJson(
-            json['user'] as Map<String, dynamic>),
-      );
     }
-    return null;
   }
 
   Future<void> logout() async {

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-class User extends Equatable {
+abstract class User extends Equatable {
   const User({
     required this.email,
     required this.token,
@@ -8,6 +8,8 @@ class User extends Equatable {
 
   final String email;
   final String token;
+
+  Map<String, dynamic> toJson();
 
   @override
   List<Object> get props => [email, token];

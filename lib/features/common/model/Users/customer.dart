@@ -1,24 +1,18 @@
+import 'package:json_annotation/json_annotation.dart';
 import 'package:resellio/features/common/model/Users/user.dart';
 
+part 'customer.g.dart';
+
+@JsonSerializable()
 class Customer extends User {
   const Customer({
     required super.email,
     required super.token,
   });
 
-  @override
-  Map<String, dynamic> toJson() {
-    return {
-      'email': email,
-      'token': token,
-    };
-  }
+  factory Customer.fromJson(Map<String, dynamic> json) =>
+      _$CustomerFromJson(json);
 
   @override
-  factory Customer.fromJson(Map<String, dynamic> json) {
-    return Customer(
-      email: json['email'] as String,
-      token: json['token'] as String,
-    );
-  }
+  Map<String, dynamic> toJson() => _$CustomerToJson(this);
 }

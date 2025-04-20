@@ -1,24 +1,18 @@
+import 'package:json_annotation/json_annotation.dart';
 import 'package:resellio/features/common/model/Users/user.dart';
 
+part 'organizer_registration_needed.g.dart';
+
+@JsonSerializable()
 class OrganizerRegistrationNeeded extends User {
   const OrganizerRegistrationNeeded({
     required super.email,
     required super.token,
   });
 
-  @override
-  Map<String, dynamic> toJson() {
-    return {
-      'email': email,
-      'token': token,
-    };
-  }
+  factory OrganizerRegistrationNeeded.fromJson(Map<String, dynamic> json) =>
+      _$OrganizerRegistrationNeededFromJson(json);
 
   @override
-  factory OrganizerRegistrationNeeded.fromJson(Map<String, dynamic> json) {
-    return OrganizerRegistrationNeeded(
-      email: json['email'] as String,
-      token: json['token'] as String,
-    );
-  }
+  Map<String, dynamic> toJson() => _$OrganizerRegistrationNeededToJson(this);
 }
