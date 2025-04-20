@@ -16,7 +16,7 @@ class LoginRoute extends GoRouteData {
   }
 }
 
-@TypedGoRoute<OrganizerRegistrationRoute>(path: '/organizer/registration')
+@TypedGoRoute<OrganizerRegistrationRoute>(path: '/org/registration')
 class OrganizerRegistrationRoute extends GoRouteData {
   const OrganizerRegistrationRoute();
 
@@ -26,7 +26,7 @@ class OrganizerRegistrationRoute extends GoRouteData {
   }
 }
 
-@TypedGoRoute<OrganizerUnverifiedRoute>(path: '/pending')
+@TypedGoRoute<OrganizerUnverifiedRoute>(path: '/org/pending')
 class OrganizerUnverifiedRoute extends GoRouteData {
   const OrganizerUnverifiedRoute();
 

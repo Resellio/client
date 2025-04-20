@@ -1,6 +1,6 @@
 import 'package:bloc_presentation/bloc_presentation.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/data/api.dart';
@@ -9,12 +9,12 @@ import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
 
-class AuthCubit extends Cubit<AuthState>
+class AuthCubit extends HydratedCubit<AuthState>
     with BlocPresentationMixin<AuthState, AuthCubitEvent> {
   AuthCubit({
     required this.apiService,
     required this.googleSignIn,
-  }) : super(Unauthorized());
+  }) : super(const Unauthorized());
 
   final ApiService apiService;
   final GoogleSignIn googleSignIn;
@@ -144,8 +144,63 @@ class AuthCubit extends Cubit<AuthState>
     }
   }
 
+  @override
+  Map<String, dynamic>? toJson(AuthState state) {
+    if (state is Unauthorized) {
+      return {'type': 'Unauthorized'};
+    } else if (state is AuthorizedCustomer) {
+      return {
+        'type': 'AuthorizedCustomer',
+        'user': state.user.toJson(),
+      };
+    } else if (state is AuthorizedOrganizer) {
+      return {
+        'type': 'AuthorizedOrganizer',
+        'user': state.user.toJson(),
+      };
+    } else if (state is AuthorizedUnverifiedOrganizer) {
+      return {
+        'type': 'AuthorizedUnverifiedOrganizer',
+        'user': state.user.toJson(),
+      };
+    } else if (state is AuthorizedOrganizerRegistrationNeeded) {
+      return {
+        'type': 'AuthorizedOrganizerRegistrationNeeded',
+        'user': state.user.toJson(),
+      };
+    }
+    return null;
+  }
+
+  @override
+  AuthState? fromJson(Map<String, dynamic> json) {
+    final type = json['type'] as String?;
+    if (type == 'Unauthorized') {
+      return const Unauthorized();
+    } else if (type == 'AuthorizedCustomer') {
+      return AuthorizedCustomer(
+        Customer.fromJson(json['user'] as Map<String, dynamic>),
+      );
+    } else if (type == 'AuthorizedOrganizer') {
+      return AuthorizedOrganizer(
+        Organizer.fromJson(json['user'] as Map<String, dynamic>),
+      );
+    } else if (type == 'AuthorizedUnverifiedOrganizer') {
+      return AuthorizedUnverifiedOrganizer(
+        Organizer.fromJson(json['user'] as Map<String, dynamic>),
+      );
+    } else if (type == 'AuthorizedOrganizerRegistrationNeeded') {
+      return AuthorizedOrganizerRegistrationNeeded(
+        OrganizerRegistrationNeeded.fromJson(
+            json['user'] as Map<String, dynamic>),
+      );
+    }
+    return null;
+  }
+
   Future<void> logout() async {
     await googleSignIn.signOut();
-    emit(Unauthorized());
+    emit(const Unauthorized());
+    await clear();
   }
 }

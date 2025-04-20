@@ -12,4 +12,26 @@ class Organizer extends User {
   final String firstName;
   final String lastName;
   final String displayName;
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'token': token,
+      'firstName': firstName,
+      'lastName': lastName,
+      'displayName': displayName,
+    };
+  }
+
+  @override
+  factory Organizer.fromJson(Map<String, dynamic> json) {
+    return Organizer(
+      email: json['email'] as String,
+      token: json['token'] as String,
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
+      displayName: json['displayName'] as String,
+    );
+  }
 }

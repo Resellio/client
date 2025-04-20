@@ -35,7 +35,7 @@ extension $LoginRouteExtension on LoginRoute {
 }
 
 RouteBase get $organizerRegistrationRoute => GoRouteData.$route(
-      path: '/organizer/registration',
+      path: '/org/registration',
       factory: $OrganizerRegistrationRouteExtension._fromState,
     );
 
@@ -44,7 +44,7 @@ extension $OrganizerRegistrationRouteExtension on OrganizerRegistrationRoute {
       const OrganizerRegistrationRoute();
 
   String get location => GoRouteData.$location(
-        '/organizer/registration',
+        '/org/registration',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -58,7 +58,7 @@ extension $OrganizerRegistrationRouteExtension on OrganizerRegistrationRoute {
 }
 
 RouteBase get $organizerUnverifiedRoute => GoRouteData.$route(
-      path: '/pending',
+      path: '/org/pending',
       factory: $OrganizerUnverifiedRouteExtension._fromState,
     );
 
@@ -67,7 +67,7 @@ extension $OrganizerUnverifiedRouteExtension on OrganizerUnverifiedRoute {
       const OrganizerUnverifiedRoute();
 
   String get location => GoRouteData.$location(
-        '/pending',
+        '/org/pending',
       );
 
   void go(BuildContext context) => context.go(location);

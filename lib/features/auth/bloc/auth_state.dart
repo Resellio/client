@@ -5,12 +5,14 @@ import 'package:resellio/features/common/model/Users/organizer_registration_need
 
 abstract class AuthState extends Equatable {
   const AuthState();
+}
+
+class Unauthorized extends AuthState {
+  const Unauthorized();
 
   @override
   List<Object> get props => [];
 }
-
-class Unauthorized extends AuthState {}
 
 class AuthorizedCustomer extends AuthState {
   const AuthorizedCustomer(this.user);

@@ -13,13 +13,13 @@ part 'organizer_routes.g.dart';
   branches: [
     TypedStatefulShellBranch<OrganizerHomeBranchData>(
       routes: [
-        TypedGoRoute<OrganizerHomeRoute>(path: '/'),
+        TypedGoRoute<OrganizerHomeRoute>(path: '/org'),
       ],
     ),
     TypedStatefulShellBranch<OrganizerSearchBranchData>(
       routes: [
         TypedGoRoute<OrganizerEventsRoute>(
-          path: '/events',
+          path: '/org/events',
           routes: [
             TypedGoRoute<OrganizerEventDetailRoute>(path: ':eventId'),
             TypedGoRoute<OrganizerNewEventRoute>(path: 'new'),
@@ -29,7 +29,7 @@ part 'organizer_routes.g.dart';
     ),
     TypedStatefulShellBranch<OrganizerProfileBranchData>(
       routes: [
-        TypedGoRoute<OrganizerProfileRoute>(path: '/profile'),
+        TypedGoRoute<OrganizerProfileRoute>(path: '/org/profile'),
       ],
     ),
   ],

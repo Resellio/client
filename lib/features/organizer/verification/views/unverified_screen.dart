@@ -99,9 +99,8 @@ class _OrganizerUnverifiedScreenState extends State<OrganizerUnverifiedScreen> {
                         const Text(
                           'Status',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 20, color: Colors.white),
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
-                        const SizedBox(height: 8),
                         const Text(
                           'W trakcie weryfikacji',
                           textAlign: TextAlign.center,

@@ -5,4 +5,20 @@ class OrganizerRegistrationNeeded extends User {
     required super.email,
     required super.token,
   });
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'token': token,
+    };
+  }
+
+  @override
+  factory OrganizerRegistrationNeeded.fromJson(Map<String, dynamic> json) {
+    return OrganizerRegistrationNeeded(
+      email: json['email'] as String,
+      token: json['token'] as String,
+    );
+  }
 }
