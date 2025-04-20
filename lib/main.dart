@@ -9,9 +9,9 @@ import 'package:http/http.dart' as http;
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:resellio/config.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/routes/auth_routes.dart' as auth_routes;
 import 'package:resellio/routes/customer_routes.dart';
 import 'package:resellio/routes/organizer_routes.dart';
@@ -32,7 +32,7 @@ void main() async {
       providers: [
         Provider(
           create: (context) => ApiService(
-            baseUrl: Config.apiBaseUrl,
+            baseUrl: ApiEndpoints.baseUrl,
             client: http.Client(),
           ),
         ),

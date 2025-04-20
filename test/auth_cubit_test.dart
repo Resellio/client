@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
@@ -17,8 +18,19 @@ class MockGoogleSignIn extends Mock implements GoogleSignIn {}
 
 class MockGoogleSignInAccount extends Mock implements GoogleSignInAccount {}
 
+class MockStorage extends Mock implements Storage {}
+
 class MockGoogleSignInAuthentication extends Mock
     implements GoogleSignInAuthentication {}
+
+void setupHydratedStorage() {
+  HydratedBloc.storage = MockStorage();
+  when(() => HydratedBloc.storage.read(any())).thenAnswer((_) async => null);
+  when(() => HydratedBloc.storage.write(any(), any<dynamic>()))
+      .thenAnswer((_) async {});
+  when(() => HydratedBloc.storage.clear()).thenAnswer((_) async {});
+  when(() => HydratedBloc.storage.delete(any())).thenAnswer((_) async {});
+}
 
 void main() {
   late AuthCubit authCubit;
@@ -27,14 +39,13 @@ void main() {
   late MockGoogleSignInAccount mockGoogleAccount;
   late MockGoogleSignInAuthentication mockGoogleAuth;
 
+  setUpAll(setupHydratedStorage);
+
   setUp(() {
     mockApiService = MockApiService();
     mockGoogleSignIn = MockGoogleSignIn();
     mockGoogleAccount = MockGoogleSignInAccount();
     mockGoogleAuth = MockGoogleSignInAuthentication();
-
-    authCubit =
-        AuthCubit(apiService: mockApiService, googleSignIn: mockGoogleSignIn);
 
     // Setup common mock behaviors
     when(() => mockGoogleSignIn.signIn())
@@ -44,6 +55,11 @@ void main() {
     when(() => mockGoogleAuth.accessToken).thenReturn('mock-access-token');
     when(() => mockGoogleAccount.email).thenReturn('test@example.com');
     when(() => mockGoogleSignIn.signOut()).thenAnswer((_) async => null);
+
+    authCubit = AuthCubit(
+      apiService: mockApiService,
+      googleSignIn: mockGoogleSignIn,
+    );
   });
 
   tearDown(() {

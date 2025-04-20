@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
-import 'package:resellio/config.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
@@ -15,7 +14,7 @@ class MockHttpClient extends Mock implements http.Client {}
 void main() {
   late MockHttpClient mockHttpClient;
   late ApiService apiService;
-  const baseUrl = Config.apiBaseUrl;
+  const baseUrl = ApiEndpoints.baseUrl;
   const successResponse = {'token': 'jwt-token'};
 
   setUp(() {
@@ -34,7 +33,7 @@ void main() {
     test('successful google login returns decoded response', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse(ApiEndpoints.customerGoogleLogin),
+          Uri.parse('$baseUrl/${ApiEndpoints.customerGoogleLogin}'),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
@@ -53,7 +52,7 @@ void main() {
     test('401 response throws unauthorized exception', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse(ApiEndpoints.customerGoogleLogin),
+          Uri.parse('$baseUrl/${ApiEndpoints.customerGoogleLogin}'),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
@@ -74,7 +73,7 @@ void main() {
     test('handles invalid response format', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse(ApiEndpoints.customerGoogleLogin),
+          Uri.parse('$baseUrl/${ApiEndpoints.customerGoogleLogin}'),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
@@ -92,7 +91,7 @@ void main() {
     test('handles 403 forbidden response', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse(ApiEndpoints.customerGoogleLogin),
+          Uri.parse('$baseUrl/${ApiEndpoints.customerGoogleLogin}'),
           headers: ApiService.defaultHeaders,
           body: jsonEncode({'accessToken': accessToken}),
         ),
@@ -124,7 +123,7 @@ void main() {
 
       when(
         () => mockHttpClient.post(
-          Uri.parse('$baseUrl/organizer/create-organizer'),
+          Uri.parse('$baseUrl/${ApiEndpoints.organizers}'),
           headers: headers,
           body: jsonEncode({
             'firstName': firstName,
@@ -149,7 +148,7 @@ void main() {
     test('handles network errors during organizer creation', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse('$baseUrl/organizer/create-organizer'),
+          Uri.parse('$baseUrl/${ApiEndpoints.organizers}'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -182,7 +181,7 @@ void main() {
     test('handles unauthorized token during organizer creation', () async {
       when(
         () => mockHttpClient.post(
-          Uri.parse('$baseUrl/organizer/create-organizer'),
+          Uri.parse('$baseUrl/${ApiEndpoints.organizers}'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',

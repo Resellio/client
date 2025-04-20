@@ -1,4 +1,5 @@
 class ApiEndpoints {
+  static const String baseUrl = 'http://192.168.0.129:5124/api';
   static const String customers = 'Customers';
   static const String organizers = 'Organizers';
   static const String events = 'Events';
