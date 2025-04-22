@@ -76,6 +76,19 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> organizerAboutMe({
+    required String token,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerAboutMe,
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> createOrganizer({
     required String token,
     required String firstName,

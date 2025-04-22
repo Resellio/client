@@ -5,4 +5,5 @@ class ApiEndpoints {
   static const String events = 'Events';
   static const String customerGoogleLogin = '$customers/google-login';
   static const String organizerGoogleLogin = '$organizers/google-login';
+  static const String organizerAboutMe = '$organizers/about-me';
 }

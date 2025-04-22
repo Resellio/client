@@ -83,28 +83,26 @@ class AuthCubit extends HydratedCubit<AuthState>
 
         emitPresentation(AuthenticatedEvent(user));
         emit(AuthorizedOrganizerRegistrationNeeded(user));
-      } else if (isVerified) {
-        final user = Organizer(
-          email: googleUser.email,
-          firstName: 'xd',
-          lastName: 'xd2',
-          displayName: 'xd3',
-          token: token,
-        );
-
-        emitPresentation(AuthenticatedEvent(user));
-        emit(AuthorizedOrganizer(user));
       } else {
-        final user = Organizer(
-          email: googleUser.email,
+        final aboutMeResponse = await apiService.organizerAboutMe(
           token: token,
-          firstName: 'xd',
-          lastName: 'xd2',
-          displayName: 'xd3',
         );
 
-        emitPresentation(AuthenticatedEvent(user));
-        emit(AuthorizedUnverifiedOrganizer(user));
+        final user = Organizer(
+          email: googleUser.email,
+          firstName: aboutMeResponse['firstName'] as String,
+          lastName: aboutMeResponse['lastName'] as String,
+          displayName: aboutMeResponse['displayName'] as String,
+          token: token,
+        );
+
+        if (isVerified) {
+          emitPresentation(AuthenticatedEvent(user));
+          emit(AuthorizedOrganizer(user));
+        } else {
+          emitPresentation(AuthenticatedEvent(user));
+          emit(AuthorizedUnverifiedOrganizer(user));
+        }
       }
     } catch (err) {
       emitPresentation(AuthErrorEvent(err.toString()));
@@ -149,9 +147,9 @@ class AuthCubit extends HydratedCubit<AuthState>
   Map<String, dynamic>? toJson(AuthState state) {
     try {
       return state.toJson();
-    } catch (e, stackTrace) {
-      debugPrint('Error serializing AuthState: $e');
-      debugPrint(stackTrace.toString());
+    } catch (err, st) {
+      debugPrint('Error serializing AuthState: $err');
+      debugPrint(st.toString());
       return const Unauthorized().toJson();
     }
   }
@@ -160,9 +158,9 @@ class AuthCubit extends HydratedCubit<AuthState>
   AuthState? fromJson(Map<String, dynamic> json) {
     try {
       return AuthState.fromJson(json);
-    } catch (e, stackTrace) {
-      debugPrint('Error deserializing AuthState: $e');
-      debugPrint(stackTrace.toString());
+    } catch (err, st) {
+      debugPrint('Error deserializing AuthState: $err');
+      debugPrint(st.toString());
       return const Unauthorized();
     }
   }

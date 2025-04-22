@@ -16,6 +16,7 @@ void main() {
   late ApiService apiService;
   const baseUrl = ApiEndpoints.baseUrl;
   const successResponse = {'token': 'jwt-token'};
+  const token = 'test-token';
 
   setUp(() {
     mockHttpClient = MockHttpClient();
@@ -110,7 +111,6 @@ void main() {
   });
 
   group('createOrganizer', () {
-    const token = 'test-token';
     const firstName = 'John';
     const lastName = 'Doe';
     const displayName = 'JohnDoe';
@@ -204,6 +204,56 @@ void main() {
         throwsA(
           isA<ApiException>()
               .having((e) => e.message, 'message', 'Unauthorized'),
+        ),
+      );
+    });
+  });
+
+  group('organizerAboutMe', () {
+    const successResponse = {
+      'firstName': 'John',
+      'lastName': 'Doe',
+      'displayName': 'JohnDoe',
+    };
+
+    test('successful organizer about me request returns decoded response',
+        () async {
+      when(
+        () => mockHttpClient.get(
+          Uri.parse('$baseUrl/${ApiEndpoints.organizerAboutMe}'),
+          headers: {
+            ...ApiService.defaultHeaders,
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(jsonEncode(successResponse), 200),
+      );
+
+      final result = await apiService.organizerAboutMe(token: token);
+
+      expect(result, successResponse);
+    });
+
+    test('handles network errors during organizer about me request', () async {
+      when(
+        () => mockHttpClient.get(
+          Uri.parse('$baseUrl/${ApiEndpoints.organizerAboutMe}'),
+          headers: {
+            ...ApiService.defaultHeaders,
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      ).thenThrow(const SocketException('Network error'));
+
+      expect(
+        () => apiService.organizerAboutMe(token: token),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Failed to connect to the server',
+          ),
         ),
       );
     });

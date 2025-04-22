@@ -132,6 +132,17 @@ void main() {
               'isNewOrganizer': false,
             },
           );
+          when(
+            () => mockApiService.organizerAboutMe(token: 'mock-token'),
+          ).thenAnswer(
+            (_) async => {
+              'email': 'test@example.com',
+              'firstName': 'John',
+              'lastName': 'Doe',
+              'displayName': 'JohnD',
+              'isVerified': true,
+            },
+          );
           return authCubit;
         },
         act: (cubit) => cubit.organizerSignInWithGoogle(),
@@ -189,6 +200,17 @@ void main() {
               'token': 'mock-token',
               'isVerified': false,
               'isNewOrganizer': false,
+            },
+          );
+          when(
+            () => mockApiService.organizerAboutMe(token: 'mock-token'),
+          ).thenAnswer(
+            (_) async => {
+              'email': 'test@example.com',
+              'firstName': 'John',
+              'lastName': 'Doe',
+              'displayName': 'JohnD',
+              'isVerified': false,
             },
           );
           return authCubit;
