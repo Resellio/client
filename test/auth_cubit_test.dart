@@ -11,7 +11,6 @@ import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
 
-// Mocks
 class MockApiService extends Mock implements ApiService {}
 
 class MockGoogleSignIn extends Mock implements GoogleSignIn {}
@@ -33,6 +32,46 @@ void setupHydratedStorage() {
 }
 
 void main() {
+  // --- Constants for Test Data ---
+  const mockAccessToken = 'mock-access-token';
+  const mockToken = 'mock-token';
+  const newToken = 'new-token';
+  const testEmail = 'test@example.com';
+  const testFirstName = 'John';
+  const testLastName = 'Doe';
+  const testDisplayName = 'JohnD';
+
+  // --- Test Models ---
+  const tCustomer = Customer(email: testEmail, token: mockToken);
+  const tOrganizer = Organizer(
+    email: testEmail,
+    token: mockToken,
+    firstName: testFirstName,
+    lastName: testLastName,
+    displayName: testDisplayName,
+  );
+  const tNewlyRegisteredOrganizer = Organizer(
+    email: testEmail,
+    token: newToken,
+    firstName: testFirstName,
+    lastName: testLastName,
+    displayName: testDisplayName,
+  );
+  const tOrganizerRegistrationNeeded =
+      OrganizerRegistrationNeeded(email: testEmail, token: mockToken);
+
+  // --- Expected States ---
+  const tUnauthorizedState = Unauthorized();
+  const tAuthorizedCustomerState = AuthorizedCustomer(tCustomer);
+  const tAuthorizedOrganizerState = AuthorizedOrganizer(tOrganizer);
+  const tAuthorizedOrganizerRegNeededState =
+      AuthorizedOrganizerRegistrationNeeded(tOrganizerRegistrationNeeded);
+  const tAuthorizedUnverifiedOrganizerState =
+      AuthorizedUnverifiedOrganizer(tOrganizer);
+  const tAuthorizedUnverifiedOrganizerAfterRegState =
+      AuthorizedUnverifiedOrganizer(tNewlyRegisteredOrganizer);
+
+  // --- Mocks ---
   late AuthCubit authCubit;
   late MockApiService mockApiService;
   late MockGoogleSignIn mockGoogleSignIn;
@@ -47,13 +86,17 @@ void main() {
     mockGoogleAccount = MockGoogleSignInAccount();
     mockGoogleAuth = MockGoogleSignInAuthentication();
 
-    // Setup common mock behaviors
+    reset(mockApiService);
+    reset(mockGoogleSignIn);
+    reset(mockGoogleAccount);
+    reset(mockGoogleAuth);
+
     when(() => mockGoogleSignIn.signIn())
         .thenAnswer((_) async => mockGoogleAccount);
     when(() => mockGoogleAccount.authentication)
         .thenAnswer((_) async => mockGoogleAuth);
-    when(() => mockGoogleAuth.accessToken).thenReturn('mock-access-token');
-    when(() => mockGoogleAccount.email).thenReturn('test@example.com');
+    when(() => mockGoogleAuth.accessToken).thenReturn(mockAccessToken);
+    when(() => mockGoogleAccount.email).thenReturn(testEmail);
     when(() => mockGoogleSignIn.signOut()).thenAnswer((_) async => null);
 
     authCubit = AuthCubit(
@@ -68,32 +111,28 @@ void main() {
 
   group('AuthCubit', () {
     test('initial state is Unauthorized', () {
-      expect(authCubit.state, const Unauthorized());
+      expect(authCubit.state, tUnauthorizedState);
     });
 
     group('customerSignInWithGoogle', () {
       blocTest<AuthCubit, AuthState>(
-        'emits AuthorizedCustomer when sign in succeeds',
+        'emits [AuthorizedCustomer] when sign in and API call succeed',
         build: () {
           when(
             () => mockApiService.googleLogin(
-              accessToken: 'mock-access-token',
+              accessToken: mockAccessToken,
               endpoint: ApiEndpoints.customerGoogleLogin,
             ),
-          ).thenAnswer((_) async => {'token': 'mock-token'});
+          ).thenAnswer((_) async => {'token': mockToken});
           return authCubit;
         },
         act: (cubit) => cubit.customerSignInWithGoogle(),
-        expect: () => [
-          const AuthorizedCustomer(
-            Customer(email: 'test@example.com', token: 'mock-token'),
-          ),
-        ],
+        expect: () => [tAuthorizedCustomerState],
         verify: (_) {
           verify(() => mockGoogleSignIn.signIn()).called(1);
           verify(
             () => mockApiService.googleLogin(
-              accessToken: 'mock-access-token',
+              accessToken: mockAccessToken,
               endpoint: ApiEndpoints.customerGoogleLogin,
             ),
           ).called(1);
@@ -101,11 +140,30 @@ void main() {
       );
 
       blocTest<AuthCubit, AuthState>(
-        'emits nothing when sign in fails',
+        'emits nothing when Google Sign-In is cancelled (returns null)',
+        build: () {
+          when(() => mockGoogleSignIn.signIn()).thenAnswer((_) async => null);
+          return authCubit;
+        },
+        act: (cubit) => cubit.customerSignInWithGoogle(),
+        expect: () => <AuthState>[],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verifyNever(
+            () => mockApiService.googleLogin(
+              accessToken: any(named: 'accessToken'),
+              endpoint: any(named: 'endpoint'),
+            ),
+          );
+        },
+      );
+
+      blocTest<AuthCubit, AuthState>(
+        'emits nothing when API call fails',
         build: () {
           when(
             () => mockApiService.googleLogin(
-              accessToken: 'mock-access-token',
+              accessToken: mockAccessToken,
               endpoint: ApiEndpoints.customerGoogleLogin,
             ),
           ).thenThrow(Exception('API Error'));
@@ -113,63 +171,76 @@ void main() {
         },
         act: (cubit) => cubit.customerSignInWithGoogle(),
         expect: () => <AuthState>[],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verify(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.customerGoogleLogin,
+            ),
+          ).called(1);
+        },
       );
     });
 
     group('organizerSignInWithGoogle', () {
+      void setupMockOrganizerAboutMe({required bool isVerified}) {
+        when(() => mockApiService.organizerAboutMe(token: mockToken))
+            .thenAnswer(
+          (_) async => {
+            'email': testEmail,
+            'firstName': testFirstName,
+            'lastName': testLastName,
+            'displayName': testDisplayName,
+            'isVerified': isVerified,
+          },
+        );
+      }
+
       blocTest<AuthCubit, AuthState>(
-        'emits AuthorizedOrganizer when organizer is verified',
+        'emits [AuthorizedOrganizer] when organizer is verified',
         build: () {
           when(
             () => mockApiService.googleLogin(
-              accessToken: 'mock-access-token',
+              accessToken: mockAccessToken,
               endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
           ).thenAnswer(
             (_) async => {
-              'token': 'mock-token',
+              'token': mockToken,
               'isVerified': true,
               'isNewOrganizer': false,
             },
           );
-          when(
-            () => mockApiService.organizerAboutMe(token: 'mock-token'),
-          ).thenAnswer(
-            (_) async => {
-              'email': 'test@example.com',
-              'firstName': 'John',
-              'lastName': 'Doe',
-              'displayName': 'JohnD',
-              'isVerified': true,
-            },
-          );
+          setupMockOrganizerAboutMe(isVerified: true);
           return authCubit;
         },
         act: (cubit) => cubit.organizerSignInWithGoogle(),
-        expect: () => [
-          const AuthorizedOrganizer(
-            Organizer(
-              email: 'test@example.com',
-              token: 'mock-token',
-              firstName: 'John',
-              lastName: 'Doe',
-              displayName: 'JohnD',
+        expect: () => [tAuthorizedOrganizerState],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verify(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
-          ),
-        ],
+          ).called(1);
+          verify(() => mockApiService.organizerAboutMe(token: mockToken))
+              .called(1);
+        },
       );
 
       blocTest<AuthCubit, AuthState>(
-        'emits AuthorizedOrganizerRegistrationNeeded when organizer is new',
+        'emits [AuthorizedOrganizerRegistrationNeeded] when organizer is new',
         build: () {
           when(
             () => mockApiService.googleLogin(
-              accessToken: 'mock-access-token',
+              accessToken: mockAccessToken,
               endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
           ).thenAnswer(
             (_) async => {
-              'token': 'mock-token',
+              'token': mockToken,
               'isVerified': false,
               'isNewOrganizer': true,
             },
@@ -177,155 +248,288 @@ void main() {
           return authCubit;
         },
         act: (cubit) => cubit.organizerSignInWithGoogle(),
-        expect: () => [
-          const AuthorizedOrganizerRegistrationNeeded(
-            OrganizerRegistrationNeeded(
-              email: 'test@example.com',
-              token: 'mock-token',
+        expect: () => [tAuthorizedOrganizerRegNeededState],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verify(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
-          ),
-        ],
+          ).called(1);
+          verifyNever(
+            () => mockApiService.organizerAboutMe(token: any(named: 'token')),
+          );
+        },
       );
 
       blocTest<AuthCubit, AuthState>(
-        'emits AuthorizedUnverifiedOrganizer when organizer is unverified',
+        'emits [AuthorizedUnverifiedOrganizer] when organizer exists but is unverified',
         build: () {
           when(
             () => mockApiService.googleLogin(
-              accessToken: 'mock-access-token',
+              accessToken: mockAccessToken,
               endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
           ).thenAnswer(
             (_) async => {
-              'token': 'mock-token',
+              'token': mockToken,
               'isVerified': false,
               'isNewOrganizer': false,
             },
           );
-          when(
-            () => mockApiService.organizerAboutMe(token: 'mock-token'),
-          ).thenAnswer(
-            (_) async => {
-              'email': 'test@example.com',
-              'firstName': 'John',
-              'lastName': 'Doe',
-              'displayName': 'JohnD',
-              'isVerified': false,
-            },
-          );
+          setupMockOrganizerAboutMe(isVerified: false);
           return authCubit;
         },
         act: (cubit) => cubit.organizerSignInWithGoogle(),
-        expect: () => [
-          const AuthorizedUnverifiedOrganizer(
-            Organizer(
-              email: 'test@example.com',
-              token: 'mock-token',
-              firstName: 'John',
-              lastName: 'Doe',
-              displayName: 'JohnD',
+        expect: () => [tAuthorizedUnverifiedOrganizerState],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verify(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
             ),
-          ),
-        ],
+          ).called(1);
+          verify(() => mockApiService.organizerAboutMe(token: mockToken))
+              .called(1);
+        },
       );
 
       blocTest<AuthCubit, AuthState>(
-        'emits nothing when sign in fails',
+        'emits nothing when Google Sign-In is cancelled (returns null)',
         build: () {
-          when(
-            () => mockApiService.googleLogin(
-              accessToken: 'mock-access-token',
-              endpoint: ApiEndpoints.organizerGoogleLogin,
-            ),
-          ).thenThrow(Exception('API Error'));
+          when(() => mockGoogleSignIn.signIn()).thenAnswer((_) async => null);
           return authCubit;
         },
         act: (cubit) => cubit.organizerSignInWithGoogle(),
         expect: () => <AuthState>[],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verifyNever(
+            () => mockApiService.googleLogin(
+              accessToken: any(named: 'accessToken'),
+              endpoint: any(named: 'endpoint'),
+            ),
+          );
+          verifyNever(
+            () => mockApiService.organizerAboutMe(token: any(named: 'token')),
+          );
+        },
+      );
+
+      blocTest<AuthCubit, AuthState>(
+        'emits nothing when API login call fails',
+        build: () {
+          when(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
+            ),
+          ).thenThrow(Exception('API Login Error'));
+          return authCubit;
+        },
+        act: (cubit) => cubit.organizerSignInWithGoogle(),
+        expect: () => <AuthState>[],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verify(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
+            ),
+          ).called(1);
+          verifyNever(
+            () => mockApiService.organizerAboutMe(token: any(named: 'token')),
+          );
+        },
+      );
+
+      blocTest<AuthCubit, AuthState>(
+        'emits nothing when API aboutMe call fails (for verified/unverified cases)',
+        build: () {
+          when(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
+            ),
+          ).thenAnswer(
+            (_) async => {
+              'token': mockToken,
+              'isVerified': false,
+              'isNewOrganizer': false,
+            },
+          );
+          when(() => mockApiService.organizerAboutMe(token: mockToken))
+              .thenThrow(Exception('API AboutMe Error'));
+          return authCubit;
+        },
+        act: (cubit) => cubit.organizerSignInWithGoogle(),
+        expect: () => <AuthState>[],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verify(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
+            ),
+          ).called(1);
+          verify(() => mockApiService.organizerAboutMe(token: mockToken))
+              .called(1);
+        },
+      );
+
+      blocTest<AuthCubit, AuthState>(
+        'emits nothing when organizerAboutMe returns incomplete data',
+        build: () {
+          when(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
+            ),
+          ).thenAnswer(
+            (_) async => {
+              'token': mockToken,
+              'isVerified': false,
+              'isNewOrganizer': false,
+            },
+          );
+          when(() => mockApiService.organizerAboutMe(token: mockToken))
+              .thenAnswer(
+            (_) async => {'email': testEmail},
+          );
+          return authCubit;
+        },
+        act: (cubit) => cubit.organizerSignInWithGoogle(),
+        expect: () => <AuthState>[],
+        verify: (_) {
+          verify(() => mockGoogleSignIn.signIn()).called(1);
+          verify(
+            () => mockApiService.googleLogin(
+              accessToken: mockAccessToken,
+              endpoint: ApiEndpoints.organizerGoogleLogin,
+            ),
+          ).called(1);
+          verify(() => mockApiService.organizerAboutMe(token: mockToken))
+              .called(1);
+        },
       );
     });
 
     group('completeOrganizerRegistration', () {
       blocTest<AuthCubit, AuthState>(
-        'emits AuthorizedUnverifiedOrganizer when registration completes',
+        'emits [AuthorizedUnverifiedOrganizer] when registration completes successfully',
         build: () {
-          authCubit.emit(
-            const AuthorizedOrganizerRegistrationNeeded(
-              OrganizerRegistrationNeeded(
-                email: 'test@example.com',
-                token: 'mock-token',
-              ),
-            ),
-          );
+          authCubit.emit(tAuthorizedOrganizerRegNeededState);
           when(
             () => mockApiService.createOrganizer(
-              token: 'mock-token',
-              firstName: 'John',
-              lastName: 'Doe',
-              displayName: 'JohnD',
+              token: mockToken,
+              firstName: testFirstName,
+              lastName: testLastName,
+              displayName: testDisplayName,
             ),
-          ).thenAnswer((_) async => {'token': 'new-token'});
+          ).thenAnswer(
+            (_) async => {'token': newToken},
+          );
           return authCubit;
         },
         act: (cubit) => cubit.completeOrganizerRegistration(
-          firstName: 'John',
-          lastName: 'Doe',
-          displayName: 'JohnD',
+          firstName: testFirstName,
+          lastName: testLastName,
+          displayName: testDisplayName,
         ),
-        expect: () => [
-          const AuthorizedUnverifiedOrganizer(
-            Organizer(
-              email: 'test@example.com',
-              token: 'new-token',
-              firstName: 'John',
-              lastName: 'Doe',
-              displayName: 'JohnD',
+        expect: () => [tAuthorizedUnverifiedOrganizerAfterRegState],
+        verify: (_) {
+          verify(
+            () => mockApiService.createOrganizer(
+              token: mockToken,
+              firstName: testFirstName,
+              lastName: testLastName,
+              displayName: testDisplayName,
             ),
-          ),
-        ],
+          ).called(1);
+        },
+      );
+
+      blocTest<AuthCubit, AuthState>(
+        'emits nothing and stays in [AuthorizedOrganizerRegistrationNeeded] if API call fails',
+        build: () {
+          authCubit.emit(tAuthorizedOrganizerRegNeededState);
+          when(
+            () => mockApiService.createOrganizer(
+              token: mockToken,
+              firstName: testFirstName,
+              lastName: testLastName,
+              displayName: testDisplayName,
+            ),
+          ).thenThrow(Exception('API Create Error'));
+          return authCubit;
+        },
+        act: (cubit) => cubit.completeOrganizerRegistration(
+          firstName: testFirstName,
+          lastName: testLastName,
+          displayName: testDisplayName,
+        ),
+        expect: () => <AuthState>[],
+        verify: (_) {
+          verify(
+            () => mockApiService.createOrganizer(
+              token: mockToken,
+              firstName: testFirstName,
+              lastName: testLastName,
+              displayName: testDisplayName,
+            ),
+          ).called(1);
+        },
+      );
+
+      blocTest<AuthCubit, AuthState>(
+        'does nothing if state is not [AuthorizedOrganizerRegistrationNeeded]',
+        build: () {
+          authCubit.emit(tUnauthorizedState);
+          return authCubit;
+        },
+        act: (cubit) => cubit.completeOrganizerRegistration(
+          firstName: testFirstName,
+          lastName: testLastName,
+          displayName: testDisplayName,
+        ),
+        expect: () => <AuthState>[],
+        verify: (_) {
+          verifyNever(
+            () => mockApiService.createOrganizer(
+              token: any(named: 'token'),
+              firstName: any(named: 'firstName'),
+              lastName: any(named: 'lastName'),
+              displayName: any(named: 'displayName'),
+            ),
+          );
+        },
       );
     });
 
     group('logout', () {
-      blocTest<AuthCubit, AuthState>(
-        'emits Unauthorized when logging out as customer',
-        build: () {
-          authCubit.emit(
-            const AuthorizedCustomer(
-              Customer(email: 'test@example.com', token: 'mock-token'),
-            ),
-          );
-          return authCubit;
-        },
-        act: (cubit) => cubit.logout(),
-        expect: () => [const Unauthorized()],
-        verify: (_) {
-          verify(() => mockGoogleSignIn.signOut()).called(1);
-        },
-      );
-
-      blocTest<AuthCubit, AuthState>(
-        'emits Unauthorized when logging out as organizer',
-        build: () {
-          authCubit.emit(
-            const AuthorizedOrganizer(
-              Organizer(
-                email: 'test@example.com',
-                token: 'mock-token',
-                firstName: 'John',
-                lastName: 'Doe',
-                displayName: 'JohnD',
-              ),
-            ),
-          );
-          return authCubit;
-        },
-        act: (cubit) => cubit.logout(),
-        expect: () => [const Unauthorized()],
-        verify: (_) {
-          verify(() => mockGoogleSignIn.signOut()).called(1);
-        },
-      );
+      <String, AuthState>{
+        'AuthorizedCustomer': tAuthorizedCustomerState,
+        'AuthorizedOrganizer': tAuthorizedOrganizerState,
+        'AuthorizedUnverifiedOrganizer': tAuthorizedUnverifiedOrganizerState,
+        'AuthorizedOrganizerRegistrationNeeded':
+            tAuthorizedOrganizerRegNeededState,
+      }.forEach((stateName, initialState) {
+        blocTest<AuthCubit, AuthState>(
+          'emits [Unauthorized] when logging out from $stateName',
+          build: () {
+            authCubit.emit(initialState);
+            return authCubit;
+          },
+          act: (cubit) => cubit.logout(),
+          expect: () => [tUnauthorizedState],
+          verify: (_) {
+            verify(() => mockGoogleSignIn.signOut()).called(1);
+            verify(() => HydratedBloc.storage.delete('AuthCubit')).called(1);
+          },
+        );
+      });
     });
   });
 }
