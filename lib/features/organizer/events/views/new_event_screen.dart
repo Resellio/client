@@ -277,7 +277,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
+                    if (!(_formKey.currentState?.validate() ?? false)) {
                       return;
                     }
                     _generateJson();

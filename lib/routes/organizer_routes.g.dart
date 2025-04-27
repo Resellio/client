@@ -16,7 +16,7 @@ RouteBase get $organizerShellRouteData => StatefulShellRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/',
+              path: '/org',
               factory: $OrganizerHomeRouteExtension._fromState,
             ),
           ],
@@ -24,25 +24,25 @@ RouteBase get $organizerShellRouteData => StatefulShellRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/events',
+              path: '/org/events',
               factory: $OrganizerEventsRouteExtension._fromState,
               routes: [
+                GoRouteData.$route(
+                  path: 'new',
+                  factory: $OrganizerNewEventRouteExtension._fromState,
+                ),
                 GoRouteData.$route(
                   path: ':eventId',
                   factory: $OrganizerEventDetailRouteExtension._fromState,
                 ),
               ],
             ),
-            GoRouteData.$route(
-              path: '/new-event',
-              factory: $OrganizerNewEventRouteExtension._fromState,
-            ),
           ],
         ),
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/profile',
+              path: '/org/profile',
               factory: $OrganizerProfileRouteExtension._fromState,
             ),
           ],
@@ -60,7 +60,7 @@ extension $OrganizerHomeRouteExtension on OrganizerHomeRoute {
       const OrganizerHomeRoute();
 
   String get location => GoRouteData.$location(
-        '/',
+        '/org',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -78,7 +78,25 @@ extension $OrganizerEventsRouteExtension on OrganizerEventsRoute {
       const OrganizerEventsRoute();
 
   String get location => GoRouteData.$location(
-        '/events',
+        '/org/events',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+extension $OrganizerNewEventRouteExtension on OrganizerNewEventRoute {
+  static OrganizerNewEventRoute _fromState(GoRouterState state) =>
+      const OrganizerNewEventRoute();
+
+  String get location => GoRouteData.$location(
+        '/org/events/new',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -98,25 +116,7 @@ extension $OrganizerEventDetailRouteExtension on OrganizerEventDetailRoute {
       );
 
   String get location => GoRouteData.$location(
-        '/events/${Uri.encodeComponent(eventId)}',
-      );
-
-  void go(BuildContext context) => context.go(location);
-
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  void replace(BuildContext context) => context.replace(location);
-}
-
-extension $OrganizerNewEventRouteExtension on OrganizerNewEventRoute {
-  static OrganizerNewEventRoute _fromState(GoRouterState state) =>
-      const OrganizerNewEventRoute();
-
-  String get location => GoRouteData.$location(
-        '/new-event',
+        '/org/events/${Uri.encodeComponent(eventId)}',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -134,7 +134,7 @@ extension $OrganizerProfileRouteExtension on OrganizerProfileRoute {
       const OrganizerProfileRoute();
 
   String get location => GoRouteData.$location(
-        '/profile',
+        '/org/profile',
       );
 
   void go(BuildContext context) => context.go(location);

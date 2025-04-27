@@ -14,13 +14,13 @@ part 'customer_routes.g.dart';
   branches: [
     TypedStatefulShellBranch<CustomerHomeBranchData>(
       routes: [
-        TypedGoRoute<CustomerHomeRoute>(path: '/'),
+        TypedGoRoute<CustomerHomeRoute>(path: '/app'),
       ],
     ),
     TypedStatefulShellBranch<CustomerSearchBranchData>(
       routes: [
         TypedGoRoute<CustomerEventsRoute>(
-          path: '/events',
+          path: '/app/events',
           routes: [
             TypedGoRoute<CustomerEventDetailRoute>(path: ':eventId'),
           ],
@@ -30,7 +30,7 @@ part 'customer_routes.g.dart';
     TypedStatefulShellBranch<CustomerTicketsBranchData>(
       routes: [
         TypedGoRoute<CustomerTicketsRoute>(
-          path: '/tickets',
+          path: '/app/tickets',
           routes: [
             TypedGoRoute<TicketDetailRoute>(path: ':ticketId'),
           ],
@@ -39,7 +39,7 @@ part 'customer_routes.g.dart';
     ),
     TypedStatefulShellBranch<CustomerProfileBranchData>(
       routes: [
-        TypedGoRoute<CustomerProfileRoute>(path: '/profile'),
+        TypedGoRoute<CustomerProfileRoute>(path: '/app/profile'),
       ],
     ),
   ],

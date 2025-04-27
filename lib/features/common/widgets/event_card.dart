@@ -156,8 +156,7 @@ class EventCard extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.bottomRight,
                       child: Padding(
-                        padding: const EdgeInsets.only(
-                            right: 16.0), // Adjust the value as needed
+                        padding: const EdgeInsets.only(right: 16),
                         child: ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
