@@ -1,4 +1,4 @@
-package com.example.resellio
+package com.resellio.resellio
 
 import io.flutter.embedding.android.FlutterActivity
 

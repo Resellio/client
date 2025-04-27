@@ -16,7 +16,7 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/',
+              path: '/app',
               factory: $CustomerHomeRouteExtension._fromState,
             ),
           ],
@@ -24,7 +24,7 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/events',
+              path: '/app/events',
               factory: $CustomerEventsRouteExtension._fromState,
               routes: [
                 GoRouteData.$route(
@@ -38,7 +38,7 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/tickets',
+              path: '/app/tickets',
               factory: $CustomerTicketsRouteExtension._fromState,
               routes: [
                 GoRouteData.$route(
@@ -52,7 +52,7 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/profile',
+              path: '/app/profile',
               factory: $CustomerProfileRouteExtension._fromState,
             ),
           ],
@@ -70,7 +70,7 @@ extension $CustomerHomeRouteExtension on CustomerHomeRoute {
       const CustomerHomeRoute();
 
   String get location => GoRouteData.$location(
-        '/',
+        '/app',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -88,7 +88,7 @@ extension $CustomerEventsRouteExtension on CustomerEventsRoute {
       const CustomerEventsRoute();
 
   String get location => GoRouteData.$location(
-        '/events',
+        '/app/events',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -108,7 +108,7 @@ extension $CustomerEventDetailRouteExtension on CustomerEventDetailRoute {
       );
 
   String get location => GoRouteData.$location(
-        '/events/${Uri.encodeComponent(eventId)}',
+        '/app/events/${Uri.encodeComponent(eventId)}',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -126,7 +126,7 @@ extension $CustomerTicketsRouteExtension on CustomerTicketsRoute {
       const CustomerTicketsRoute();
 
   String get location => GoRouteData.$location(
-        '/tickets',
+        '/app/tickets',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -145,7 +145,7 @@ extension $TicketDetailRouteExtension on TicketDetailRoute {
       );
 
   String get location => GoRouteData.$location(
-        '/tickets/${Uri.encodeComponent(ticketId)}',
+        '/app/tickets/${Uri.encodeComponent(ticketId)}',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -163,7 +163,7 @@ extension $CustomerProfileRouteExtension on CustomerProfileRoute {
       const CustomerProfileRoute();
 
   String get location => GoRouteData.$location(
-        '/profile',
+        '/app/profile',
       );
 
   void go(BuildContext context) => context.go(location);
