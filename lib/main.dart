@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
@@ -27,27 +28,29 @@ void main() async {
         : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
 
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider(
-          create: (context) => ApiService(
-            baseUrl: ApiEndpoints.baseUrl,
-            client: http.Client(),
+  initializeDateFormatting('pl_PL').then((_) {
+    runApp(
+      MultiProvider(
+        providers: [
+          Provider(
+            create: (context) => ApiService(
+              baseUrl: ApiEndpoints.baseUrl,
+              client: http.Client(),
+            ),
           ),
-        ),
-        BlocProvider<AuthCubit>(
-          create: (context) => AuthCubit(
-            apiService: context.read(),
-            googleSignIn: GoogleSignIn(),
+          BlocProvider<AuthCubit>(
+            create: (context) => AuthCubit(
+              apiService: context.read(),
+              googleSignIn: GoogleSignIn(),
+            ),
           ),
+        ],
+        child: Builder(
+          builder: (context) => MyApp(authCubit: context.read<AuthCubit>()),
         ),
-      ],
-      child: Builder(
-        builder: (context) => MyApp(authCubit: context.read<AuthCubit>()),
       ),
-    ),
-  );
+    );
+  });
 }
 
 class MyApp extends StatefulWidget {

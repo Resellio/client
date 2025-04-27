@@ -12,14 +12,15 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.0
+  geocoding: ^2.0.6
   go_router: ^14.8.1
   google_sign_in: ^6.3.0
   http: ^1.3.0
   hydrated_bloc: ^10.0.0
   json_annotation: ^4.9.0
   path_provider: ^2.1.5
+  intl: ^0.18.0
   provider: ^6.1.2
-
 dev_dependencies:
   bloc_test: ^10.0.0
   build_runner: ^2.4.15
