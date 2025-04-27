@@ -28,14 +28,14 @@ RouteBase get $organizerShellRouteData => StatefulShellRouteData.$route(
               factory: $OrganizerEventsRouteExtension._fromState,
               routes: [
                 GoRouteData.$route(
+                  path: 'new',
+                  factory: $OrganizerNewEventRouteExtension._fromState,
+                ),
+                GoRouteData.$route(
                   path: ':eventId',
                   factory: $OrganizerEventDetailRouteExtension._fromState,
                 ),
               ],
-            ),
-            GoRouteData.$route(
-              path: '/new-event',
-              factory: $OrganizerNewEventRouteExtension._fromState,
             ),
           ],
         ),
@@ -91,14 +91,12 @@ extension $OrganizerEventsRouteExtension on OrganizerEventsRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $OrganizerEventDetailRouteExtension on OrganizerEventDetailRoute {
-  static OrganizerEventDetailRoute _fromState(GoRouterState state) =>
-      OrganizerEventDetailRoute(
-        eventId: state.pathParameters['eventId']!,
-      );
+extension $OrganizerNewEventRouteExtension on OrganizerNewEventRoute {
+  static OrganizerNewEventRoute _fromState(GoRouterState state) =>
+      const OrganizerNewEventRoute();
 
   String get location => GoRouteData.$location(
-        '/org/events/${Uri.encodeComponent(eventId)}',
+        '/org/events/new',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -111,12 +109,14 @@ extension $OrganizerEventDetailRouteExtension on OrganizerEventDetailRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $OrganizerNewEventRouteExtension on OrganizerNewEventRoute {
-  static OrganizerNewEventRoute _fromState(GoRouterState state) =>
-      const OrganizerNewEventRoute();
+extension $OrganizerEventDetailRouteExtension on OrganizerEventDetailRoute {
+  static OrganizerEventDetailRoute _fromState(GoRouterState state) =>
+      OrganizerEventDetailRoute(
+        eventId: state.pathParameters['eventId']!,
+      );
 
   String get location => GoRouteData.$location(
-        '/org/events/new',
+        '/org/events/${Uri.encodeComponent(eventId)}',
       );
 
   void go(BuildContext context) => context.go(location);

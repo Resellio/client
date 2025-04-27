@@ -225,14 +225,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.6"
-  csslib:
-    dependency: transitive
-    description:
-      name: csslib
-      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.2"
   custom_lint:
     dependency: transitive
     description:
@@ -342,14 +334,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.14.3"
-  flutter_plugin_android_lifecycle:
-    dependency: transitive
-    description:
-      name: flutter_plugin_android_lifecycle
-      sha256: "5a1e6fb2c0561958d7e4c33574674bda7b77caaca7a33b758876956f2902eea3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.27"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -504,14 +488,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.3.0"
-  html:
-    dependency: transitive
-    description:
-      name: html
-      sha256: "1fc58edeaec4307368c60d59b7e15b9d658b57d7f3125098b6294153c75337ec"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.15.5"
   http:
     dependency: "direct main"
     description:
@@ -824,14 +800,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  sanitize_html:
-    dependency: transitive
-    description:
-      name: sanitize_html
-      sha256: "12669c4a913688a26555323fb9cec373d8f9fbe091f2d01c40c723b33caa8989"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   shelf:
     dependency: transitive
     description:

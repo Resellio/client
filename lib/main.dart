@@ -7,8 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
@@ -28,7 +28,7 @@ void main() async {
         : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
 
-  initializeDateFormatting('pl_PL').then((_) {
+  await initializeDateFormatting('pl_PL').then((_) {
     runApp(
       MultiProvider(
         providers: [
