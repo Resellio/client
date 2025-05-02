@@ -46,8 +46,8 @@ class TicketOption extends StatelessWidget {
   }
 }
 
-class CustomerEventDetails extends StatelessWidget {
-  const CustomerEventDetails({super.key, required this.eventId});
+class CustomerEventDetailsScreen extends StatelessWidget {
+  const CustomerEventDetailsScreen({super.key, required this.eventId});
 
   final String eventId;
 
