@@ -7,11 +7,8 @@ class OrganizerEventsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Organizer Events'),
-      ),
       body: const Center(
-        child: Text('test'),
+        child: Text('Wydarzenia organizatora'),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => const OrganizerNewEventRoute().go(context),

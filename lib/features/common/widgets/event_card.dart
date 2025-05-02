@@ -23,7 +23,6 @@ class EventCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Card(
-        color: const Color.fromARGB(255, 204, 178, 219),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

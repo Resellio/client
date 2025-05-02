@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
-import 'package:resellio/features/common/style/colors.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/app_logo.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -39,7 +39,10 @@ class WelcomeScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.primaryDark],
+                    colors: [
+                      AppColors.primaryDark,
+                      AppColors.primaryVeryDark,
+                    ],
                   ),
                 ),
               ),
