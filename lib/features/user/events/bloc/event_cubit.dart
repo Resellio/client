@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/model/event.dart';
 
 class EventsCubit extends Cubit<EventsState> {
-  EventsCubit() : super(EventInitial());
+  EventsCubit() : super(EventsInitial());
 
   Future<void> getEvents() async {
     emit(EventsLoading());
@@ -36,7 +36,7 @@ sealed class EventsState extends Equatable {
   List<Object> get props => [];
 }
 
-class EventInitial extends EventsState {}
+class EventsInitial extends EventsState {}
 
 class EventsLoading extends EventsState {}
 

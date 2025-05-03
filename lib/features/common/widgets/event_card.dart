@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/common/model/event.dart';
@@ -20,13 +21,12 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        elevation: 4,
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: InkWell(
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: Column(
@@ -40,8 +40,8 @@ class EventCard extends StatelessWidget {
                     topLeft: Radius.circular(8),
                     topRight: Radius.circular(8),
                   ),
-                  child: Image.network(
-                    event.image,
+                  child: CachedNetworkImage(
+                    imageUrl: event.image,
                     fit: BoxFit.cover,
                     width: double.infinity,
                   ),

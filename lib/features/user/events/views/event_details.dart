@@ -57,7 +57,7 @@ class CustomerEventDetailsScreen extends StatelessWidget {
       create: (_) => EventsCubit()..getEvents(),
       child: BlocBuilder<EventsCubit, EventsState>(
         builder: (context, state) {
-          if (state is EventInitial) {
+          if (state is EventsInitial) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is EventsLoading) {
             return const Center(child: CircularProgressIndicator());
