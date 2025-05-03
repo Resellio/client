@@ -16,16 +16,26 @@ class ApiService {
 
   static const Map<String, String> defaultHeaders = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   };
 
   Future<Map<String, dynamic>> makeRequest({
     required String endpoint,
     required String method,
+    Map<String, dynamic>? queryParameters,
     Map<String, String> headers = defaultHeaders,
     String? body,
   }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/$endpoint');
+      final uri = Uri.parse('$_baseUrl/$endpoint').replace(
+        queryParameters: queryParameters?.map(
+          (key, value) => MapEntry(key, value.toString()),
+        ),
+      );
+
+      print('Making request to: $uri');
+      print('Headers: $headers');
+      print('Body: $body');
 
       switch (method.toUpperCase()) {
         case 'GET':
@@ -52,15 +62,20 @@ class ApiService {
       }
     } on ApiException {
       rethrow;
-    } on SocketException {
+    } on SocketException catch (e) {
+      print('SocketException: $e');
       throw ApiException.failedToConnect();
-    } on TimeoutException {
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
       throw ApiException.timeout();
-    } on FormatException {
+    } on FormatException catch (e) {
+      print('FormatException: $e');
       throw ApiException.invalidResponse();
-    } on http.ClientException {
+    } on http.ClientException catch (e) {
+      print('ClientException: $e');
       throw ApiException.networkError();
     } catch (err) {
+      print('Unknown Error in makeRequest: $err');
       throw ApiException.unknown(err.toString());
     }
   }
@@ -76,12 +91,20 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> organizerAboutMe({
+  Future<Map<String, dynamic>> getEvents({
     required String token,
+    required int page,
+    required int pageSize,
   }) async {
+    final queryParams = {
+      'page': page,
+      'pageSize': pageSize,
+    };
+
     return makeRequest(
-      endpoint: ApiEndpoints.organizerAboutMe,
+      endpoint: ApiEndpoints.events,
       method: 'GET',
+      queryParameters: queryParams,
       headers: {
         ...defaultHeaders,
         'Authorization': 'Bearer $token',
@@ -110,10 +133,52 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> organizerAboutMe({
+    required String token,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerAboutMe,
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+
+    final contentType = response.headers['content-type'];
+    dynamic decoded;
+
+    if (response.body.isEmpty) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {};
+      } else {
+        print(
+            'Error: Empty response body for status code ${response.statusCode}');
+      }
+    } else if (contentType != null &&
+        contentType.contains('application/json')) {
+      try {
+        decoded = jsonDecode(response.body);
+      } catch (e) {
+        print('JSON Decode Error: $e');
+        throw ApiException.invalidResponse();
+      }
+    } else {
+      print('Warning: Received non-JSON response (Content-Type: $contentType)');
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException.http(response.statusCode, response.body);
+      } else {
+        throw ApiException.invalidResponse();
+      }
+    }
+
     switch (response.statusCode) {
       case 200:
-        final decoded = jsonDecode(response.body);
         if (decoded is! Map<String, dynamic>) {
           throw ApiException.invalidResponse();
         }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:resellio/features/user/events/bloc/event_cubit.dart';
+import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
@@ -56,7 +57,9 @@ class CustomerShellRouteData extends StatefulShellRouteData {
     StatefulNavigationShell navigationShell,
   ) {
     return BlocProvider<EventsCubit>(
-      create: (context) => EventsCubit()..getEvents(),
+      create: (context) => EventsCubit(
+        apiService: context.read<ApiService>(),
+      ),
       child: CustomerShellScreen(navigationShell: navigationShell),
     );
   }

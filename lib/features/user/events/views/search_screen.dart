@@ -3,9 +3,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/event_card.dart';
-import 'package:resellio/features/user/events/bloc/event_cubit.dart';
+import 'package:resellio/features/user/events/bloc/events_cubit.dart';
+import 'package:resellio/features/user/events/bloc/events_state.dart';
 import 'package:resellio/routes/customer_routes.dart';
 
 class Debouncer {
@@ -50,27 +53,33 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   DateTimeRange? _selectedDateRange;
   RangeValues? _selectedPriceRange;
   final TextEditingController _searchController = TextEditingController();
-
-  final List<String> _categories = ['Koncerty', 'Kultura', 'Rozrywka', 'Inne'];
   String? _selectedCategory;
 
+  final List<String> _categories = ['Koncerty', 'Kultura', 'Rozrywka', 'Inne'];
+
   late final Debouncer _debouncer;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _debouncer = Debouncer(milliseconds: 500);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _debouncer.dispose();
     super.dispose();
   }
 
   void _triggerSearch() {
-    context.read<EventsCubit>().getEvents();
+    context.read<EventsCubit>().refreshEvents(
+        (context.read<AuthCubit>().state as AuthorizedCustomer).user.token);
   }
 
   void _onSearchChanged(String query) {
@@ -78,6 +87,25 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       print('Debounced Search query: $query');
       _triggerSearch();
     });
+  }
+
+  void _onScroll() {
+    final state = context.read<EventsCubit>().state;
+    if (_isBottom &&
+        state.status != EventsStatus.loadingMore &&
+        !state.hasReachedMax) {
+      print("Reached bottom, loading more events...");
+      context.read<EventsCubit>().loadMoreEvents(
+            (context.read<AuthCubit>().state as AuthorizedCustomer).user.token,
+          );
+    }
+  }
+
+  bool get _isBottom {
+    if (!_scrollController.hasClients) return false;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    return currentScroll >= (maxScroll * 0.9);
   }
 
   Future<void> _selectDateRange(BuildContext context) async {
@@ -208,7 +236,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   }
 
   void _clearAllFilters() {
-    final needsUpdate = _selectedDateRange != null ||
+    final bool filtersWereActive = _selectedDateRange != null ||
         _selectedPriceRange != null ||
         _selectedCategory != null ||
         _searchController.text.isNotEmpty;
@@ -222,7 +250,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     print('All filters cleared');
 
-    if (needsUpdate) {
+    if (filtersWereActive) {
       _triggerSearch();
     }
   }
@@ -234,23 +262,14 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         _selectedCategory != null ||
         _searchController.text.isNotEmpty;
 
-    final eventState = context.watch<EventsCubit>().state;
-    var resultCount = 0;
-    if (eventState is EventsLoaded) {
-      resultCount = eventState.events.length;
-    }
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context, resultCount, isAnyFilterActive),
+            _buildHeader(context, isAnyFilterActive),
             Expanded(
-              child: _buildResultsContent(
-                context,
-                isAnyFilterActive,
-              ),
+              child: _buildResultsContent(context),
             ),
           ],
         ),
@@ -258,11 +277,10 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    int resultCount,
-    bool isAnyFilterActive,
-  ) {
+  Widget _buildHeader(BuildContext context, bool isAnyFilterActive) {
+    final state = context.watch<EventsCubit>().state;
+    final resultCount = 2; // TODO
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -275,7 +293,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildResultsCount(resultCount),
+              _buildResultsCount(state),
               if (isAnyFilterActive) _buildClearFiltersButton(),
             ],
           ),
@@ -360,13 +378,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
             const SizedBox(width: 8),
             _buildFilterChip(
               context,
-              'Typ',
-              isDropdown: true,
-              onPressed: _onTypeFilterPressed,
-            ),
-            const SizedBox(width: 8),
-            _buildFilterChip(
-              context,
               'Miasto',
               isDropdown: true,
               onPressed: _onCityFilterPressed,
@@ -426,21 +437,33 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     );
   }
 
-  Widget _buildResultsCount(int count) {
-    final state = context.watch<EventsCubit>().state;
+  Widget _buildResultsCount(EventsState state) {
     String message;
     var style = TextStyle(color: Colors.grey[600], fontSize: 12);
+    final resultCount = 1; // TODO
 
-    switch (state) {
-      case EventsInitial():
+    switch (state.status) {
+      case EventsStatus.initial:
         message = 'Wprowadź kryteria wyszukiwania';
-      case EventsLoading():
+      case EventsStatus.loading:
         message = 'Szukanie...';
-      case EventsLoaded():
-        message = 'Znaleziono: $count wyników';
+      case EventsStatus.loadingMore:
+        message = 'Znaleziono: $resultCount wyników (Ładowanie...)';
         style = TextStyle(
             color: Colors.grey[800], fontSize: 12, fontWeight: FontWeight.w500);
-      case EventsError():
+      case EventsStatus.success:
+        if (state.events.isEmpty) {
+          message = 'Brak wyników dla podanych kryteriów';
+        } else if (state.events.isEmpty) {
+          message = 'Nie znaleziono wydarzeń';
+        } else {
+          message = 'Znaleziono: $resultCount wyników';
+          style = TextStyle(
+              color: Colors.grey[800],
+              fontSize: 12,
+              fontWeight: FontWeight.w500);
+        }
+      case EventsStatus.failure:
         message = 'Błąd wyszukiwania';
         style = TextStyle(color: Colors.red[700], fontSize: 12);
     }
@@ -474,45 +497,59 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     );
   }
 
-  Widget _buildResultsContent(
-    BuildContext context,
-    bool filtersOrSearchActive,
-  ) {
+  Widget _buildResultsContent(BuildContext context) {
     return BlocBuilder<EventsCubit, EventsState>(
       builder: (context, state) {
-        switch (state) {
-          case EventsInitial():
+        final bool cubitFiltersActive = state.events.isNotEmpty ||
+            state.status == EventsStatus.loadingMore ||
+            state.status == EventsStatus.success ||
+            state.status == EventsStatus.failure;
+
+        switch (state.status) {
+          case EventsStatus.initial:
             return _buildPlaceholder(
               icon: Icons.search_outlined,
               message: 'Zacznij wyszukiwanie lub wybierz filtry',
             );
 
-          case EventsLoading():
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: CircularProgressIndicator()),
-            );
+          case EventsStatus.loading:
+            return const Center(
+                child: Padding(
+              padding: EdgeInsets.all(40.0),
+              child: CircularProgressIndicator(),
+            ));
 
-          case EventsError():
+          case EventsStatus.failure:
             return _buildPlaceholder(
               icon: Icons.error_outline,
-              message: 'Błąd: ${state.message}\nSpróbuj ponownie.',
+              message:
+                  'Błąd: ${state.errorMessage ?? 'Nieznany błąd'}\nSpróbuj ponownie.',
               iconColor: Colors.red,
             );
 
-          case EventsLoaded():
-            if (state.events.isEmpty) {
+          case EventsStatus.loadingMore:
+          case EventsStatus.success:
+            if (state.events.isEmpty &&
+                state.status != EventsStatus.loadingMore) {
               return _buildPlaceholder(
                 icon: Icons.search_off_outlined,
-                message: filtersOrSearchActive
+                message: cubitFiltersActive
                     ? 'Brak wyników dla podanych kryteriów'
                     : 'Nie znaleziono żadnych wydarzeń',
               );
             } else {
               return ListView.separated(
+                controller: _scrollController,
                 padding: const EdgeInsets.all(16),
-                itemCount: state.events.length,
+                itemCount: state.events.length +
+                    (state.status == EventsStatus.loadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (index >= state.events.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
                   final event = state.events[index];
                   return EventCard(
                     event: event,

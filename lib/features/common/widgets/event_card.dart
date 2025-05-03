@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/user/events/bloc/events_state.dart';
 
 String getDateString(DateTime dateTime) {
   final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'pl_PL');
@@ -16,7 +17,7 @@ String getTimeString(DateTime dateTime) {
 class EventCard extends StatelessWidget {
   const EventCard({required this.event, required this.onTap, super.key});
 
-  final Event event;
+  final GetEventResponseDto event;
   final VoidCallback onTap;
 
   @override
@@ -41,7 +42,8 @@ class EventCard extends StatelessWidget {
                     topRight: Radius.circular(8),
                   ),
                   child: CachedNetworkImage(
-                    imageUrl: event.image,
+                    imageUrl:
+                        'https://picsum.photos/200/300?random=${event.id}',
                     fit: BoxFit.cover,
                     width: double.infinity,
                   ),
@@ -130,7 +132,7 @@ class EventCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          event.location,
+                          event.address.street,
                           style: const TextStyle(
                             fontSize: 16,
                             height: 0.2,
@@ -144,10 +146,10 @@ class EventCard extends StatelessWidget {
                           event.description,
                         ),
                         Text(
-                          getDateString(event.date),
+                          getDateString(event.startDate!),
                         ),
                         Text(
-                          getTimeString(event.date),
+                          getTimeString(event.endDate!),
                         ),
                       ],
                     ),
