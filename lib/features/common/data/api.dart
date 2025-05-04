@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
 
@@ -34,8 +35,11 @@ class ApiService {
           .replace(queryParameters: stringQueryParameters);
 
       print('Making request to: $uri');
+      print('Method: $method');
       print('Headers: $headers');
-      print('Body: $body');
+      if (body != null) print('Body: $body');
+
+      http.Response response;
 
       switch (method.toUpperCase()) {
         case 'GET':
@@ -91,32 +95,6 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> getEvents({
-    required String token,
-    required int page,
-    required int pageSize,
-    String? name,
-  }) async {
-    final queryParams = <String, dynamic>{
-      'page': page,
-      'pageSize': pageSize,
-    };
-
-    if (name != null && name.trim().isNotEmpty) {
-      queryParams['name'] = name.trim();
-    }
-
-    return makeRequest(
-      endpoint: ApiEndpoints.events,
-      method: 'GET',
-      queryParameters: queryParams,
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
-    );
-  }
-
   Future<Map<String, dynamic>> createOrganizer({
     required String token,
     required String firstName,
@@ -151,6 +129,56 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> getEvents({
+    required String token,
+    required int page,
+    required int pageSize,
+    String? name,
+    DateTime? startDate,
+    DateTime? endDate,
+    double? minPrice,
+    double? maxPrice,
+    String? city,
+    String? category,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    if (name != null && name.trim().isNotEmpty) {
+      queryParams['name'] = name.trim();
+    }
+    if (startDate != null) {
+      queryParams['minEndDate'] = startDate.toString();
+    }
+    if (endDate != null) {
+      queryParams['maxStartDate'] = endDate.toString();
+    }
+    if (minPrice != null) {
+      queryParams['minPrice'] = minPrice.toString();
+    }
+    if (maxPrice != null) {
+      queryParams['maxPrice'] = maxPrice.toString();
+    }
+    if (city != null && city.trim().isNotEmpty) {
+      queryParams['addressCity'] = city.trim();
+    }
+    // if (category != null && category.trim().isNotEmpty) {
+    //   queryParams['category'] = category.trim();
+    // }
+
+    return makeRequest(
+      endpoint: ApiEndpoints.events,
+      method: 'GET',
+      queryParameters: queryParams,
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     print('Response Status: ${response.statusCode}');
     print('Response Body: ${response.body}');
@@ -167,8 +195,9 @@ class ApiService {
         throw ApiException.http(response.statusCode,
             'Server returned empty response for error status.');
       }
-    } else if (contentType != null &&
-        contentType.contains('application/json')) {
+    }
+
+    if (contentType != null && contentType.contains('application/json')) {
       try {
         decoded = jsonDecode(response.body);
       } catch (e) {
@@ -176,11 +205,14 @@ class ApiService {
         throw ApiException.invalidResponse();
       }
     } else {
-      print('Warning: Received non-JSON response (Content-Type: $contentType)');
       if (response.statusCode < 200 || response.statusCode >= 300) {
+        print(
+            'Warning: Received non-JSON error response (Content-Type: $contentType)');
         throw ApiException.http(response.statusCode, response.body);
       } else {
-        throw ApiException.invalidResponse();
+        print(
+            'Warning: Received successful non-JSON response. Returning empty map.');
+        return {};
       }
     }
 
@@ -194,12 +226,7 @@ class ApiService {
         throw ApiException.invalidResponse();
       }
     } else {
-      String errorMessage = response.body;
-      if (decoded is Map<String, dynamic> && decoded.containsKey('message')) {
-        errorMessage = decoded['message'] as String? ?? response.body;
-      } else if (decoded is String && decoded.isNotEmpty) {
-        errorMessage = decoded;
-      }
+      print('API Error: ${response.body}');
 
       switch (response.statusCode) {
         case 401:
@@ -209,9 +236,9 @@ class ApiService {
         case 404:
           throw ApiException.notFound();
         case 500:
-          throw ApiException.unknown('Internal server error: $errorMessage');
+          throw ApiException.unknown('Internal server error: ${response.body}');
         default:
-          throw ApiException.http(response.statusCode, errorMessage);
+          throw ApiException.http(response.statusCode, response.body);
       }
     }
   }

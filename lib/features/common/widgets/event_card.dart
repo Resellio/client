@@ -2,22 +2,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/common/model/event.dart';
-import 'package:resellio/features/user/events/bloc/events_state.dart';
 
 String getDateString(DateTime dateTime) {
-  final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'pl_PL');
+  final dateFormat = DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl_PL');
   return dateFormat.format(dateTime);
-}
-
-String getTimeString(DateTime dateTime) {
-  final timeFormat = DateFormat('HH:mm');
-  return timeFormat.format(dateTime);
 }
 
 class EventCard extends StatelessWidget {
   const EventCard({required this.event, required this.onTap, super.key});
 
-  final GetEventResponseDto event;
+  final Event event;
   final VoidCallback onTap;
 
   @override
@@ -28,99 +22,54 @@ class EventCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ConstrainedBox(
-                constraints:
-                    const BoxConstraints(maxHeight: 200, minHeight: 200),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    topRight: Radius.circular(8),
-                  ),
-                  child: CachedNetworkImage(
-                    imageUrl:
-                        'https://picsum.photos/200/300?random=${event.id}',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  ),
-                ),
-              ),
-              ScrollConfiguration(
-                behavior:
-                    ScrollConfiguration.of(context).copyWith(scrollbars: false),
-                child: SizedBox(
-                  height: 35,
-                  child: ListView(
-                    padding: const EdgeInsets.all(5),
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      //TODO change to Chip
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 1,
-                            vertical: 1,
-                          ),
-                        ),
-                        child: const Text('Tag 1'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 1,
-                            vertical: 1,
-                          ),
-                        ),
-                        child: const Text('Tag 2'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 1,
-                            vertical: 1,
-                          ),
-                        ),
-                        child: const Text('Tag 3'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 1,
-                            vertical: 1,
-                          ),
-                        ),
-                        child: const Text('Tag 4'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 1,
-                            vertical: 1,
-                          ),
-                        ),
-                        child: const Text('Tag 5'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Row(
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(maxHeight: 200, minHeight: 200),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(8),
+                        topRight: Radius.circular(8),
+                      ),
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://picsum.photos/200/300?random=${event.id}',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      ),
+                    ),
+                  ),
+                  if (event.categories.isNotEmpty)
+                    ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(context)
+                          .copyWith(scrollbars: false),
+                      child: SizedBox(
+                        height: 35,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: event.categories.length,
+                          itemBuilder: (context, index) {
+                            return Chip(
+                              label: Text(
+                                event.categories[index],
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 16),
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -128,9 +77,9 @@ class EventCard extends StatelessWidget {
                           event.name,
                           style: const TextStyle(
                             fontSize: 24,
-                            letterSpacing: 1.2,
                           ),
                         ),
+                        const SizedBox(height: 20),
                         Text(
                           event.address.street,
                           style: const TextStyle(
@@ -143,39 +92,30 @@ class EventCard extends StatelessWidget {
                           height: 10,
                         ),
                         Text(
-                          event.description,
+                          event.address.country,
                         ),
                         Text(
                           getDateString(event.startDate!),
                         ),
-                        Text(
-                          getTimeString(event.endDate!),
-                        ),
+                        // Text(),
                       ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 1,
-                              vertical: 1,
-                            ),
-                          ),
-                          child: const Text('Buy'),
-                        ),
-                      ),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: Text(
+                'Od ${event.minimumPrice} PLN',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

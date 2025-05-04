@@ -6,9 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
-import 'package:resellio/features/common/widgets/event_card.dart';
+import 'package:resellio/features/common/widgets/event_card.dart'; // Ensure correct path
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
-import 'package:resellio/features/user/events/bloc/events_state.dart';
+import 'package:resellio/features/user/events/bloc/events_state.dart'; // Ensure correct path
 import 'package:resellio/routes/customer_routes.dart';
 
 class Debouncer {
@@ -52,10 +52,20 @@ class EventSearchScreenContent extends StatefulWidget {
 class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   DateTimeRange? _selectedDateRange;
   RangeValues? _selectedPriceRange;
-  final TextEditingController _searchController = TextEditingController();
+  String? _selectedCity;
   String? _selectedCategory;
 
+  final TextEditingController _searchController = TextEditingController();
   final List<String> _categories = ['Koncerty', 'Kultura', 'Rozrywka', 'Inne'];
+  // TEMP
+  final List<String> _cities = [
+    'Warszawa',
+    'Kraków',
+    'Gdańsk',
+    'Wrocław',
+    'Poznań',
+    'Łódź'
+  ];
 
   late final Debouncer _debouncer;
   final ScrollController _scrollController = ScrollController();
@@ -65,11 +75,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     super.initState();
     _debouncer = Debouncer(milliseconds: 500);
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _triggerSearch();
-      }
-    });
   }
 
   @override
@@ -85,13 +90,31 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   void _triggerSearch() {
     final query = _searchController.text.trim();
     final authState = context.read<AuthCubit>().state;
+
+    final DateTime? startDate = _selectedDateRange?.start;
+    final DateTime? endDate = _selectedDateRange?.end;
+    final double? minPrice =
+        (_selectedPriceRange != null && _selectedPriceRange!.start > 0)
+            ? _selectedPriceRange!.start
+            : null;
+    final double? maxPrice =
+        (_selectedPriceRange != null && _selectedPriceRange!.end < 1000)
+            ? _selectedPriceRange!.end
+            : null;
+    final String? city = _selectedCity;
+    final String? category = _selectedCategory;
+
     if (authState is AuthorizedCustomer) {
-      context.read<EventsCubit>().refreshEvents(
-            authState.user.token,
+      context.read<EventsCubit>().applyFiltersAndFetch(
+            token: authState.user.token,
             searchQuery: query,
+            startDate: startDate,
+            endDate: endDate,
+            minPrice: minPrice,
+            maxPrice: maxPrice,
+            city: city,
+            category: category,
           );
-    } else {
-      print("Error: User not authorized to search events.");
     }
   }
 
@@ -103,24 +126,20 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   }
 
   void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
     final state = context.read<EventsCubit>().state;
-    if (_isBottom &&
-        state.status != EventsStatus.loadingMore &&
+
+    if (currentScroll >= (maxScroll * 0.9) &&
+        state.status != EventsStatus.loading &&
         !state.hasReachedMax) {
-      print(
-          "Reached bottom, loading more events for query: \"${state.searchQuery}\"...");
+      print("Reached bottom, loading more events...");
       final authState = context.read<AuthCubit>().state;
       if (authState is AuthorizedCustomer) {
-        context.read<EventsCubit>().loadMoreEvents(authState.user.token);
+        context.read<EventsCubit>().fetchNextPage(authState.user.token);
       }
     }
-  }
-
-  bool get _isBottom {
-    if (!_scrollController.hasClients) return false;
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
-    return currentScroll >= (maxScroll * 0.9);
   }
 
   Future<void> _selectDateRange(BuildContext context) async {
@@ -139,10 +158,15 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     if (picked != null && picked != _selectedDateRange) {
       setState(() {
-        _selectedDateRange = picked;
+        _selectedDateRange = DateTimeRange(
+          start: DateTime(
+              picked.start.year, picked.start.month, picked.start.day, 0, 0),
+          end: DateTime(
+              picked.end.year, picked.end.month, picked.end.day, 23, 59),
+        );
       });
       print(
-          'Selected date range: ${DateFormat('yyyy-MM-dd').format(picked.start)} - ${DateFormat('yyyy-MM-dd').format(picked.end)}');
+          'Selected date range: ${DateFormat('yyyy-MM-dd HH:mm').format(_selectedDateRange!.start)} - ${DateFormat('yyyy-MM-dd HH:mm').format(_selectedDateRange!.end)}');
       _triggerSearch();
     }
   }
@@ -192,16 +216,12 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                   TextButton(
                     child: const Text('Wyczyść cenę'),
                     onPressed: () {
-                      Navigator.of(context).pop(
-                        const RangeValues(-1, -1),
-                      );
+                      Navigator.of(context).pop(const RangeValues(-1, -1));
                     },
                   ),
                 TextButton(
                   child: const Text('OK'),
-                  onPressed: () => Navigator.of(context).pop(
-                    dialogRange,
-                  ),
+                  onPressed: () => Navigator.of(context).pop(dialogRange),
                 ),
               ],
             );
@@ -234,11 +254,45 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     }
   }
 
-  void _onCityFilterPressed() {
-    print('City filter pressed - Implement me');
-    // TODO: Implement city filter logic
-    // Potentially add 'city' parameter to API/Cubit
-    // Might involve a text input or a selection dialog/screen
+  Future<void> _showCityFilterDialog(BuildContext context) async {
+    final String? result = await showDialog<String>(
+        context: context,
+        builder: (BuildContext context) {
+          return SimpleDialog(
+            title: const Text('Wybierz miasto'),
+            children: <Widget>[
+              SimpleDialogOption(
+                onPressed: () {
+                  Navigator.pop(context, null);
+                },
+                child: const Text('Wszystkie miasta',
+                    style: TextStyle(color: AppColors.primary)),
+              ),
+              ..._cities.map(
+                (city) => SimpleDialogOption(
+                  onPressed: () {
+                    Navigator.pop(context, city);
+                  },
+                  child: Text(
+                    city,
+                    style: TextStyle(
+                        fontWeight: _selectedCity == city
+                            ? FontWeight.bold
+                            : FontWeight.normal),
+                  ),
+                ),
+              ),
+            ],
+          );
+        });
+
+    if (result != _selectedCity) {
+      setState(() {
+        _selectedCity = result;
+      });
+      print('Selected city: $_selectedCity');
+      _triggerSearch();
+    }
   }
 
   void _onCategoryFilterPressed(String category) {
@@ -249,7 +303,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         _selectedCategory = category;
       }
     });
-    print('Category filter pressed: $category, Selected: $_selectedCategory');
+    print('Selected category: $_selectedCategory');
     _triggerSearch();
   }
 
@@ -257,12 +311,14 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     final bool filtersWereActive = _selectedDateRange != null ||
         _selectedPriceRange != null ||
         _selectedCategory != null ||
+        _selectedCity != null ||
         _searchController.text.isNotEmpty;
 
     setState(() {
       _selectedDateRange = null;
       _selectedPriceRange = null;
       _selectedCategory = null;
+      _selectedCity = null;
       _searchController.clear();
     });
 
@@ -278,6 +334,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     final isAnyFilterActive = _selectedDateRange != null ||
         _selectedPriceRange != null ||
         _selectedCategory != null ||
+        _selectedCity != null ||
         _searchController.text.isNotEmpty;
 
     return Scaffold(
@@ -324,12 +381,12 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       controller: _searchController,
       onChanged: _onSearchChanged,
       decoration: InputDecoration(
-        hintText: 'Czego szukasz...',
-        hintStyle: TextStyle(color: Colors.grey[700]),
-        prefixIcon: Icon(Icons.search, color: Colors.grey[800]),
+        hintText: 'Szukaj wydarzeń...',
+        hintStyle: TextStyle(color: Colors.grey[600], fontSize: 15),
+        prefixIcon: Icon(Icons.search, color: Colors.grey[700], size: 22),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
-                icon: Icon(Icons.clear, color: Colors.grey[700]),
+                icon: Icon(Icons.clear, color: Colors.grey[600], size: 20),
                 onPressed: () {
                   _searchController.clear();
                   _triggerSearch();
@@ -362,69 +419,69 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       final formatter = DateFormat('d MMM', 'pl_PL');
       final startFormatted = formatter.format(_selectedDateRange!.start);
       final endFormatted = formatter.format(_selectedDateRange!.end);
-      dateLabel = startFormatted == endFormatted
-          ? startFormatted
-          : '$startFormatted - $endFormatted';
+      bool isSameDay = _selectedDateRange!.start.year ==
+              _selectedDateRange!.end.year &&
+          _selectedDateRange!.start.month == _selectedDateRange!.end.month &&
+          _selectedDateRange!.start.day == _selectedDateRange!.end.day;
+      dateLabel =
+          isSameDay ? startFormatted : '$startFormatted - $endFormatted';
     }
 
     var priceLabel = 'Cena';
     if (_selectedPriceRange != null) {
       final start = _selectedPriceRange!.start.round();
       final end = _selectedPriceRange!.end.round();
-      if (start == 0 && end == 1000) {
-      } else if (end == 1000) {
-        priceLabel = '> $start zł';
-      } else if (start == 0) {
+      if (start == 0 && end < 1000) {
         priceLabel = '< $end zł';
-      } else {
+      } else if (start > 0 && end == 1000) {
+        priceLabel = '> $start zł';
+      } else if (start > 0 && end < 1000) {
         priceLabel = '$start - $end zł';
       }
     }
 
-    return ScrollConfiguration(
-      behavior: const ScrollBehavior().copyWith(
-        overscroll: false,
-        dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
-        scrollbars: false,
-      ),
-      child: SingleChildScrollView(
+    final cityLabel = _selectedCity ?? 'Miasto';
+
+    return SizedBox(
+      height: 40,
+      child: ListView(
         scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildFilterChip(
-              context,
-              dateLabel,
-              isSelected: _selectedDateRange != null,
-              onPressed: () => _selectDateRange(context),
-            ),
-            const SizedBox(width: 8),
-            _buildFilterChip(
-              context,
-              priceLabel,
-              isSelected: _selectedPriceRange != null,
-              onPressed: () => _showPriceFilterDialog(context),
-            ),
-            const SizedBox(width: 8),
-            _buildFilterChip(
-              context,
-              'Miasto',
-              isDropdown: true,
-              onPressed: _onCityFilterPressed,
-            ),
-            const SizedBox(width: 8),
-            ..._categories.map(
-              (category) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _buildFilterChip(
-                  context,
-                  category,
-                  isSelected: _selectedCategory == category,
-                  onPressed: () => _onCategoryFilterPressed(category),
-                ),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        children: [
+          _buildFilterChip(
+            context,
+            dateLabel,
+            isSelected: _selectedDateRange != null,
+            onPressed: () => _selectDateRange(context),
+          ),
+          const SizedBox(width: 8),
+          _buildFilterChip(
+            context,
+            priceLabel,
+            isSelected: _selectedPriceRange != null,
+            onPressed: () => _showPriceFilterDialog(context),
+          ),
+          const SizedBox(width: 8),
+          _buildFilterChip(
+            context,
+            cityLabel,
+            isSelected: _selectedCity != null,
+            isDropdown: true,
+            onPressed: () => _showCityFilterDialog(context),
+          ),
+          const SizedBox(width: 8),
+          ..._categories.map(
+            (category) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildFilterChip(
+                context,
+                category,
+                isSelected: _selectedCategory == category,
+                onPressed: () => _onCategoryFilterPressed(category),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -469,32 +526,33 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   Widget _buildResultsCount(EventsState state) {
     String message;
     var style = TextStyle(color: Colors.grey[600], fontSize: 12);
-    final hasActiveSearch =
-        state.searchQuery != null && state.searchQuery!.isNotEmpty;
+    final bool hasActiveSearchCriteria =
+        (state.searchQuery != null && state.searchQuery!.isNotEmpty) ||
+            state.startDateFilter != null ||
+            state.endDateFilter != null ||
+            state.minPriceFilter != null ||
+            state.maxPriceFilter != null ||
+            state.cityFilter != null ||
+            state.categoryFilter != null;
 
     switch (state.status) {
       case EventsStatus.initial:
-        message = hasActiveSearch
-            ? 'Wyszukaj "${state.searchQuery}"...'
-            : 'Wprowadź kryteria wyszukiwania';
+        message = hasActiveSearchCriteria
+            ? 'Naciśnij szukaj lub wybierz filtry'
+            : 'Przeglądaj dostępne wydarzenia';
       case EventsStatus.loading:
-        message = hasActiveSearch
-            ? 'Szukanie "${state.searchQuery}"...'
-            : 'Szukanie wydarzeń...';
-      case EventsStatus.loadingMore:
         final loadedCount = state.events.length;
         final total = state.totalResults;
         message =
-            'Znaleziono: ${total ?? loadedCount}${total != null ? '' : '+'} wyników (${loadedCount} załadowanych)';
+            'Znaleziono: ${total ?? loadedCount}${total != null ? '' : '+'} wyników';
         style = TextStyle(
             color: Colors.grey[800], fontSize: 12, fontWeight: FontWeight.w500);
       case EventsStatus.success:
-        final total = state.totalResults ??
-            state.events.length; // Fallback to loaded count
-        if (state.events.isEmpty) {
-          message = hasActiveSearch
-              ? 'Brak wyników dla "${state.searchQuery}"'
-              : 'Nie znaleziono żadnych wydarzeń';
+        final total = state.totalResults ?? state.events.length;
+        if (state.events.isEmpty && hasActiveSearchCriteria) {
+          message = 'Brak wyników dla wybranych kryteriów';
+        } else if (state.events.isEmpty && !hasActiveSearchCriteria) {
+          message = 'Brak wydarzeń do wyświetlenia';
         } else {
           message = 'Znaleziono: $total wyników';
           style = TextStyle(
@@ -540,63 +598,49 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   Widget _buildResultsContent(BuildContext context) {
     return BlocBuilder<EventsCubit, EventsState>(
       builder: (context, state) {
-        final bool searchAttempted = state.status != EventsStatus.initial ||
-            (state.searchQuery != null && state.searchQuery!.isNotEmpty);
-
         switch (state.status) {
           case EventsStatus.initial:
-            if (state.searchQuery == null || state.searchQuery!.isEmpty) {
-              return _buildPlaceholder(
-                icon: Icons.search_outlined,
-                message:
-                    'Zacznij wyszukiwanie wpisując nazwę\nlub wybierz filtry powyżej',
-              );
-            } else {
-              return const Center(
-                  child: Padding(
+            return const Center(
+              child: Padding(
                 padding: EdgeInsets.all(40),
                 child: CircularProgressIndicator(),
-              ));
-            }
-
-          case EventsStatus.loading:
-            return const Center(
-                child: Padding(
-              padding: EdgeInsets.all(40),
-              child: CircularProgressIndicator(),
-            ));
+              ),
+            );
 
           case EventsStatus.failure:
             return Center(
               child: _buildPlaceholder(
                 icon: Icons.error_outline,
                 message:
-                    'Błąd: ${state.errorMessage ?? 'Nieznany błąd'}\nSpróbuj ponownie lub zmień filtry.',
-                iconColor: Colors.red,
+                    'Wystąpił błąd podczas ładowania wydarzeń.\n${state.errorMessage ?? 'Spróbuj ponownie później.'}',
+                iconColor: Colors.red.shade400,
               ),
             );
 
-          case EventsStatus.loadingMore:
+          case EventsStatus.loading:
           case EventsStatus.success:
-            if (state.events.isEmpty && searchAttempted) {
-              return Center(
-                child: _buildPlaceholder(
-                  icon: Icons.search_off_outlined,
-                  message: 'Brak wyników dla podanych kryteriów',
+            if (state.events.isEmpty && state.status == EventsStatus.loading) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: CircularProgressIndicator(),
                 ),
               );
-            } else if (state.events.isEmpty && !searchAttempted) {
-              return _buildPlaceholder(
-                icon: Icons.search_outlined,
-                message:
-                    'Zacznij wyszukiwanie wpisując nazwę\nlub wybierz filtry powyżej',
+            } else if (state.events.isEmpty &&
+                state.status == EventsStatus.success) {
+              return Center(
+                child: _buildPlaceholder(
+                  icon: Icons.sentiment_dissatisfied_outlined,
+                  message:
+                      'Nie znaleziono wydarzeń pasujących\ndo wybranych kryteriów.',
+                ),
               );
             } else {
               return ListView.separated(
                 controller: _scrollController,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: state.events.length +
-                    (state.status == EventsStatus.loadingMore ? 1 : 0),
+                    (state.status == EventsStatus.loading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index >= state.events.length) {
                     return const Padding(

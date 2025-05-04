@@ -27,6 +27,20 @@ class AuthCubit extends HydratedCubit<AuthState>
       state is AuthorizedOrganizerRegistrationNeeded;
   bool get isUnverifiedOrganizer => state is AuthorizedUnverifiedOrganizer;
 
+  String get token {
+    if (state is AuthorizedCustomer) {
+      return (state as AuthorizedCustomer).user.token;
+    } else if (state is AuthorizedOrganizer) {
+      return (state as AuthorizedOrganizer).user.token;
+    } else if (state is AuthorizedUnverifiedOrganizer) {
+      return (state as AuthorizedUnverifiedOrganizer).user.token;
+    } else if (state is AuthorizedOrganizerRegistrationNeeded) {
+      return (state as AuthorizedOrganizerRegistrationNeeded).user.token;
+    } else {
+      throw Exception('No token available for the current state');
+    }
+  }
+
   Future<GoogleSignInAccount> _signInWithGoogle() async {
     final googleUser = await googleSignIn.signIn();
     if (googleUser == null) {

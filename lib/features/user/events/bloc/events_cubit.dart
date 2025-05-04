@@ -1,61 +1,135 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
+import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/common/model/paginated.dart';
 import 'package:resellio/features/user/events/bloc/events_state.dart';
 
 class EventsCubit extends Cubit<EventsState> {
-  final ApiService _apiService;
-  final int _pageSize = 20;
-
   EventsCubit({required ApiService apiService})
       : _apiService = apiService,
         super(const EventsState());
 
-  Future<void> fetchEvents(
-    String token, {
-    bool isInitialLoad = true,
-    String? searchQuery,
-  }) async {
-    if (state.hasReachedMax && !isInitialLoad) return;
-    if (state.status == EventsStatus.loading && isInitialLoad) return;
-    if (state.status == EventsStatus.loadingMore && !isInitialLoad) return;
+  final ApiService _apiService;
+  final int _pageSize = 3;
 
-    final String? queryForApi = isInitialLoad ? searchQuery : state.searchQuery;
+  Future<void> fetchNextPage(String token) async {
+    if (state.status == EventsStatus.loading || state.hasReachedMax) {
+      print(
+          'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}');
+      return;
+    }
+
+    print('Fetching next page...');
+    emit(state.copyWith(status: EventsStatus.loading));
 
     try {
-      int pageToFetch;
-      if (isInitialLoad) {
-        emit(state.copyWith(
-          status: EventsStatus.loading,
-          errorMessage: null,
-          clearError: true,
-          events: [],
-          hasReachedMax: false,
-          currentPage: -1,
-          searchQuery: searchQuery,
-          totalResults: null,
-        ));
-        pageToFetch = 0;
-      } else {
-        emit(state.copyWith(
-            status: EventsStatus.loadingMore,
-            errorMessage: null,
-            clearError: true));
-        pageToFetch = state.currentPage + 1;
-      }
+      final pageToFetch = state.currentPage + 1;
 
-      print('Fetching events - Page: $pageToFetch, Query: "$queryForApi"');
+      print(
+          'Fetching events - Page: $pageToFetch, Query: "${state.searchQuery}", StartDate: ${state.startDateFilter}, EndDate: ${state.endDateFilter}, MinPrice: ${state.minPriceFilter}, MaxPrice: ${state.maxPriceFilter}, City: "${state.cityFilter}", Category: "${state.categoryFilter}"');
 
       final response = await _apiService.getEvents(
         token: token,
         page: pageToFetch,
         pageSize: _pageSize,
-        name: queryForApi,
+        name: state.searchQuery,
+        startDate: state.startDateFilter,
+        endDate: state.endDateFilter,
+        minPrice: state.minPriceFilter,
+        maxPrice: state.maxPriceFilter,
+        city: state.cityFilter,
+        category: state.categoryFilter,
       );
 
-      final paginatedData = PaginatedData<GetEventResponseDto>.fromJson(
+      final paginatedData = PaginatedData<Event>.fromJson(
         response,
-        (json) => GetEventResponseDto.fromJson(json as Map<String, dynamic>),
+        (json) => Event.fromJson(json as Map<String, dynamic>),
+      );
+
+      final newEvents = paginatedData.data;
+      final bool hasReachedMax = !paginatedData.hasNextPage;
+      final int totalResults = state.totalResults ??
+          paginatedData.paginationDetails.allElementsCount;
+
+      emit(
+        state.copyWith(
+          status: EventsStatus.success,
+          events: List.of(state.events)..addAll(newEvents),
+          hasReachedMax: hasReachedMax,
+          currentPage: paginatedData.pageNumber,
+          totalResults: totalResults,
+        ),
+      );
+      print(
+          'Fetch successful. New count: ${state.events.length}. HasReachedMax: $hasReachedMax');
+    } on ApiException catch (err) {
+      print('ApiException fetching next page: $err');
+      emit(
+        state.copyWith(
+          status: EventsStatus.failure,
+          errorMessage: err.toString(),
+        ),
+      );
+    } catch (err, st) {
+      print('Unknown Error fetching next page: $err');
+      print(st);
+      emit(
+        state.copyWith(
+          status: EventsStatus.failure,
+          errorMessage: 'An unexpected error occurred.',
+        ),
+      );
+    }
+  }
+
+  Future<void> applyFiltersAndFetch({
+    required String token,
+    String? searchQuery,
+    DateTime? startDate,
+    DateTime? endDate,
+    double? minPrice,
+    double? maxPrice,
+    String? city,
+    String? category,
+  }) async {
+    print('Applying filters and fetching first page...');
+
+    emit(
+      EventsState(
+        status: EventsStatus.loading,
+        searchQuery: searchQuery,
+        startDateFilter: startDate,
+        endDateFilter: endDate,
+        minPriceFilter: minPrice,
+        maxPriceFilter: maxPrice,
+        cityFilter: city,
+        categoryFilter: category,
+      ),
+    );
+
+    try {
+      const firstPage = 0;
+
+      print(
+          'Fetching filtered events - Page: $firstPage, Query: "$searchQuery", StartDate: $startDate, EndDate: $endDate, MinPrice: $minPrice, MaxPrice: $maxPrice, City: "$city", Category: "$category"');
+
+      final response = await _apiService.getEvents(
+        token: token,
+        page: firstPage,
+        pageSize: _pageSize,
+        name: searchQuery,
+        startDate: startDate,
+        endDate: endDate,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        city: city,
+        category: category,
+      );
+
+      final paginatedData = PaginatedData<Event>.fromJson(
+        response,
+        (json) => Event.fromJson(json as Map<String, dynamic>),
       );
 
       final newEvents = paginatedData.data;
@@ -64,28 +138,36 @@ class EventsCubit extends Cubit<EventsState> {
 
       emit(state.copyWith(
         status: EventsStatus.success,
-        events: isInitialLoad ? newEvents : [...state.events, ...newEvents],
+        events: newEvents,
         hasReachedMax: hasReachedMax,
         currentPage: paginatedData.pageNumber,
         totalResults: totalResults,
       ));
-    } on ApiException catch (e) {
-      print('ApiException in Cubit: $e');
-      emit(state.copyWith(
-          status: EventsStatus.failure, errorMessage: e.toString()));
-    } catch (e) {
-      print('Unknown Error in Cubit: $e');
-      emit(state.copyWith(
+      print(
+          'Filter fetch successful. Count: ${state.events.length}. HasReachedMax: $hasReachedMax');
+    } on ApiException catch (err) {
+      print('ApiException applying filters: $err');
+      emit(
+        state.copyWith(
           status: EventsStatus.failure,
-          errorMessage: 'An unexpected error occurred.'));
+          errorMessage: err.toString(),
+          events: [],
+          hasReachedMax: false,
+          currentPage: 0,
+        ),
+      );
+    } catch (err, st) {
+      print('Unknown Error applying filters: $err');
+      print(st);
+      emit(
+        state.copyWith(
+          status: EventsStatus.failure,
+          errorMessage: 'An unexpected error occurred.',
+          events: [],
+          hasReachedMax: false,
+          currentPage: 0,
+        ),
+      );
     }
-  }
-
-  Future<void> refreshEvents(String token, {String? searchQuery}) async {
-    await fetchEvents(token, isInitialLoad: true, searchQuery: searchQuery);
-  }
-
-  Future<void> loadMoreEvents(String token) async {
-    await fetchEvents(token, isInitialLoad: false);
   }
 }
