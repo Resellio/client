@@ -11,18 +11,30 @@ class EventsCubit extends Cubit<EventsState> {
       : _apiService = apiService,
         super(const EventsState());
 
-  Future<void> fetchEvents(String token, {bool isInitialLoad = true}) async {
+  Future<void> fetchEvents(
+    String token, {
+    bool isInitialLoad = true,
+    String? searchQuery,
+  }) async {
     if (state.hasReachedMax && !isInitialLoad) return;
     if (state.status == EventsStatus.loading && isInitialLoad) return;
     if (state.status == EventsStatus.loadingMore && !isInitialLoad) return;
+
+    final String? queryForApi = isInitialLoad ? searchQuery : state.searchQuery;
 
     try {
       int pageToFetch;
       if (isInitialLoad) {
         emit(state.copyWith(
-            status: EventsStatus.loading,
-            errorMessage: null,
-            clearError: true));
+          status: EventsStatus.loading,
+          errorMessage: null,
+          clearError: true,
+          events: [],
+          hasReachedMax: false,
+          currentPage: -1,
+          searchQuery: searchQuery,
+          totalResults: null,
+        ));
         pageToFetch = 0;
       } else {
         emit(state.copyWith(
@@ -32,10 +44,13 @@ class EventsCubit extends Cubit<EventsState> {
         pageToFetch = state.currentPage + 1;
       }
 
+      print('Fetching events - Page: $pageToFetch, Query: "$queryForApi"');
+
       final response = await _apiService.getEvents(
         token: token,
         page: pageToFetch,
         pageSize: _pageSize,
+        name: queryForApi,
       );
 
       final paginatedData = PaginatedData<GetEventResponseDto>.fromJson(
@@ -45,12 +60,14 @@ class EventsCubit extends Cubit<EventsState> {
 
       final newEvents = paginatedData.data;
       final bool hasReachedMax = !paginatedData.hasNextPage;
+      final int totalResults = paginatedData.paginationDetails.allElementsCount;
 
       emit(state.copyWith(
         status: EventsStatus.success,
         events: isInitialLoad ? newEvents : [...state.events, ...newEvents],
         hasReachedMax: hasReachedMax,
         currentPage: paginatedData.pageNumber,
+        totalResults: totalResults,
       ));
     } on ApiException catch (e) {
       print('ApiException in Cubit: $e');
@@ -64,9 +81,8 @@ class EventsCubit extends Cubit<EventsState> {
     }
   }
 
-  Future<void> refreshEvents(String token) async {
-    emit(const EventsState());
-    await fetchEvents(token, isInitialLoad: true);
+  Future<void> refreshEvents(String token, {String? searchQuery}) async {
+    await fetchEvents(token, isInitialLoad: true, searchQuery: searchQuery);
   }
 
   Future<void> loadMoreEvents(String token) async {

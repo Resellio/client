@@ -65,6 +65,11 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     super.initState();
     _debouncer = Debouncer(milliseconds: 500);
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _triggerSearch();
+      }
+    });
   }
 
   @override
@@ -78,8 +83,16 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   }
 
   void _triggerSearch() {
-    context.read<EventsCubit>().refreshEvents(
-        (context.read<AuthCubit>().state as AuthorizedCustomer).user.token);
+    final query = _searchController.text.trim();
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthorizedCustomer) {
+      context.read<EventsCubit>().refreshEvents(
+            authState.user.token,
+            searchQuery: query,
+          );
+    } else {
+      print("Error: User not authorized to search events.");
+    }
   }
 
   void _onSearchChanged(String query) {
@@ -94,10 +107,12 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     if (_isBottom &&
         state.status != EventsStatus.loadingMore &&
         !state.hasReachedMax) {
-      print("Reached bottom, loading more events...");
-      context.read<EventsCubit>().loadMoreEvents(
-            (context.read<AuthCubit>().state as AuthorizedCustomer).user.token,
-          );
+      print(
+          "Reached bottom, loading more events for query: \"${state.searchQuery}\"...");
+      final authState = context.read<AuthCubit>().state;
+      if (authState is AuthorizedCustomer) {
+        context.read<EventsCubit>().loadMoreEvents(authState.user.token);
+      }
     }
   }
 
@@ -133,7 +148,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   }
 
   Future<void> _showPriceFilterDialog(BuildContext context) async {
-    final currentRange = _selectedPriceRange ?? const RangeValues(0, 500);
+    final currentRange = _selectedPriceRange ?? const RangeValues(0, 1000);
 
     final RangeValues? result = await showDialog<RangeValues>(
       context: context,
@@ -152,7 +167,9 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                     divisions: 20,
                     labels: RangeLabels(
                       dialogRange.start.round().toString(),
-                      dialogRange.end.round().toString(),
+                      dialogRange.end.round() == 1000
+                          ? '1000+'
+                          : dialogRange.end.round().toString(),
                     ),
                     activeColor: AppColors.primary,
                     inactiveColor: AppColors.primaryLight,
@@ -163,7 +180,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                     },
                   ),
                   Text(
-                    'Zakres: ${dialogRange.start.round()} zł - ${dialogRange.end.round()} zł',
+                    'Zakres: ${dialogRange.start.round()} zł - ${dialogRange.end.round() == 1000 ? '1000+ zł' : '${dialogRange.end.round()} zł'}',
                   ),
                 ],
               ),
@@ -204,7 +221,11 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         }
       } else if (result != _selectedPriceRange) {
         setState(() {
-          _selectedPriceRange = result;
+          if (result.start == 0 && result.end == 1000) {
+            _selectedPriceRange = null;
+          } else {
+            _selectedPriceRange = result;
+          }
         });
         print(
             'Selected price range: ${result.start.round()} - ${result.end.round()}');
@@ -213,14 +234,11 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     }
   }
 
-  void _onTypeFilterPressed() {
-    print('Type filter pressed - Implement me');
-    // TODO: Implement type filter logic (e.g., show dropdown/dialog)
-  }
-
   void _onCityFilterPressed() {
     print('City filter pressed - Implement me');
-    // TODO: Implement city filter logic (e.g., show dropdown/dialog/new screen)
+    // TODO: Implement city filter logic
+    // Potentially add 'city' parameter to API/Cubit
+    // Might involve a text input or a selection dialog/screen
   }
 
   void _onCategoryFilterPressed(String category) {
@@ -279,7 +297,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
   Widget _buildHeader(BuildContext context, bool isAnyFilterActive) {
     final state = context.watch<EventsCubit>().state;
-    final resultCount = 2; // TODO
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -307,9 +324,18 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       controller: _searchController,
       onChanged: _onSearchChanged,
       decoration: InputDecoration(
-        hintText: 'Czego szukasz?',
+        hintText: 'Czego szukasz...',
         hintStyle: TextStyle(color: Colors.grey[700]),
         prefixIcon: Icon(Icons.search, color: Colors.grey[800]),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: Icon(Icons.clear, color: Colors.grey[700]),
+                onPressed: () {
+                  _searchController.clear();
+                  _triggerSearch();
+                },
+              )
+            : null,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
@@ -325,6 +351,8 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
+      onSubmitted: (_) => _triggerSearch(),
+      textInputAction: TextInputAction.search,
     );
   }
 
@@ -341,14 +369,15 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     var priceLabel = 'Cena';
     if (_selectedPriceRange != null) {
-      priceLabel =
-          '${_selectedPriceRange!.start.round()} - ${_selectedPriceRange!.end.round()} zł';
-      if (_selectedPriceRange!.start.round() == 0 &&
-          _selectedPriceRange!.end.round() == 1000) {
-      } else if (_selectedPriceRange!.end.round() == 1000) {
-        priceLabel = '> ${_selectedPriceRange!.start.round()} zł';
-      } else if (_selectedPriceRange!.start.round() == 0) {
-        priceLabel = '< ${_selectedPriceRange!.end.round()} zł';
+      final start = _selectedPriceRange!.start.round();
+      final end = _selectedPriceRange!.end.round();
+      if (start == 0 && end == 1000) {
+      } else if (end == 1000) {
+        priceLabel = '> $start zł';
+      } else if (start == 0) {
+        priceLabel = '< $end zł';
+      } else {
+        priceLabel = '$start - $end zł';
       }
     }
 
@@ -440,24 +469,34 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   Widget _buildResultsCount(EventsState state) {
     String message;
     var style = TextStyle(color: Colors.grey[600], fontSize: 12);
-    final resultCount = 1; // TODO
+    final hasActiveSearch =
+        state.searchQuery != null && state.searchQuery!.isNotEmpty;
 
     switch (state.status) {
       case EventsStatus.initial:
-        message = 'Wprowadź kryteria wyszukiwania';
+        message = hasActiveSearch
+            ? 'Wyszukaj "${state.searchQuery}"...'
+            : 'Wprowadź kryteria wyszukiwania';
       case EventsStatus.loading:
-        message = 'Szukanie...';
+        message = hasActiveSearch
+            ? 'Szukanie "${state.searchQuery}"...'
+            : 'Szukanie wydarzeń...';
       case EventsStatus.loadingMore:
-        message = 'Znaleziono: $resultCount wyników (Ładowanie...)';
+        final loadedCount = state.events.length;
+        final total = state.totalResults;
+        message =
+            'Znaleziono: ${total ?? loadedCount}${total != null ? '' : '+'} wyników (${loadedCount} załadowanych)';
         style = TextStyle(
             color: Colors.grey[800], fontSize: 12, fontWeight: FontWeight.w500);
       case EventsStatus.success:
+        final total = state.totalResults ??
+            state.events.length; // Fallback to loaded count
         if (state.events.isEmpty) {
-          message = 'Brak wyników dla podanych kryteriów';
-        } else if (state.events.isEmpty) {
-          message = 'Nie znaleziono wydarzeń';
+          message = hasActiveSearch
+              ? 'Brak wyników dla "${state.searchQuery}"'
+              : 'Nie znaleziono żadnych wydarzeń';
         } else {
-          message = 'Znaleziono: $resultCount wyników';
+          message = 'Znaleziono: $total wyników';
           style = TextStyle(
               color: Colors.grey[800],
               fontSize: 12,
@@ -473,6 +512,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         message,
         style: style,
         overflow: TextOverflow.ellipsis,
+        maxLines: 1,
       ),
     );
   }
@@ -500,42 +540,56 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   Widget _buildResultsContent(BuildContext context) {
     return BlocBuilder<EventsCubit, EventsState>(
       builder: (context, state) {
-        final bool cubitFiltersActive = state.events.isNotEmpty ||
-            state.status == EventsStatus.loadingMore ||
-            state.status == EventsStatus.success ||
-            state.status == EventsStatus.failure;
+        final bool searchAttempted = state.status != EventsStatus.initial ||
+            (state.searchQuery != null && state.searchQuery!.isNotEmpty);
 
         switch (state.status) {
           case EventsStatus.initial:
-            return _buildPlaceholder(
-              icon: Icons.search_outlined,
-              message: 'Zacznij wyszukiwanie lub wybierz filtry',
-            );
+            if (state.searchQuery == null || state.searchQuery!.isEmpty) {
+              return _buildPlaceholder(
+                icon: Icons.search_outlined,
+                message:
+                    'Zacznij wyszukiwanie wpisując nazwę\nlub wybierz filtry powyżej',
+              );
+            } else {
+              return const Center(
+                  child: Padding(
+                padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(),
+              ));
+            }
 
           case EventsStatus.loading:
             return const Center(
                 child: Padding(
-              padding: EdgeInsets.all(40.0),
+              padding: EdgeInsets.all(40),
               child: CircularProgressIndicator(),
             ));
 
           case EventsStatus.failure:
-            return _buildPlaceholder(
-              icon: Icons.error_outline,
-              message:
-                  'Błąd: ${state.errorMessage ?? 'Nieznany błąd'}\nSpróbuj ponownie.',
-              iconColor: Colors.red,
+            return Center(
+              child: _buildPlaceholder(
+                icon: Icons.error_outline,
+                message:
+                    'Błąd: ${state.errorMessage ?? 'Nieznany błąd'}\nSpróbuj ponownie lub zmień filtry.',
+                iconColor: Colors.red,
+              ),
             );
 
           case EventsStatus.loadingMore:
           case EventsStatus.success:
-            if (state.events.isEmpty &&
-                state.status != EventsStatus.loadingMore) {
+            if (state.events.isEmpty && searchAttempted) {
+              return Center(
+                child: _buildPlaceholder(
+                  icon: Icons.search_off_outlined,
+                  message: 'Brak wyników dla podanych kryteriów',
+                ),
+              );
+            } else if (state.events.isEmpty && !searchAttempted) {
               return _buildPlaceholder(
-                icon: Icons.search_off_outlined,
-                message: cubitFiltersActive
-                    ? 'Brak wyników dla podanych kryteriów'
-                    : 'Nie znaleziono żadnych wydarzeń',
+                icon: Icons.search_outlined,
+                message:
+                    'Zacznij wyszukiwanie wpisując nazwę\nlub wybierz filtry powyżej',
               );
             } else {
               return ListView.separated(

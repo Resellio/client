@@ -27,11 +27,11 @@ class ApiService {
     String? body,
   }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/$endpoint').replace(
-        queryParameters: queryParameters?.map(
-          (key, value) => MapEntry(key, value.toString()),
-        ),
-      );
+      final Map<String, String>? stringQueryParameters =
+          queryParameters?.map((key, value) => MapEntry(key, value.toString()));
+
+      final uri = Uri.parse('$_baseUrl/$endpoint')
+          .replace(queryParameters: stringQueryParameters);
 
       print('Making request to: $uri');
       print('Headers: $headers');
@@ -95,11 +95,16 @@ class ApiService {
     required String token,
     required int page,
     required int pageSize,
+    String? name,
   }) async {
-    final queryParams = {
+    final queryParams = <String, dynamic>{
       'page': page,
       'pageSize': pageSize,
     };
+
+    if (name != null && name.trim().isNotEmpty) {
+      queryParams['name'] = name.trim();
+    }
 
     return makeRequest(
       endpoint: ApiEndpoints.events,
@@ -159,6 +164,8 @@ class ApiService {
       } else {
         print(
             'Error: Empty response body for status code ${response.statusCode}');
+        throw ApiException.http(response.statusCode,
+            'Server returned empty response for error status.');
       }
     } else if (contentType != null &&
         contentType.contains('application/json')) {
@@ -177,22 +184,35 @@ class ApiService {
       }
     }
 
-    switch (response.statusCode) {
-      case 200:
-        if (decoded is! Map<String, dynamic>) {
-          throw ApiException.invalidResponse();
-        }
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (decoded is Map<String, dynamic>) {
         return decoded;
-      case 401:
-        throw ApiException.unauthorized();
-      case 403:
-        throw ApiException.forbidden();
-      case 404:
-        throw ApiException.notFound();
-      case 500:
-        throw ApiException.unknown('Internal server error');
-      default:
-        throw ApiException.http(response.statusCode, response.body);
+      } else if (decoded == null && response.body.isEmpty) {
+        return {};
+      } else {
+        print('Error: Expected JSON Map but got ${decoded.runtimeType}');
+        throw ApiException.invalidResponse();
+      }
+    } else {
+      String errorMessage = response.body;
+      if (decoded is Map<String, dynamic> && decoded.containsKey('message')) {
+        errorMessage = decoded['message'] as String? ?? response.body;
+      } else if (decoded is String && decoded.isNotEmpty) {
+        errorMessage = decoded;
+      }
+
+      switch (response.statusCode) {
+        case 401:
+          throw ApiException.unauthorized();
+        case 403:
+          throw ApiException.forbidden();
+        case 404:
+          throw ApiException.notFound();
+        case 500:
+          throw ApiException.unknown('Internal server error: $errorMessage');
+        default:
+          throw ApiException.http(response.statusCode, errorMessage);
+      }
     }
   }
 

@@ -8,6 +8,8 @@ class EventsState extends Equatable {
   final bool hasReachedMax;
   final int currentPage;
   final String? errorMessage;
+  final String? searchQuery;
+  final int? totalResults;
 
   const EventsState({
     this.status = EventsStatus.initial,
@@ -15,6 +17,8 @@ class EventsState extends Equatable {
     this.hasReachedMax = false,
     this.currentPage = 0,
     this.errorMessage,
+    this.searchQuery,
+    this.totalResults,
   });
 
   EventsState copyWith({
@@ -24,6 +28,9 @@ class EventsState extends Equatable {
     int? currentPage,
     String? errorMessage,
     bool clearError = false,
+    String? searchQuery,
+    bool clearSearchQuery = false,
+    int? totalResults,
   }) {
     return EventsState(
       status: status ?? this.status,
@@ -31,12 +38,21 @@ class EventsState extends Equatable {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       currentPage: currentPage ?? this.currentPage,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      searchQuery: clearSearchQuery ? null : (searchQuery ?? this.searchQuery),
+      totalResults: totalResults ?? this.totalResults,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [status, events, hasReachedMax, currentPage, errorMessage];
+  List<Object?> get props => [
+        status,
+        events,
+        hasReachedMax,
+        currentPage,
+        errorMessage,
+        searchQuery,
+        totalResults,
+      ];
 }
 
 class PaginatedData<T> extends Equatable {
