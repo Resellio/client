@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:resellio/features/common/model/event.dart';
-import 'package:resellio/features/user/events/bloc/event_cubit.dart';
+import 'package:resellio/features/user/events/bloc/events_cubit.dart';
+import 'package:resellio/features/user/events/bloc/events_state.dart';
 
 class TicketOption extends StatelessWidget {
   const TicketOption({
@@ -32,15 +34,109 @@ class TicketOption extends StatelessWidget {
           ),
           subtitle: Text(price),
           trailing: status != null
-              ? Text(
-                  status!,
-                  style: const TextStyle(color: Colors.red),
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.block, color: Colors.red, size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      status!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
                 )
               : ElevatedButton(
-                  onPressed: () {},
-                  child: Text(buttonText ?? 'Choose'),
+                  onPressed: () {
+                    // TODO: Dodać logikę wyboru biletu
+                  },
+                  child: Text(buttonText ?? 'Wybierz'),
                 ),
         ),
+      ),
+    );
+  }
+}
+
+class EventDetails extends StatelessWidget {
+  const EventDetails({super.key, required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    final priceFormatter =
+        NumberFormat.currency(locale: 'pl_PL', symbol: 'zł', decimalDigits: 2);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_on, size: 20),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  event.address.city,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.access_time, size: 20),
+              const SizedBox(width: 6),
+              Text(
+                event.startDate != null
+                    ? DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl_PL')
+                        .format(event.startDate!)
+                    : 'Brak informacji o dacie',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          if (event.endDate != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 20),
+                const SizedBox(width: 6),
+                Text(
+                  'Koniec: ${DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl_PL').format(event.endDate!)}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 8),
+          if (event.minimumPrice > 0 || event.maximumPrice > 0)
+            Row(
+              children: [
+                const Icon(Icons.attach_money, size: 20),
+                const SizedBox(width: 6),
+                Text(
+                  event.minimumPrice == event.maximumPrice
+                      ? 'Cena: ${priceFormatter.format(event.minimumPrice)}'
+                      : 'Cena: od ${priceFormatter.format(event.minimumPrice)} do ${priceFormatter.format(event.maximumPrice)}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          const SizedBox(height: 8),
+          if (event.minimumAge > 0)
+            Row(
+              children: [
+                const Icon(Icons.person, size: 20),
+                const SizedBox(width: 6),
+                Text(
+                  'Minimalny wiek: ${event.minimumAge} lat',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -53,222 +149,162 @@ class CustomerEventDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => EventsCubit()..getEvents(),
-      child: BlocBuilder<EventsCubit, EventsState>(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Szczegóły wydarzenia (WIP)'),
+        centerTitle: true,
+      ),
+      body: BlocBuilder<EventsCubit, EventsState>(
         builder: (context, state) {
-          if (state is EventInitial) {
+          if (state.status == EventsStatus.initial ||
+              (state.status == EventsStatus.loading && state.events.isEmpty)) {
             return const Center(child: CircularProgressIndicator());
-          } else if (state is EventsLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is EventsLoaded) {
-            final event = state.events.firstWhere(
-              (event) => event.id == eventId,
-              orElse: () => Event(
-                id: 'no_event',
-                name: 'Event Not Found',
-                description: '',
-                date: DateTime.now(),
-                location: '',
-                image: '',
-              ),
+          } else if (state.status == EventsStatus.failure &&
+              state.events.isEmpty) {
+            return Center(
+              child:
+                  Text(state.errorMessage ?? 'Wystąpił błąd ładowania danych.'),
             );
+          } else {
+            final event = state.events.firstWhere(
+              (e) => e.id == eventId,
+            );
+
             return Padding(
               padding: const EdgeInsets.all(16),
-              child: Stack(
-                children: [
-                  Card(
-                    color: const Color.fromARGB(255, 204, 178, 219),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 4,
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: 60), // space for FAB
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                maxHeight: 200,
-                                minHeight: 200,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(8),
-                                  topRight: Radius.circular(8),
-                                ),
-                                child: Image.network(
-                                  event.image,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                ),
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.arrow_back),
-                                    SizedBox(width: 8),
-                                    Chip(label: Text('Warszawa')),
-                                    SizedBox(width: 4),
-                                    Chip(label: Text('Koncert')),
-                                    SizedBox(width: 4),
-                                    Chip(
-                                      label: Text('18+'),
-                                      backgroundColor: Colors.pinkAccent,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                event.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 32,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.location_on, size: 20),
-                                            SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                'Stefana Batorego 10, 02-591 Warszawa',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  decoration:
-                                                      TextDecoration.underline,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      FloatingActionButton.small(
-                                        heroTag: 'mapButton',
-                                        onPressed: () {
-                                          // TODO
-                                        },
-                                        backgroundColor: Colors.grey[200],
-                                        child: const Icon(
-                                          Icons.open_in_new,
-                                          size: 18,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Row(
-                                    children: [
-                                      Icon(Icons.access_time, size: 20),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Niedziela, 9 lutego 2025',
-                                        style: TextStyle(fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: Text(
-                                'Kult Akustik to trasa koncertowa, która zabierze fanów w niezwykłą podróż. Usłyszysz największe hity w wersji bez prądu. Start: 9 lutego 2025!',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                'Bilety od organizatora',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            const TicketOption(
-                              title: 'Normalny',
-                              price: '39,99 zł',
-                              status: 'wyprzedane',
-                            ),
-                            const TicketOption(
-                              title: 'Ulgowy',
-                              price: '19,99 zł',
-                            ),
-                            const TicketOption(
-                              title: 'VIP',
-                              price: '129,99 zł',
-                              buttonText: 'Wybierz na schemacie',
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              child: Text(
-                                'Bilety od społeczności',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            const TicketOption(
-                              title: 'Normalny',
-                              price: 'od 54,99 zł',
-                              buttonText: 'Wybierz',
-                            ),
-                          ],
+              child: Card(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 4,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Zdjęcie
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxHeight: 200,
+                          minHeight: 200,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            topRight: Radius.circular(8),
+                          ),
+                          child: Image.network(
+                            'https://picsum.photos/200/300?random=${event.id}',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                    child: Icon(Icons.broken_image, size: 50)),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: FloatingActionButton(
-                      backgroundColor: Colors.deepPurple,
-                      onPressed: () {
-                        //TODO
-                      },
-                      child: const Icon(
-                        Icons.local_activity,
+                      // Tagi/Chipsy
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              if (event.address.city != null &&
+                                  event.address.city!.isNotEmpty) ...[
+                                Chip(label: Text(event.address.city!)),
+                                const SizedBox(width: 4),
+                              ],
+                              if (event.categories != null)
+                                ...event.categories!
+                                    .map((category) => Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 4.0),
+                                          child: Chip(label: Text(category)),
+                                        ))
+                                    .toList(),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      // Nazwa wydarzenia
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          event.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Szczegóły wydarzenia
+                      EventDetails(event: event),
+                      const SizedBox(height: 16),
+                      // Opis
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          event.description,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Bilety
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'Bilety od organizatora',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      const TicketOption(
+                        title: 'Normalny',
+                        price: '39,99 zł',
+                        status: 'wyprzedane',
+                      ),
+                      const TicketOption(
+                        title: 'Ulgowy',
+                        price: '19,99 zł',
+                      ),
+                      const TicketOption(
+                        title: 'VIP',
+                        price: '129,99 zł',
+                        buttonText: 'Wybierz na schemacie',
+                      ),
+                      const Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Text(
+                          'Bilety od społeczności',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      const TicketOption(
+                        title: 'Normalny',
+                        price: 'od 54,99 zł',
+                        buttonText: 'Wybierz',
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             );
-          } else if (state is EventsError) {
-            return Center(child: Text(state.message));
-          } else {
-            return const Center(child: Text('Something went wrong'));
           }
         },
       ),
