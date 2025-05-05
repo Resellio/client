@@ -23,7 +23,6 @@ class EventCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Card(
-        color: const Color.fromARGB(255, 204, 178, 219),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -57,6 +56,7 @@ class EventCard extends StatelessWidget {
                     padding: const EdgeInsets.all(5),
                     scrollDirection: Axis.horizontal,
                     children: [
+                      //TODO change to Chip
                       ElevatedButton(
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(

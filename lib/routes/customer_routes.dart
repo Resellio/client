@@ -98,7 +98,7 @@ class CustomerEventDetailRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return CustomerEventDetails(eventId: eventId);
+    return CustomerEventDetailsScreen(eventId: eventId);
   }
 }
 

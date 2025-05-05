@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resellio/features/common/style/colors.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
 
 OutlineInputBorder buildBorder(Color color, {double width = 1.0}) {
   return OutlineInputBorder(
@@ -44,11 +44,11 @@ class ResellioTextField extends StatelessWidget {
             : null,
         enabledBorder: buildBorder(Colors.white.withAlpha(25)),
         focusedBorder: buildBorder(Colors.white, width: 2),
-        errorBorder: buildBorder(AppColors.redAccent),
-        focusedErrorBorder: buildBorder(AppColors.redAccent, width: 2),
+        errorBorder: buildBorder(AppColors.error),
+        focusedErrorBorder: buildBorder(AppColors.error, width: 2),
         errorStyle: const TextStyle(
           fontWeight: FontWeight.bold,
-          color: AppColors.redAccent,
+          color: AppColors.error,
         ),
       ),
       readOnly: readOnly ?? false,

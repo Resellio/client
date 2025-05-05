@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
 
 class ResellioLogo extends StatelessWidget {
-  const ResellioLogo({required this.size, super.key});
+  const ResellioLogo({
+    required this.size,
+    this.withBorder = false,
+    super.key,
+  });
 
   final double size;
+  final bool withBorder;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: Image.asset(
-        'assets/icon/icon.png',
-        width: size,
-        height: size,
+    return Container(
+      decoration: withBorder
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: Theme.of(context).primaryColorDark,
+                width: 2,
+              ),
+            )
+          : null,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Image.asset(
+          'assets/icon/icon.png',
+          width: size,
+          height: size,
+        ),
       ),
     );
   }

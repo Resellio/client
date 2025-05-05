@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
+import 'package:resellio/features/common/style/app_theme.dart';
 import 'package:resellio/routes/auth_routes.dart' as auth_routes;
 import 'package:resellio/routes/customer_routes.dart';
 import 'package:resellio/routes/organizer_routes.dart';
@@ -156,14 +157,10 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       routerConfig: _router,
       title: 'Bilety na wydarzenia | Resellio',
-      theme: ThemeData(
-        fontFamily: 'Roboto',
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
     );
   }
 }

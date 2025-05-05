@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
-import 'package:resellio/features/common/style/colors.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/app_logo.dart';
 import 'package:resellio/features/organizer/verification/views/widgets.dart';
 
