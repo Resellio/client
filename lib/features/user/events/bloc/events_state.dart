@@ -33,7 +33,7 @@ class EventsState extends Equatable {
     double? minPriceFilter,
     double? maxPriceFilter,
     String? cityFilter,
-    String? categoryFilter,
+    List<String>? categoryFilter,
   }) {
     return EventsState(
       status: status ?? this.status,
@@ -63,7 +63,7 @@ class EventsState extends Equatable {
   final double? minPriceFilter;
   final double? maxPriceFilter;
   final String? cityFilter;
-  final String? categoryFilter;
+  final List<String>? categoryFilter;
 
   @override
   List<Object?> get props => [

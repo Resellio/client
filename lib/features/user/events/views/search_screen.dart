@@ -53,10 +53,10 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   DateTimeRange? _selectedDateRange;
   RangeValues? _selectedPriceRange;
   String? _selectedCity;
-  String? _selectedCategory;
+  final List<String> _selectedCategories = [];
 
   final TextEditingController _searchController = TextEditingController();
-  final List<String> _categories = ['Koncerty', 'Kultura', 'Rozrywka', 'Inne'];
+  final List<String> _categories = ['Koncert', 'Rock', 'Rap', 'Inne'];
   // TEMP
   final List<String> _cities = [
     'Warszawa',
@@ -73,7 +73,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   @override
   void initState() {
     super.initState();
-    _debouncer = Debouncer(milliseconds: 500);
+    _debouncer = Debouncer(milliseconds: 300);
     _scrollController.addListener(_onScroll);
   }
 
@@ -102,7 +102,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
             ? _selectedPriceRange!.end
             : null;
     final String? city = _selectedCity;
-    final String? category = _selectedCategory;
 
     if (authState is AuthorizedCustomer) {
       context.read<EventsCubit>().applyFiltersAndFetch(
@@ -113,7 +112,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
             minPrice: minPrice,
             maxPrice: maxPrice,
             city: city,
-            category: category,
+            categories: _selectedCategories,
           );
     }
   }
@@ -297,27 +296,27 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
   void _onCategoryFilterPressed(String category) {
     setState(() {
-      if (_selectedCategory == category) {
-        _selectedCategory = null;
+      if (_selectedCategories.contains(category)) {
+        _selectedCategories.remove(category);
       } else {
-        _selectedCategory = category;
+        _selectedCategories.add(category);
       }
     });
-    print('Selected category: $_selectedCategory');
+    print('Selected category: $_selectedCategories');
     _triggerSearch();
   }
 
   void _clearAllFilters() {
     final bool filtersWereActive = _selectedDateRange != null ||
         _selectedPriceRange != null ||
-        _selectedCategory != null ||
+        _selectedCategories.isNotEmpty ||
         _selectedCity != null ||
         _searchController.text.isNotEmpty;
 
     setState(() {
       _selectedDateRange = null;
       _selectedPriceRange = null;
-      _selectedCategory = null;
+      _selectedCategories.clear();
       _selectedCity = null;
       _searchController.clear();
     });
@@ -333,7 +332,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   Widget build(BuildContext context) {
     final isAnyFilterActive = _selectedDateRange != null ||
         _selectedPriceRange != null ||
-        _selectedCategory != null ||
+        _selectedCategories.isNotEmpty ||
         _selectedCity != null ||
         _searchController.text.isNotEmpty;
 
@@ -356,14 +355,14 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     final state = context.watch<EventsCubit>().state;
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildSearchBar(context),
           const SizedBox(height: 8),
           _buildFilterBar(context),
-          const SizedBox(height: 8),
+          // const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -476,7 +475,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
               child: _buildFilterChip(
                 context,
                 category,
-                isSelected: _selectedCategory == category,
+                isSelected: _selectedCategories.contains(category),
                 onPressed: () => _onCategoryFilterPressed(category),
               ),
             ),
@@ -524,51 +523,13 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   }
 
   Widget _buildResultsCount(EventsState state) {
-    String message;
-    var style = TextStyle(color: Colors.grey[600], fontSize: 12);
-    final bool hasActiveSearchCriteria =
-        (state.searchQuery != null && state.searchQuery!.isNotEmpty) ||
-            state.startDateFilter != null ||
-            state.endDateFilter != null ||
-            state.minPriceFilter != null ||
-            state.maxPriceFilter != null ||
-            state.cityFilter != null ||
-            state.categoryFilter != null;
+    final total = state.totalResults ?? '..';
 
-    switch (state.status) {
-      case EventsStatus.initial:
-        message = hasActiveSearchCriteria
-            ? 'Naciśnij szukaj lub wybierz filtry'
-            : 'Przeglądaj dostępne wydarzenia';
-      case EventsStatus.loading:
-        final loadedCount = state.events.length;
-        final total = state.totalResults;
-        message =
-            'Znaleziono: ${total ?? loadedCount}${total != null ? '' : '+'} wyników';
-        style = TextStyle(
-            color: Colors.grey[800], fontSize: 12, fontWeight: FontWeight.w500);
-      case EventsStatus.success:
-        final total = state.totalResults ?? state.events.length;
-        if (state.events.isEmpty && hasActiveSearchCriteria) {
-          message = 'Brak wyników dla wybranych kryteriów';
-        } else if (state.events.isEmpty && !hasActiveSearchCriteria) {
-          message = 'Brak wydarzeń do wyświetlenia';
-        } else {
-          message = 'Znaleziono: $total wyników';
-          style = TextStyle(
-              color: Colors.grey[800],
-              fontSize: 12,
-              fontWeight: FontWeight.w500);
-        }
-      case EventsStatus.failure:
-        message = 'Błąd wyszukiwania';
-        style = TextStyle(color: Colors.red[700], fontSize: 12);
-    }
-
-    return Flexible(
+    return Padding(
+      padding: const EdgeInsets.all(8),
       child: Text(
-        message,
-        style: style,
+        'Znaleziono: $total wyników',
+        style: TextStyle(color: Colors.grey[600], fontSize: 12),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
       ),

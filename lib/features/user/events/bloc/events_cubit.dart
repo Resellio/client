@@ -39,7 +39,7 @@ class EventsCubit extends Cubit<EventsState> {
         minPrice: state.minPriceFilter,
         maxPrice: state.maxPriceFilter,
         city: state.cityFilter,
-        category: state.categoryFilter,
+        categories: state.categoryFilter,
       );
 
       final paginatedData = PaginatedData<Event>.fromJson(
@@ -91,7 +91,7 @@ class EventsCubit extends Cubit<EventsState> {
     double? minPrice,
     double? maxPrice,
     String? city,
-    String? category,
+    List<String>? categories,
   }) async {
     print('Applying filters and fetching first page...');
 
@@ -104,7 +104,7 @@ class EventsCubit extends Cubit<EventsState> {
         minPriceFilter: minPrice,
         maxPriceFilter: maxPrice,
         cityFilter: city,
-        categoryFilter: category,
+        categoryFilter: categories,
       ),
     );
 
@@ -112,7 +112,7 @@ class EventsCubit extends Cubit<EventsState> {
       const firstPage = 0;
 
       print(
-          'Fetching filtered events - Page: $firstPage, Query: "$searchQuery", StartDate: $startDate, EndDate: $endDate, MinPrice: $minPrice, MaxPrice: $maxPrice, City: "$city", Category: "$category"');
+          'Fetching filtered events - Page: $firstPage, Query: "$searchQuery", StartDate: $startDate, EndDate: $endDate, MinPrice: $minPrice, MaxPrice: $maxPrice, City: "$city", Category: "$categories"');
 
       final response = await _apiService.getEvents(
         token: token,
@@ -124,7 +124,7 @@ class EventsCubit extends Cubit<EventsState> {
         minPrice: minPrice,
         maxPrice: maxPrice,
         city: city,
-        category: category,
+        categories: categories,
       );
 
       final paginatedData = PaginatedData<Event>.fromJson(

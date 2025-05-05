@@ -28,6 +28,14 @@ class Address extends Equatable {
   final int houseNumber;
   final int? flatNumber;
 
+  String get fullAddress {
+    final buffer = StringBuffer()
+      ..write('$street $houseNumber')
+      ..write(flatNumber != null ? '/$flatNumber' : '')
+      ..write(', $city');
+    return buffer.toString();
+  }
+
   @override
   List<Object?> get props =>
       [country, city, postalCode, street, houseNumber, flatNumber];

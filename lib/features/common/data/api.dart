@@ -139,7 +139,7 @@ class ApiService {
     double? minPrice,
     double? maxPrice,
     String? city,
-    String? category,
+    List<String>? categories,
   }) async {
     final queryParams = <String, dynamic>{
       'page': page.toString(),
@@ -164,8 +164,10 @@ class ApiService {
     if (city != null && city.trim().isNotEmpty) {
       queryParams['addressCity'] = city.trim();
     }
-    // if (category != null && category.trim().isNotEmpty) {
-    //   queryParams['category'] = category.trim();
+    // TODO:
+    // if (categories != null && categories.isNotEmpty) {
+    //   queryParams['categories'] =
+    //       categories.map((e) => {name: e.trim()}).toList();
     // }
 
     return makeRequest(
