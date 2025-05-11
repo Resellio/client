@@ -149,37 +149,37 @@ class _OrganizerUnverifiedScreenState extends State<OrganizerUnverifiedScreen> {
                           ),
                           child: const Text('Wyloguj się'),
                         ),
-                        ElevatedButton(
-                          // FIXME: temporary button to verify organizer
-                          onPressed: () async {
-                            print((context.read<AuthCubit>().state
-                                    as AuthorizedUnverifiedOrganizer)
-                                .user);
-                            final email = (context.read<AuthCubit>().state
-                                    as AuthorizedUnverifiedOrganizer)
-                                .user
-                                .email;
+                        // ElevatedButton(
+                        //   // FIXME: temporary button to verify organizer
+                        //   onPressed: () async {
+                        //     print((context.read<AuthCubit>().state
+                        //             as AuthorizedUnverifiedOrganizer)
+                        //         .user);
+                        //     final email = (context.read<AuthCubit>().state
+                        //             as AuthorizedUnverifiedOrganizer)
+                        //         .user
+                        //         .email;
 
-                            final response = await http.post(
-                              Uri.parse(
-                                  '${ApiEndpoints.baseUrl}/${ApiEndpoints.organizerVerify}'),
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: jsonEncode({
-                                'email': email,
-                              }),
-                            );
+                        //     final response = await http.post(
+                        //       Uri.parse(
+                        //           '${ApiEndpoints.baseUrl}/${ApiEndpoints.organizerVerify}'),
+                        //       headers: {
+                        //         'Content-Type': 'application/json',
+                        //       },
+                        //       body: jsonEncode({
+                        //         'email': email,
+                        //       }),
+                        //     );
 
-                            if (response.statusCode != 200) {
-                              print(
-                                  'Failed to verify organizer (${response.body})');
-                            }
+                        //     if (response.statusCode != 200) {
+                        //       print(
+                        //           'Failed to verify organizer (${response.body})');
+                        //     }
 
-                            print(response.body);
-                          },
-                          child: const Text('Verify organizer'),
-                        ),
+                        //     print(response.body);
+                        //   },
+                        //   child: const Text('Verify organizer'),
+                        // ),
                       ],
                     ),
                   ),

@@ -52,3 +52,13 @@ Map<String, dynamic> _$AuthorizedOrganizerRegistrationNeededToJson(
     <String, dynamic>{
       'user': instance.user.toJson(),
     };
+
+AuthorizedAdmin _$AuthorizedAdminFromJson(Map<String, dynamic> json) =>
+    AuthorizedAdmin(
+      Admin.fromJson(json['user'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$AuthorizedAdminToJson(AuthorizedAdmin instance) =>
+    <String, dynamic>{
+      'user': instance.user.toJson(),
+    };

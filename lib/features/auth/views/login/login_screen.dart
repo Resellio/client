@@ -112,6 +112,19 @@ class WelcomeScreen extends StatelessWidget {
                             isCustomer: false,
                             isOutlined: true,
                           ),
+                          const SizedBox(height: 32),
+                          TextButton(
+                            onPressed: () => context
+                                .read<AuthCubit>()
+                                .adminSignInWithGoogle(),
+                            child: const Text(
+                              'Zaloguj się jako administrator',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

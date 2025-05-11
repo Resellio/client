@@ -166,8 +166,8 @@ class ApiService {
     }
     // TODO:
     // if (categories != null && categories.isNotEmpty) {
-    //   queryParams['categories'] =
-    //       categories.map((e) => {name: e.trim()}).toList();
+    //   queryParams['categoriesNames'] =
+    //       categories.map((e) => {query: e.trim()}).toList();
     // }
 
     return makeRequest(
@@ -194,8 +194,7 @@ class ApiService {
       } else {
         print(
             'Error: Empty response body for status code ${response.statusCode}');
-        throw ApiException.http(response.statusCode,
-            'Server returned empty response for error status.');
+        throw ApiException.http(response.statusCode, '');
       }
     }
 
