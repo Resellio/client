@@ -8,15 +8,12 @@ class CustomerProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
       body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('Jesteś zalogowany jako klient'),
             const SizedBox(height: 16),
-            Text(
-              'Twój email: ${(context.read<AuthCubit>().state as AuthorizedCustomer).user.email}',
-            ),
             ElevatedButton(
               onPressed: () {
                 context.read<AuthCubit>().logout();

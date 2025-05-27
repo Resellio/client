@@ -2,7 +2,8 @@ import 'package:bloc_presentation/bloc_presentation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
-import 'package:resellio/features/common/style/colors.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/app_logo.dart';
 
 class OrganizerRegistrationScreen extends StatefulWidget {
@@ -34,12 +35,16 @@ class _OrganizerRegistrationScreenState
     return BlocPresentationListener<AuthCubit, AuthCubitEvent>(
       listener: (context, event) {
         switch (event) {
-          case FailedToRegister():
+          case AuthErrorEvent():
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(SnackBar(content: Text(event.reason)));
-          default:
-            break;
+          case AuthenticatedEvent(:final user):
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text('Zalogowano jako ${user.email}')),
+              );
         }
       },
       child: Scaffold(
@@ -264,11 +269,11 @@ class _OrganizerRegistrationScreenState
             : null,
         enabledBorder: buildBorder(Colors.white.withAlpha(25)),
         focusedBorder: buildBorder(Colors.white, width: 2),
-        errorBorder: buildBorder(AppColors.redAccent),
-        focusedErrorBorder: buildBorder(AppColors.redAccent, width: 2),
+        errorBorder: buildBorder(AppColors.error),
+        focusedErrorBorder: buildBorder(AppColors.error, width: 2),
         errorStyle: const TextStyle(
           fontWeight: FontWeight.bold,
-          color: AppColors.redAccent,
+          color: AppColors.error,
         ),
       ),
     );

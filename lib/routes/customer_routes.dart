@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
@@ -14,13 +18,13 @@ part 'customer_routes.g.dart';
   branches: [
     TypedStatefulShellBranch<CustomerHomeBranchData>(
       routes: [
-        TypedGoRoute<CustomerHomeRoute>(path: '/'),
+        TypedGoRoute<CustomerHomeRoute>(path: '/app'),
       ],
     ),
     TypedStatefulShellBranch<CustomerSearchBranchData>(
       routes: [
         TypedGoRoute<CustomerEventsRoute>(
-          path: '/events',
+          path: '/app/events',
           routes: [
             TypedGoRoute<CustomerEventDetailRoute>(path: ':eventId'),
           ],
@@ -30,7 +34,7 @@ part 'customer_routes.g.dart';
     TypedStatefulShellBranch<CustomerTicketsBranchData>(
       routes: [
         TypedGoRoute<CustomerTicketsRoute>(
-          path: '/tickets',
+          path: '/app/tickets',
           routes: [
             TypedGoRoute<TicketDetailRoute>(path: ':ticketId'),
           ],
@@ -39,7 +43,7 @@ part 'customer_routes.g.dart';
     ),
     TypedStatefulShellBranch<CustomerProfileBranchData>(
       routes: [
-        TypedGoRoute<CustomerProfileRoute>(path: '/profile'),
+        TypedGoRoute<CustomerProfileRoute>(path: '/app/profile'),
       ],
     ),
   ],
@@ -53,7 +57,14 @@ class CustomerShellRouteData extends StatefulShellRouteData {
     GoRouterState state,
     StatefulNavigationShell navigationShell,
   ) {
-    return CustomerShellScreen(navigationShell: navigationShell);
+    return BlocProvider<EventsCubit>(
+      create: (context) => EventsCubit(
+        apiService: context.read<ApiService>(),
+      )..applyFiltersAndFetch(
+          token: context.read<AuthCubit>().token,
+        ),
+      child: CustomerShellScreen(navigationShell: navigationShell),
+    );
   }
 }
 
@@ -98,7 +109,7 @@ class CustomerEventDetailRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return CustomerEventDetails(eventId: eventId);
+    return CustomerEventDetailsScreen(eventId: eventId);
   }
 }
 

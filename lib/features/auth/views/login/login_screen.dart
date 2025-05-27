@@ -2,7 +2,9 @@ import 'package:bloc_presentation/bloc_presentation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
-import 'package:resellio/features/common/style/colors.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/app_logo.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -12,14 +14,20 @@ class WelcomeScreen extends StatelessWidget {
     return BlocPresentationListener<AuthCubit, AuthCubitEvent>(
       listener: (context, event) {
         switch (event) {
-          case FailedToSignIn():
+          case AuthErrorEvent():
             Navigator.of(context)
                 .popUntil((route) => route is! ModalBottomSheetRoute);
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(SnackBar(content: Text(event.reason)));
-          default:
-            break;
+          case AuthenticatedEvent(:final user):
+            Navigator.of(context)
+                .popUntil((route) => route is! ModalBottomSheetRoute);
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text('Zalogowano jako ${user.email}')),
+              );
         }
       },
       child: Scaffold(
@@ -31,7 +39,10 @@ class WelcomeScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.primaryDark],
+                    colors: [
+                      AppColors.primaryDark,
+                      AppColors.primaryVeryDark,
+                    ],
                   ),
                 ),
               ),
@@ -84,9 +95,7 @@ class WelcomeScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const SizedBox(height: 32),
-                          _buildAppLogo(),
-                          const SizedBox(height: 16),
-                          _buildAppTitle(),
+                          const ResellioLogoWithTitle(size: 120),
                           _buildAppDescription(),
                           const SizedBox(height: 120),
                           _buildLoginButton(
@@ -112,29 +121,6 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildAppLogo() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: Image.asset(
-        'assets/icon/icon.png',
-        width: 120,
-        height: 120,
-      ),
-    );
-  }
-
-  Widget _buildAppTitle() {
-    return const Text(
-      'Resellio',
-      style: TextStyle(
-        fontSize: 42,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-        letterSpacing: 1.2,
       ),
     );
   }
