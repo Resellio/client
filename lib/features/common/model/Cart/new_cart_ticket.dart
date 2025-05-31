@@ -1,5 +1,5 @@
 class NewCartTicket {
-  NewCartTicket({
+  const NewCartTicket({
     required this.ticketTypeId,
     required this.eventName,
     required this.ticketType,
@@ -25,7 +25,7 @@ class NewCartTicket {
   final String eventName;
   final String ticketType;
   final String organizerName;
-  int quantity;
+  final int quantity;
   final double unitPrice;
   final String currency;
 

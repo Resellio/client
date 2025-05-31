@@ -35,9 +35,9 @@ class ResellCartItem implements CartItem {
 }
 
 class NewCartItem implements CartItem {
-  NewCartItem(this.ticket);
+  const NewCartItem(this.ticket);
 
-  NewCartTicket ticket;
+  final NewCartTicket ticket;
 
   @override
   String get eventName => ticket.eventName;

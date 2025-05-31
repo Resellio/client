@@ -1,8 +1,11 @@
 // shopping_cart_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/model/Cart/cart_item.dart';
 import 'package:resellio/features/common/model/Cart/new_cart_ticket.dart';
 import 'package:resellio/features/common/model/Cart/resell_cart_ticket.dart';
+import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
+import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 
 class CustomerShoppingCartScreen extends StatefulWidget {
   const CustomerShoppingCartScreen({super.key});
@@ -14,46 +17,6 @@ class CustomerShoppingCartScreen extends StatefulWidget {
 
 class _CustomerShoppingCartScreenState
     extends State<CustomerShoppingCartScreen> {
-  final _mockCartItems = <CartItem>[
-    const ResellCartItem(
-      ResellCartTicket(
-        ticketId: '123e4567-e89b-12d3-a456-426614174000',
-        eventName: 'Koncert',
-        ticketType: 'VIP',
-        organizerName: 'Live Nation',
-        originalOwnerEmail: 'jan@example.com',
-        price: 150,
-        currency: 'PLN',
-      ),
-    ),
-    NewCartItem(
-      NewCartTicket(
-        ticketTypeId: '987fcdeb-51a2-43d7-8f9e-123456789abc',
-        eventName: 'Festiwal Orange',
-        ticketType: 'Standard',
-        organizerName: 'Orange Polska',
-        quantity: 2,
-        unitPrice: 80,
-        currency: 'PLN',
-      ),
-    ),
-    const ResellCartItem(
-      ResellCartTicket(
-        ticketId: '456e7890-e12b-34d5-a678-901234567890',
-        eventName: 'Kraków Live Festival',
-        ticketType: 'Premium',
-        organizerName: 'Kraków Events',
-        originalOwnerEmail: 'anna@example.com',
-        price: 200,
-        currency: 'PLN',
-      ),
-    ),
-  ];
-
-  double get _totalPrice {
-    return _mockCartItems.fold(0, (sum, item) => sum + item.totalPrice);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,11 +25,28 @@ class _CustomerShoppingCartScreenState
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: _mockCartItems.isEmpty
-          ? _buildEmptyCart()
-          : _buildCartWithItems(context),
-      bottomNavigationBar:
-          _mockCartItems.isNotEmpty ? _buildCheckoutBar(context) : null,
+      body: BlocBuilder<CartCubit, CartState>(
+        builder: (context, state) {
+          if (state is CartLoadingState) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is CartLoadedState) {
+            return state.items.isEmpty
+                ? _buildEmptyCart()
+                : _buildCartWithItems(context, state);
+          } else if (state is CartErrorState) {
+            return const Text('Error');
+          }
+          return const Text('unknown');
+        },
+      ),
+      bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
+        builder: (context, state) {
+          if (state is CartLoadedState && state.items.isNotEmpty) {
+            return _buildCheckoutBar(context, state);
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 
@@ -102,15 +82,15 @@ class _CustomerShoppingCartScreenState
     );
   }
 
-  Widget _buildCartWithItems(BuildContext context) {
+  Widget _buildCartWithItems(BuildContext context, CartLoadedState state) {
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: _mockCartItems.length,
+            itemCount: state.items.length,
             itemBuilder: (context, index) {
-              final item = _mockCartItems[index];
+              final item = state.items[index];
               return _buildCartItemCard(context, item, index);
             },
           ),
@@ -211,7 +191,7 @@ class _CustomerShoppingCartScreenState
     );
   }
 
-  Widget _buildCheckoutBar(BuildContext context) {
+  Widget _buildCheckoutBar(BuildContext context, CartLoadedState state) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -239,7 +219,7 @@ class _CustomerShoppingCartScreenState
                   ),
                 ),
                 Text(
-                  '${_totalPrice.toStringAsFixed(2)} PLN',
+                  '${state.totalPrice.toStringAsFixed(2)} PLN',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -277,14 +257,6 @@ class _CustomerShoppingCartScreenState
   }
 
   void _removeItem(BuildContext context, int index) {
-    setState(() {
-      if (!_mockCartItems[index].isResell &&
-          (_mockCartItems[index] as NewCartItem).ticket.quantity > 1) {
-        (_mockCartItems[index] as NewCartItem).ticket.quantity = 1;
-      } else {
-        _mockCartItems.removeAt(index);
-      }
-    });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Usunięto bilet z koszyka')),
     );
