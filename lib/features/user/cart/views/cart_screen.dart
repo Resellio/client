@@ -17,6 +17,8 @@ class CustomerShoppingCartScreen extends StatefulWidget {
 
 class _CustomerShoppingCartScreenState
     extends State<CustomerShoppingCartScreen> {
+  Map<int, int> _tempQuantities = {};
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,6 +32,7 @@ class _CustomerShoppingCartScreenState
           if (state is CartLoadingState) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is CartLoadedState) {
+            _initializeTempQuantities(state.items);
             return state.items.isEmpty
                 ? _buildEmptyCart()
                 : _buildCartWithItems(context, state);
@@ -48,6 +51,16 @@ class _CustomerShoppingCartScreenState
         },
       ),
     );
+  }
+
+  void _initializeTempQuantities(List<CartItem> items) {
+    print("initializin");
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (!item.isResell && !_tempQuantities.containsKey(i)) {
+        _tempQuantities[i] = (item as NewCartItem).ticket.quantity;
+      }
+    }
   }
 
   Widget _buildEmptyCart() {
@@ -100,6 +113,13 @@ class _CustomerShoppingCartScreenState
   }
 
   Widget _buildCartItemCard(BuildContext context, CartItem item, int index) {
+    final currentQuantity = _tempQuantities[index] ??
+        (!item.isResell ? (item as NewCartItem).ticket.quantity : 1);
+    final originalQuantity =
+        !item.isResell ? (item as NewCartItem).ticket.quantity : 1;
+    final hasQuantityChanges = currentQuantity != originalQuantity;
+    print(
+        "Number $index current q: $currentQuantity and originalq: $originalQuantity");
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -162,12 +182,17 @@ class _CustomerShoppingCartScreenState
               ),
             ),
             const SizedBox(height: 12),
+            if (!item.isResell) ...[
+              _buildQuantityControls(
+                  context, index, currentQuantity, originalQuantity),
+              const SizedBox(height: 12),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 if (!item.isResell)
                   Text(
-                    '${(item as NewCartItem).ticket.unitPrice.toStringAsFixed(2)} ${item.currency} × ${(item as NewCartItem).ticket.quantity}',
+                    '${(item as NewCartItem).ticket.unitPrice.toStringAsFixed(2)} ${item.currency} × $originalQuantity',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -176,7 +201,9 @@ class _CustomerShoppingCartScreenState
                 else
                   const SizedBox(),
                 Text(
-                  '${item.totalPrice.toStringAsFixed(2)} ${item.currency}',
+                  !item.isResell
+                      ? '${((item as NewCartItem).ticket.unitPrice * originalQuantity).toStringAsFixed(2)} ${item.currency}'
+                      : '${item.totalPrice.toStringAsFixed(2)} ${item.currency}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -185,13 +212,139 @@ class _CustomerShoppingCartScreenState
                 ),
               ],
             ),
+            if (!item.isResell && hasQuantityChanges) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () =>
+                          _cancelQuantityChange(index, originalQuantity),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey.shade600,
+                        side: BorderSide(color: Colors.grey.shade400),
+                      ),
+                      child: const Text('Anuluj'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: currentQuantity > 0
+                          ? () =>
+                              _updateQuantity(context, index, currentQuantity)
+                          : () => _removeItem(context, index),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: currentQuantity > 0
+                            ? Theme.of(context).primaryColor
+                            : Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(currentQuantity > 0 ? 'Zaktualizuj' : 'Usuń'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
+  Widget _buildQuantityControls(
+      BuildContext context, int index, int currentQuantity, int maxQuantity) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          const Text(
+            'Ilość:',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              IconButton(
+                onPressed: currentQuantity > 0
+                    ? () => _changeQuantity(index, currentQuantity - 1)
+                    : null,
+                icon: Icon(
+                  Icons.remove_circle_outline,
+                  color: currentQuantity > 0 ? Colors.red : Colors.grey,
+                ),
+                style: IconButton.styleFrom(
+                  padding: const EdgeInsets.all(4),
+                  minimumSize: const Size(32, 32),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '$currentQuantity',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: currentQuantity < maxQuantity
+                    ? () => _changeQuantity(index, currentQuantity + 1)
+                    : null,
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  color: currentQuantity < maxQuantity
+                      ? Colors.green
+                      : Colors.grey,
+                ),
+                style: IconButton.styleFrom(
+                  padding: const EdgeInsets.all(4),
+                  minimumSize: const Size(32, 32),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'z $maxQuantity',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCheckoutBar(BuildContext context, CartLoadedState state) {
+    // Calculate total with temp quantities
+    double calculatedTotal = 0.0;
+    for (int i = 0; i < state.items.length; i++) {
+      final item = state.items[i];
+      if (item.isResell) {
+        calculatedTotal += item.totalPrice;
+      } else {
+        final newItem = item as NewCartItem;
+        final quantity = newItem.ticket.quantity;
+        calculatedTotal += newItem.ticket.unitPrice * quantity;
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -219,7 +372,7 @@ class _CustomerShoppingCartScreenState
                   ),
                 ),
                 Text(
-                  '${state.totalPrice.toStringAsFixed(2)} PLN',
+                  '${calculatedTotal.toStringAsFixed(2)} PLN',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -256,7 +409,29 @@ class _CustomerShoppingCartScreenState
     );
   }
 
+  void _changeQuantity(int index, int newQuantity) {
+    setState(() {
+      _tempQuantities[index] = newQuantity;
+    });
+  }
+
+  void _cancelQuantityChange(int index, int originalQuantity) {
+    setState(() {
+      _tempQuantities[index] = originalQuantity;
+    });
+  }
+
+  void _updateQuantity(BuildContext context, int index, int newQuantity) {
+    context.read<CartCubit>().updateQuantity(index, newQuantity);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Zaktualizowano ilość na $newQuantity')),
+    );
+  }
+
   void _removeItem(BuildContext context, int index) {
+    context.read<CartCubit>().removeItem(index);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Usunięto bilet z koszyka')),
     );
