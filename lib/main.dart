@@ -80,6 +80,7 @@ class _MyAppState extends State<MyApp> {
       routes: [
         ...auth_routes.$appRoutes,
         $customerShellRouteData,
+        $customerShoppingCartRoute,
         $organizerShellRouteData,
       ],
       redirect: (context, state) {

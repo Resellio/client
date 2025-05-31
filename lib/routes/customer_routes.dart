@@ -21,9 +21,6 @@ part 'customer_routes.g.dart';
       routes: [
         TypedGoRoute<CustomerHomeRoute>(
           path: '/app',
-          routes: [
-            TypedGoRoute<CustomerShoppingCartRoute>(path: '/cart'),
-          ],
         ),
       ],
     ),
@@ -148,6 +145,7 @@ class CustomerProfileRoute extends GoRouteData {
   }
 }
 
+@TypedGoRoute<CustomerShoppingCartRoute>(path: '/app/cart')
 class CustomerShoppingCartRoute extends GoRouteData {
   const CustomerShoppingCartRoute();
 
