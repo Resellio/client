@@ -10,6 +10,19 @@ class CustomerShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Resellio'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              context.go('/app/cart');
+            },
+          ),
+        ],
+      ),
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: AppColors.primary,

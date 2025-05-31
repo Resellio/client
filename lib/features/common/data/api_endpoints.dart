@@ -1,6 +1,5 @@
 class ApiEndpoints {
-  static const String baseUrl =
-      'https://resellio-cfeug9cwgxe4fhcy.northeurope-01.azurewebsites.net/api';
+  static const String baseUrl = 'http://localhost:5124/api';
   static const String customers = 'Customers';
   static const String organizers = 'Organizers';
   static const String events = 'Events';

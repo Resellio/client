@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/user/cart/views/cart_screen.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
@@ -18,7 +19,12 @@ part 'customer_routes.g.dart';
   branches: [
     TypedStatefulShellBranch<CustomerHomeBranchData>(
       routes: [
-        TypedGoRoute<CustomerHomeRoute>(path: '/app'),
+        TypedGoRoute<CustomerHomeRoute>(
+          path: '/app',
+          routes: [
+            TypedGoRoute<CustomerShoppingCartRoute>(path: '/cart'),
+          ],
+        ),
       ],
     ),
     TypedStatefulShellBranch<CustomerSearchBranchData>(
@@ -139,5 +145,14 @@ class CustomerProfileRoute extends GoRouteData {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return const CustomerProfileScreen();
+  }
+}
+
+class CustomerShoppingCartRoute extends GoRouteData {
+  const CustomerShoppingCartRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return const CustomerShoppingCartScreen();
   }
 }
