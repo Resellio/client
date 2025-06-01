@@ -17,8 +17,6 @@ class CustomerShoppingCartScreen extends StatefulWidget {
 
 class _CustomerShoppingCartScreenState
     extends State<CustomerShoppingCartScreen> {
-  Map<int, int> _tempQuantities = {};
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +30,6 @@ class _CustomerShoppingCartScreenState
           if (state is CartLoadingState) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is CartLoadedState) {
-            _initializeTempQuantities(state.items);
             return state.items.isEmpty
                 ? _buildEmptyCart()
                 : _buildCartWithItems(context, state);
@@ -51,16 +48,6 @@ class _CustomerShoppingCartScreenState
         },
       ),
     );
-  }
-
-  void _initializeTempQuantities(List<CartItem> items) {
-    print("initializin");
-    for (int i = 0; i < items.length; i++) {
-      final item = items[i];
-      if (!item.isResell && !_tempQuantities.containsKey(i)) {
-        _tempQuantities[i] = (item as NewCartItem).ticket.quantity;
-      }
-    }
   }
 
   Widget _buildEmptyCart() {
@@ -113,13 +100,6 @@ class _CustomerShoppingCartScreenState
   }
 
   Widget _buildCartItemCard(BuildContext context, CartItem item, int index) {
-    final currentQuantity = _tempQuantities[index] ??
-        (!item.isResell ? (item as NewCartItem).ticket.quantity : 1);
-    final originalQuantity =
-        !item.isResell ? (item as NewCartItem).ticket.quantity : 1;
-    final hasQuantityChanges = currentQuantity != originalQuantity;
-    print(
-        "Number $index current q: $currentQuantity and originalq: $originalQuantity");
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -183,8 +163,14 @@ class _CustomerShoppingCartScreenState
             ),
             const SizedBox(height: 12),
             if (!item.isResell) ...[
-              _buildQuantityControls(
-                  context, index, currentQuantity, originalQuantity),
+              QuantityControlsWidget(
+                index: index,
+                initialQuantity: (item as NewCartItem).ticket.quantity,
+                maxQuantity: item.ticket.quantity,
+                onQuantityUpdate: (newQuantity) =>
+                    _updateQuantity(context, index, newQuantity),
+                onRemoveItem: () => _removeItem(context, index),
+              ),
               const SizedBox(height: 12),
             ],
             Row(
@@ -192,7 +178,7 @@ class _CustomerShoppingCartScreenState
               children: [
                 if (!item.isResell)
                   Text(
-                    '${(item as NewCartItem).ticket.unitPrice.toStringAsFixed(2)} ${item.currency} × $originalQuantity',
+                    '${(item as NewCartItem).ticket.unitPrice.toStringAsFixed(2)} ${item.currency} × ${item.ticket.quantity}',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -202,7 +188,7 @@ class _CustomerShoppingCartScreenState
                   const SizedBox(),
                 Text(
                   !item.isResell
-                      ? '${((item as NewCartItem).ticket.unitPrice * originalQuantity).toStringAsFixed(2)} ${item.currency}'
+                      ? '${((item as NewCartItem).ticket.unitPrice * item.ticket.quantity).toStringAsFixed(2)} ${item.currency}'
                       : '${item.totalPrice.toStringAsFixed(2)} ${item.currency}',
                   style: const TextStyle(
                     fontSize: 18,
@@ -212,127 +198,14 @@ class _CustomerShoppingCartScreenState
                 ),
               ],
             ),
-            if (!item.isResell && hasQuantityChanges) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () =>
-                          _cancelQuantityChange(index, originalQuantity),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey.shade600,
-                        side: BorderSide(color: Colors.grey.shade400),
-                      ),
-                      child: const Text('Anuluj'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: currentQuantity > 0
-                          ? () =>
-                              _updateQuantity(context, index, currentQuantity)
-                          : () => _removeItem(context, index),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: currentQuantity > 0
-                            ? Theme.of(context).primaryColor
-                            : Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: Text(currentQuantity > 0 ? 'Zaktualizuj' : 'Usuń'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildQuantityControls(
-      BuildContext context, int index, int currentQuantity, int maxQuantity) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          const Text(
-            'Ilość:',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              IconButton(
-                onPressed: currentQuantity > 0
-                    ? () => _changeQuantity(index, currentQuantity - 1)
-                    : null,
-                icon: Icon(
-                  Icons.remove_circle_outline,
-                  color: currentQuantity > 0 ? Colors.red : Colors.grey,
-                ),
-                style: IconButton.styleFrom(
-                  padding: const EdgeInsets.all(4),
-                  minimumSize: const Size(32, 32),
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '$currentQuantity',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: currentQuantity < maxQuantity
-                    ? () => _changeQuantity(index, currentQuantity + 1)
-                    : null,
-                icon: Icon(
-                  Icons.add_circle_outline,
-                  color: currentQuantity < maxQuantity
-                      ? Colors.green
-                      : Colors.grey,
-                ),
-                style: IconButton.styleFrom(
-                  padding: const EdgeInsets.all(4),
-                  minimumSize: const Size(32, 32),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'z $maxQuantity',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCheckoutBar(BuildContext context, CartLoadedState state) {
-    // Calculate total with temp quantities
+    // Calculate total with current quantities from the cart state
     double calculatedTotal = 0.0;
     for (int i = 0; i < state.items.length; i++) {
       final item = state.items[i];
@@ -409,18 +282,6 @@ class _CustomerShoppingCartScreenState
     );
   }
 
-  void _changeQuantity(int index, int newQuantity) {
-    setState(() {
-      _tempQuantities[index] = newQuantity;
-    });
-  }
-
-  void _cancelQuantityChange(int index, int originalQuantity) {
-    setState(() {
-      _tempQuantities[index] = originalQuantity;
-    });
-  }
-
   void _updateQuantity(BuildContext context, int index, int newQuantity) {
     context.read<CartCubit>().updateQuantity(index, newQuantity);
 
@@ -441,5 +302,184 @@ class _CustomerShoppingCartScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Przechodzenie do płatności...')),
     );
+  }
+}
+
+class QuantityControlsWidget extends StatefulWidget {
+  final int index;
+  final int initialQuantity;
+  final int maxQuantity;
+  final Function(int) onQuantityUpdate;
+  final VoidCallback onRemoveItem;
+
+  const QuantityControlsWidget({
+    super.key,
+    required this.index,
+    required this.initialQuantity,
+    required this.maxQuantity,
+    required this.onQuantityUpdate,
+    required this.onRemoveItem,
+  });
+
+  @override
+  State<QuantityControlsWidget> createState() => _QuantityControlsWidgetState();
+}
+
+class _QuantityControlsWidgetState extends State<QuantityControlsWidget> {
+  late int _currentQuantity;
+  late int _originalQuantity;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentQuantity = widget.initialQuantity;
+    _originalQuantity = widget.initialQuantity;
+  }
+
+  @override
+  void didUpdateWidget(QuantityControlsWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update when the initial quantity changes (after successful update from cubit)
+    if (widget.initialQuantity != oldWidget.initialQuantity) {
+      _currentQuantity = widget.initialQuantity;
+      _originalQuantity = widget.initialQuantity;
+    }
+  }
+
+  bool get _hasQuantityChanges => _currentQuantity != _originalQuantity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildQuantityControls(),
+        if (_hasQuantityChanges) ...[
+          const SizedBox(height: 12),
+          _buildActionButtons(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildQuantityControls() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          const Text(
+            'Ilość:',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              IconButton(
+                onPressed: _currentQuantity > 0
+                    ? () => _changeQuantity(_currentQuantity - 1)
+                    : null,
+                icon: Icon(
+                  Icons.remove_circle_outline,
+                  color: _currentQuantity > 0 ? Colors.red : Colors.grey,
+                ),
+                style: IconButton.styleFrom(
+                  padding: const EdgeInsets.all(4),
+                  minimumSize: const Size(32, 32),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '$_currentQuantity',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: _currentQuantity < widget.maxQuantity
+                    ? () => _changeQuantity(_currentQuantity + 1)
+                    : null,
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  color: _currentQuantity < widget.maxQuantity
+                      ? Colors.green
+                      : Colors.grey,
+                ),
+                style: IconButton.styleFrom(
+                  padding: const EdgeInsets.all(4),
+                  minimumSize: const Size(32, 32),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'z ${widget.maxQuantity}',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: _cancelQuantityChange,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.grey.shade600,
+              side: BorderSide(color: Colors.grey.shade400),
+            ),
+            child: const Text('Anuluj'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _currentQuantity > 0
+                ? () => widget.onQuantityUpdate(_currentQuantity)
+                : widget.onRemoveItem,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _currentQuantity > 0
+                  ? Theme.of(context).primaryColor
+                  : Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(_currentQuantity > 0 ? 'Zaktualizuj' : 'Usuń'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _changeQuantity(int newQuantity) {
+    setState(() {
+      _currentQuantity = newQuantity;
+    });
+  }
+
+  void _cancelQuantityChange() {
+    setState(() {
+      _currentQuantity = _originalQuantity;
+    });
   }
 }
