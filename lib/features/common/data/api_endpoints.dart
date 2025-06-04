@@ -3,6 +3,7 @@ class ApiEndpoints {
       'https://resellio-cfeug9cwgxe4fhcy.northeurope-01.azurewebsites.net/api';
   static const String customers = 'Customers';
   static const String organizers = 'Organizers';
+  static const String categories = 'Categories';
   static const String events = 'Events';
   static const String customerGoogleLogin = '$customers/google-login';
   static const String organizerGoogleLogin = '$organizers/google-login';
