@@ -196,6 +196,56 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> getOrganizerEvents({
+    required String token,
+    required int page,
+    required int pageSize,
+    String? query,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? minStartDate,
+    DateTime? maxStartDate,
+    DateTime? minEndDate,
+    DateTime? maxEndDate,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    if (query != null && query.trim().isNotEmpty) {
+      queryParams['SearchQuery'] = query.trim();
+    }
+    if (startDate != null) {
+      queryParams['minEndDate'] = startDate.toString();
+    }
+    if (endDate != null) {
+      queryParams['maxStartDate'] = endDate.toString();
+    }
+    if (minStartDate != null) {
+      queryParams['minStartDate'] = minStartDate.toString();
+    }
+    if (maxStartDate != null) {
+      queryParams['maxStartDate'] = maxStartDate.toString();
+    }
+    if (minEndDate != null) {
+      queryParams['minEndDate'] = minEndDate.toString();
+    }
+    if (maxEndDate != null) {
+      queryParams['maxEndDate'] = maxEndDate.toString();
+    }
+
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerEvents,
+      method: 'GET',
+      queryParameters: queryParams,
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> createEvent({
     required String token,
     required Map<String, dynamic> eventData,

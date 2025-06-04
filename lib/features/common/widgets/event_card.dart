@@ -10,10 +10,16 @@ String getDateString(DateTime dateTime) {
 }
 
 class EventCard extends StatelessWidget {
-  const EventCard({required this.event, required this.onTap, super.key});
+  const EventCard({
+    required this.event,
+    required this.onTap,
+    this.onLongPress,
+    super.key,
+  });
 
   final Event event;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +29,7 @@ class EventCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(8),
         child: Stack(
           children: [
