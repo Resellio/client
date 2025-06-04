@@ -10,7 +10,9 @@ class Event extends Equatable {
     this.endDate,
     required this.minimumAge,
     required this.minimumPrice,
+    required this.minimumPriceCurrency,
     required this.maximumPrice,
+    required this.maximumPriceCurrency,
     required this.categories,
     required this.status,
     required this.address,
@@ -36,8 +38,10 @@ class Event extends Equatable {
       startDate: tryParseDate(json['startDate'] as String?),
       endDate: tryParseDate(json['endDate'] as String?),
       minimumAge: json['minimumAge'] as int? ?? 0,
-      minimumPrice: (json['minimumPrice'] as num?)?.toDouble() ?? 0.0,
-      maximumPrice: (json['maximumPrice'] as num?)?.toDouble() ?? 0.0,
+      minimumPrice: (json['minimumPrice']?['price'] as num?)?.toDouble() ?? 0.0,
+      minimumPriceCurrency: (json['minimumPrice']?['currency'] as String?) ?? '',
+      maximumPrice: (json['maximumPrice']?['price'] as num?)?.toDouble() ?? 0.0,
+      maximumPriceCurrency: (json['maximumPrice']?['currency'] as String?) ?? '',
       categories: (json['categories'] as List<dynamic>?)
               ?.map((item) =>
                   (item as Map<String, dynamic>?)?['name'] as String? ?? '')
@@ -55,7 +59,9 @@ class Event extends Equatable {
   final DateTime? endDate;
   final int minimumAge;
   final double minimumPrice;
+  final String minimumPriceCurrency;
   final double maximumPrice;
+  final String maximumPriceCurrency;
   final List<String> categories;
   final int status;
   final Address address;

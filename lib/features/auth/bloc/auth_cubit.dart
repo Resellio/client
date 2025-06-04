@@ -62,7 +62,7 @@ class AuthCubit extends HydratedCubit<AuthState>
 
       final user = Customer(
         email: googleUser.email,
-        token: response['token'] as String,
+        token: response.data?['token'] as String,
       );
 
       emitPresentation(AuthenticatedEvent(user));
@@ -85,9 +85,9 @@ class AuthCubit extends HydratedCubit<AuthState>
         endpoint: ApiEndpoints.organizerGoogleLogin,
       );
 
-      final token = response['token'] as String;
-      final isVerified = response['isVerified'] as bool;
-      final isNewOrganizer = response['isNewOrganizer'] as bool;
+      final token = response.data?['token'] as String;
+      final isVerified = response.data?['isVerified'] as bool;
+      final isNewOrganizer = response.data?['isNewOrganizer'] as bool;
 
       if (isNewOrganizer) {
         final user = OrganizerRegistrationNeeded(
@@ -104,9 +104,9 @@ class AuthCubit extends HydratedCubit<AuthState>
 
         final user = Organizer(
           email: googleUser.email,
-          firstName: aboutMeResponse['firstName'] as String,
-          lastName: aboutMeResponse['lastName'] as String,
-          displayName: aboutMeResponse['displayName'] as String,
+          firstName: aboutMeResponse.data?['firstName'] as String,
+          lastName: aboutMeResponse.data?['lastName'] as String,
+          displayName: aboutMeResponse.data?['displayName'] as String,
           token: token,
         );
 
@@ -145,7 +145,7 @@ class AuthCubit extends HydratedCubit<AuthState>
         AuthorizedUnverifiedOrganizer(
           Organizer(
             email: currentState.user.email,
-            token: response['token'] as String,
+            token: response.data?['token'] as String,
             firstName: firstName,
             lastName: lastName,
             displayName: displayName,
