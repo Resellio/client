@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -445,61 +446,70 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     return SizedBox(
       height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        children: [
-          _buildFilterChip(
-            context,
-            dateLabel,
-            isSelected: _selectedDateRange != null,
-            onPressed: () => _selectDateRange(context),
-          ),
-          const SizedBox(width: 8),
-          _buildFilterChip(
-            context,
-            priceLabel,
-            isSelected: _selectedPriceRange != null,
-            onPressed: () => _showPriceFilterDialog(context),
-          ),
-          const SizedBox(width: 8),
-          _buildFilterChip(
-            context,
-            cityLabel,
-            isSelected: _selectedCity != null,
-            isDropdown: true,
-            onPressed: () => _showCityFilterDialog(context),
-          ),
-          const SizedBox(width: 8),
-          BlocBuilder<CategoriesCubit, CategoriesState>(
-            builder: (context, state) {
-              return switch (state) {
-                CategoriesInitial() => const SizedBox.shrink(),
-                CategoriesLoading() => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: CircularProgressIndicator(),
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          dragDevices: {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.mouse,
+          },
+        ),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          children: [
+            _buildFilterChip(
+              context,
+              dateLabel,
+              isSelected: _selectedDateRange != null,
+              onPressed: () => _selectDateRange(context),
+            ),
+            const SizedBox(width: 8),
+            _buildFilterChip(
+              context,
+              priceLabel,
+              isSelected: _selectedPriceRange != null,
+              onPressed: () => _showPriceFilterDialog(context),
+            ),
+            const SizedBox(width: 8),
+            _buildFilterChip(
+              context,
+              cityLabel,
+              isSelected: _selectedCity != null,
+              isDropdown: true,
+              onPressed: () => _showCityFilterDialog(context),
+            ),
+            const SizedBox(width: 8),
+            BlocBuilder<CategoriesCubit, CategoriesState>(
+              builder: (context, state) {
+                return switch (state) {
+                  CategoriesInitial() => const SizedBox.shrink(),
+                  CategoriesLoading() => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
-                  ),
-                CategoriesLoaded(categories: final categories) => Row(
-                    children: categories.map((category) {
-                      final isSelected = _selectedCategories.contains(category);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: _buildFilterChip(
-                          context,
-                          category,
-                          isSelected: isSelected,
-                          onPressed: () => _onCategoryFilterPressed(category),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                CategoriesError() => const SizedBox.shrink(),
-              };
-            },
-          ),
-        ],
+                  CategoriesLoaded(categories: final categories) => Row(
+                      children: categories.map((category) {
+                        final isSelected =
+                            _selectedCategories.contains(category);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _buildFilterChip(
+                            context,
+                            category,
+                            isSelected: isSelected,
+                            onPressed: () => _onCategoryFilterPressed(category),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  CategoriesError() => const SizedBox.shrink(),
+                };
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
