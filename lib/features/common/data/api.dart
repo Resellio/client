@@ -246,6 +246,20 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> getEventDetails({
+    required String token,
+    required String eventId,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.events}/$eventId',
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> createEvent({
     required String token,
     required Map<String, dynamic> eventData,

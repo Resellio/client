@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 import 'package:resellio/features/user/events/views/search_screen.dart';
@@ -121,7 +122,13 @@ class CustomerEventDetailRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return CustomerEventDetailsScreen(eventId: eventId);
+    return BlocProvider(
+      create: (context) => EventDetailsCubit(
+        context.read<ApiService>(),
+        context.read<AuthCubit>(),
+      )..loadEventDetails(eventId),
+      child: CustomerEventDetailsScreen(eventId: eventId),
+    );
   }
 }
 
