@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
+import 'package:resellio/features/common/bloc/categories_cubit.dart';
+import 'package:resellio/features/common/bloc/categories_state.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/event_card.dart'; // Ensure correct path
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
@@ -56,7 +57,8 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   final List<String> _selectedCategories = [];
 
   final TextEditingController _searchController = TextEditingController();
-  final List<String> _categories = ['Koncert', 'Rock', 'Rap', 'Inne'];
+
+  @override
   // TEMP
   final List<String> _cities = [
     'Warszawa',
@@ -469,16 +471,33 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
             onPressed: () => _showCityFilterDialog(context),
           ),
           const SizedBox(width: 8),
-          ..._categories.map(
-            (category) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildFilterChip(
-                context,
-                category,
-                isSelected: _selectedCategories.contains(category),
-                onPressed: () => _onCategoryFilterPressed(category),
-              ),
-            ),
+          BlocBuilder<CategoriesCubit, CategoriesState>(
+            builder: (context, state) {
+              return switch (state) {
+                CategoriesInitial() => const SizedBox.shrink(),
+                CategoriesLoading() => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                CategoriesLoaded(categories: final categories) => Row(
+                    children: categories.map((category) {
+                      final isSelected = _selectedCategories.contains(category);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: _buildFilterChip(
+                          context,
+                          category,
+                          isSelected: isSelected,
+                          onPressed: () => _onCategoryFilterPressed(category),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                CategoriesError() => const SizedBox.shrink(),
+              };
+            },
           ),
         ],
       ),

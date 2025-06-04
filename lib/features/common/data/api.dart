@@ -148,7 +148,7 @@ class ApiService {
     required String token,
     required int page,
     required int pageSize,
-    String? name,
+    String? query,
     DateTime? startDate,
     DateTime? endDate,
     double? minPrice,
@@ -161,8 +161,8 @@ class ApiService {
       'pageSize': pageSize.toString(),
     };
 
-    if (name != null && name.trim().isNotEmpty) {
-      queryParams['name'] = name.trim();
+    if (query != null && query.trim().isNotEmpty) {
+      queryParams['SearchQuery'] = query.trim();
     }
     if (startDate != null) {
       queryParams['minEndDate'] = startDate.toString();
@@ -179,11 +179,11 @@ class ApiService {
     if (city != null && city.trim().isNotEmpty) {
       queryParams['addressCity'] = city.trim();
     }
-    // TODO:
-    // if (categories != null && categories.isNotEmpty) {
-    //   queryParams['categories'] =
-    //       categories.map((e) => {name: e.trim()}).toList();
-    // }
+    if (categories != null && categories.isNotEmpty) {
+      for (int i = 0; i < categories.length; i++) {
+        queryParams['CategoriesNames[$i]'] = categories[i];
+      }
+    }
 
     return makeRequest(
       endpoint: ApiEndpoints.events,

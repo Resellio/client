@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-abstract class CategoriesState extends Equatable {
+sealed class CategoriesState extends Equatable {
   const CategoriesState();
 
   @override
