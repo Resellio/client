@@ -8,7 +8,6 @@ part of 'customer_routes.dart';
 
 List<RouteBase> get $appRoutes => [
       $customerShellRouteData,
-      $customerShoppingCartRoute,
     ];
 
 RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
@@ -165,29 +164,6 @@ extension $CustomerProfileRouteExtension on CustomerProfileRoute {
 
   String get location => GoRouteData.$location(
         '/app/profile',
-      );
-
-  void go(BuildContext context) => context.go(location);
-
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  void replace(BuildContext context) => context.replace(location);
-}
-
-RouteBase get $customerShoppingCartRoute => GoRouteData.$route(
-      path: '/app/cart',
-      factory: $CustomerShoppingCartRouteExtension._fromState,
-    );
-
-extension $CustomerShoppingCartRouteExtension on CustomerShoppingCartRoute {
-  static CustomerShoppingCartRoute _fromState(GoRouterState state) =>
-      const CustomerShoppingCartRoute();
-
-  String get location => GoRouteData.$location(
-        '/app/cart',
       );
 
   void go(BuildContext context) => context.go(location);

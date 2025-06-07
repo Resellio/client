@@ -18,7 +18,6 @@ import 'package:resellio/features/common/style/app_theme.dart';
 import 'package:resellio/routes/auth_routes.dart' as auth_routes;
 import 'package:resellio/routes/customer_routes.dart';
 import 'package:resellio/routes/organizer_routes.dart';
-import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 
 GoRouter? _router;
 
@@ -47,7 +46,6 @@ void main() async {
               googleSignIn: GoogleSignIn(),
             ),
           ),
-          BlocProvider<CartCubit>(create: (context) => CartCubit()),
         ],
         child: Builder(
           builder: (context) => MyApp(authCubit: context.read<AuthCubit>()),
@@ -80,7 +78,6 @@ class _MyAppState extends State<MyApp> {
       routes: [
         ...auth_routes.$appRoutes,
         $customerShellRouteData,
-        $customerShoppingCartRoute,
         $organizerShellRouteData,
       ],
       redirect: (context, state) {
