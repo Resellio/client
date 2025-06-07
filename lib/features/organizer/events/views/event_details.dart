@@ -15,16 +15,22 @@ class OrganizerEventDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) {
-        final authState = context.read<AuthCubit>().state;
-        if (authState is AuthorizedOrganizer) {
-          return OrganizerEventDetailsCubit(apiService: context.read())
-            ..fetchEventDetails(authState.user.token, id);
-        }
-        return OrganizerEventDetailsCubit(apiService: context.read());
-      },
+      create: _createCubit,
       child: const OrganizerEventDetailsView(),
     );
+  }
+
+  OrganizerEventDetailsCubit _createCubit(BuildContext context) {
+    final cubit = OrganizerEventDetailsCubit(apiService: context.read());
+    final authState = context.read<AuthCubit>().state;
+
+    if (authState is AuthorizedOrganizer) {
+      cubit.fetchEventDetails(authState.user.token, id);
+    } else {
+      cubit.setError('You are not a verified organizer');
+    }
+
+    return cubit;
   }
 }
 

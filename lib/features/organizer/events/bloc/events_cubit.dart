@@ -14,30 +14,37 @@ class OrganizerEventsCubit extends Cubit<OrganizerEventState> {
   final ApiService apiService;
 
   Future<void> fetchEvents(String token, int page) async {
-    // Only show loading for initial load (offset == 0)
-    if (page == 0) {
-      emit(OrganizerEventLoadingState());
+    try {
+      if (page == 0) {
+        emit(OrganizerEventLoadingState());
+      }
+
+      final response = await apiService.getOrganizerEvents(
+        token: token,
+        page: page,
+        pageSize: pageSize,
+      );
+
+      final paginatedData = PaginatedData<OrganizerEvent>.fromJson(
+        response,
+        (json) => OrganizerEvent.fromJson(json as Map<String, dynamic>),
+      );
+      list.addAll(paginatedData.data);
+      emit(OrganizerEventLoadedState(
+        events: List.from(list),
+        hasNextPage: paginatedData.hasNextPage,
+      ));
+    } catch (e) {
+      emit(OrganizerEventErrorState(message: e.toString()));
     }
-
-    final response = await apiService.getOrganizerEvents(
-      token: token,
-      page: page,
-      pageSize: pageSize,
-    );
-
-    final paginatedData = PaginatedData<OrganizerEvent>.fromJson(
-      response,
-      (json) => OrganizerEvent.fromJson(json as Map<String, dynamic>),
-    );
-    list.addAll(paginatedData.data);
-    emit(OrganizerEventLoadedState(
-      events: List.from(list),
-      hasNextPage: paginatedData.hasNextPage,
-    ));
   }
 
   Future<void> refreshEvents(String token) async {
     list.clear();
     await fetchEvents(token, 0);
+  }
+
+  void setError(String error) {
+    emit(OrganizerEventErrorState(message: error));
   }
 }
