@@ -2,8 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/organizer/events/bloc/event_details_state.dart';
 import 'package:resellio/features/common/model/Event/event_details.dart';
-import 'package:resellio/features/common/model/address.dart';
-import 'package:resellio/features/user/events/views/event_details.dart';
 
 class OrganizerEventDetailsCubit extends Cubit<OrganizerEventDetailsState> {
   OrganizerEventDetailsCubit({required this.apiService})
