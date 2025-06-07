@@ -181,6 +181,27 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> getOrganizerEvents({
+    required String token,
+    required int page,
+    required int pageSize,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerGetEvents,
+      method: 'GET',
+      queryParameters: queryParams,
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     print('Response Status: ${response.statusCode}');
     print('Response Body: ${response.body}');

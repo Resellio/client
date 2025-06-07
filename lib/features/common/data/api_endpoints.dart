@@ -7,4 +7,5 @@ class ApiEndpoints {
   static const String organizerGoogleLogin = '$organizers/google-login';
   static const String organizerAboutMe = '$organizers/about-me';
   static const String organizerVerify = '$organizers/verify';
+  static const String organizerGetEvents = '$events/organizer';
 }
