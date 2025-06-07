@@ -7,6 +7,7 @@ import 'package:resellio/features/organizer/events/bloc/events_state.dart';
 import 'package:resellio/features/common/model/Event/organizer_event.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
+import 'package:resellio/routes/organizer_routes.dart';
 
 class OrganizerEventsScreen extends StatelessWidget {
   const OrganizerEventsScreen({super.key});
@@ -20,7 +21,6 @@ class OrganizerEventsScreen extends StatelessWidget {
           return OrganizerEventsCubit(apiService: context.read())
             ..fetchEvents(authState.user.token, 0);
         }
-        // TODO: zrób ładniej
         return OrganizerEventsCubit(apiService: context.read());
       },
       child: const OrganizerEventsView(),
@@ -239,7 +239,8 @@ class EventCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // Navigate to event details
+          OrganizerEventDetailRoute(eventId: event.id)
+              .push<BuildContext>(context);
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -257,7 +258,8 @@ class EventCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _buildStatusChip(event.statusText, event.statusColor),
+                  _buildStatusChip(
+                      event.status.statusText, event.status.statusColor),
                 ],
               ),
               const SizedBox(height: 8),

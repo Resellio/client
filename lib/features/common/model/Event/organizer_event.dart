@@ -25,6 +25,38 @@ class EventCategory {
 
 enum EventStatus { ticketsAvailable, soldOut, inProgress, finished, unknown }
 
+extension EventStatusExtension on EventStatus {
+  String get statusText {
+    switch (this) {
+      case EventStatus.ticketsAvailable:
+        return 'Bilety dostepne';
+      case EventStatus.finished:
+        return 'Zakończony';
+      case EventStatus.inProgress:
+        return 'W trakcie';
+      case EventStatus.soldOut:
+        return 'Wyprzedany';
+      default:
+        return 'Nieznany';
+    }
+  }
+
+  Color get statusColor {
+    switch (this) {
+      case EventStatus.inProgress:
+        return Colors.orange;
+      case EventStatus.ticketsAvailable:
+        return Colors.green;
+      case EventStatus.finished:
+        return Colors.grey;
+      case EventStatus.soldOut:
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
 class OrganizerEvent {
   final String id;
   final String name;
@@ -72,35 +104,5 @@ class OrganizerEvent {
       status: EventStatus.values[json['status'] as int],
       address: Address.fromJson(json['address'] as Map<String, dynamic> ?? {}),
     );
-  }
-
-  String get statusText {
-    switch (status) {
-      case EventStatus.ticketsAvailable:
-        return 'Bilety dostepne';
-      case EventStatus.finished:
-        return 'Zakończony';
-      case EventStatus.inProgress:
-        return 'W trakcie';
-      case EventStatus.soldOut:
-        return 'Wyprzedany';
-      default:
-        return 'Nieznany';
-    }
-  }
-
-  Color get statusColor {
-    switch (status) {
-      case EventStatus.inProgress:
-        return Colors.orange;
-      case EventStatus.ticketsAvailable:
-        return Colors.green;
-      case EventStatus.finished:
-        return Colors.grey;
-      case EventStatus.soldOut:
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 }

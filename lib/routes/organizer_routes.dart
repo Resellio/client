@@ -78,7 +78,7 @@ class OrganizerEventsRoute extends GoRouteData {
 }
 
 class OrganizerEventDetailRoute extends GoRouteData {
-  const OrganizerEventDetailRoute({required this.eventId});
+  OrganizerEventDetailRoute({required this.eventId});
 
   final String eventId;
 
