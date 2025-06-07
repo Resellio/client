@@ -15,7 +15,10 @@ class OrganizerEventDetailsCubit extends Cubit<OrganizerEventDetailsState> {
       emit(OrganizerEventDetailsLoadingState());
       final response =
           await apiService.getOrganizerEventDetails(token: token, id: eventId);
-      final details = OrganizerEventDetails.fromJson(response);
+      if (!response.success) {
+        throw Exception(response.message);
+      }
+      final details = OrganizerEventDetails.fromJson(response.data!);
       emit(OrganizerEventDetailsLoadedState(eventDetails: details));
     } catch (e) {
       emit(OrganizerEventDetailsErrorState(message: e.toString()));

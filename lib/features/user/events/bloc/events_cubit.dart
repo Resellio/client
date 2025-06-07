@@ -43,7 +43,7 @@ class EventsCubit extends Cubit<EventsState> {
       );
 
       final paginatedData = PaginatedData<Event>.fromJson(
-        response,
+        response.data ?? {},
         (json) => Event.fromJson(json as Map<String, dynamic>),
       );
 
@@ -128,7 +128,7 @@ class EventsCubit extends Cubit<EventsState> {
       );
 
       final paginatedData = PaginatedData<Event>.fromJson(
-        response,
+        response.data ?? {},
         (json) => Event.fromJson(json as Map<String, dynamic>),
       );
 

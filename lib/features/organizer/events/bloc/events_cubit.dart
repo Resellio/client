@@ -24,9 +24,11 @@ class OrganizerEventsCubit extends Cubit<OrganizerEventState> {
         page: page,
         pageSize: pageSize,
       );
-
+      if (!response.success) {
+        throw Exception(response.message);
+      }
       final paginatedData = PaginatedData<OrganizerEvent>.fromJson(
-        response,
+        response.data!,
         (json) => OrganizerEvent.fromJson(json as Map<String, dynamic>),
       );
       list.addAll(paginatedData.data);

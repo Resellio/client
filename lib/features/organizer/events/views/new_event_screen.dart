@@ -1,293 +1,1243 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/common/bloc/categories_cubit.dart';
+import 'package:resellio/features/common/bloc/categories_state.dart';
+import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
+
+class CreateEventRequest {
+  CreateEventRequest({
+    required this.name,
+    required this.description,
+    required this.startDate,
+    required this.endDate,
+    required this.minimumAge,
+    required this.categories,
+    required this.ticketTypes,
+    this.eventStatus = 0,
+    required this.createAddress,
+  });
+
+  String name;
+  String description;
+  String startDate;
+  String endDate;
+  int minimumAge;
+  List<EventCategoryRequest> categories;
+  List<TicketTypeRequest> ticketTypes;
+  int eventStatus;
+  EventAddressRequest createAddress;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'description': description,
+        'startDate': startDate,
+        'endDate': endDate,
+        'minimumAge': minimumAge,
+        'categories': categories.map((c) => c.toJson()).toList(),
+        'ticketTypes': ticketTypes.map((t) => t.toJson()).toList(),
+        'eventStatus': eventStatus,
+        'createAddress': createAddress.toJson(),
+      };
+}
+
+class EventCategoryRequest {
+  EventCategoryRequest({required this.categoryName});
+  String categoryName;
+  Map<String, dynamic> toJson() => {'categoryName': categoryName};
+}
+
+class TicketTypeRequest {
+  TicketTypeRequest({
+    required this.description,
+    required this.maxCount,
+    required this.price,
+    required this.currency,
+    required this.availableFrom,
+  });
+
+  String description;
+  int maxCount;
+  double price;
+  String currency;
+  String availableFrom;
+
+  Map<String, dynamic> toJson() => {
+        'description': description,
+        'maxCount': maxCount,
+        'price': price,
+        'currency': currency,
+        'availableFrom': availableFrom,
+      };
+}
+
+class EventAddressRequest {
+  EventAddressRequest({
+    required this.country,
+    required this.city,
+    required this.street,
+    required this.houseNumber,
+    required this.flatNumber,
+    required this.postalCode,
+  });
+
+  String country;
+  String city;
+  String street;
+  int houseNumber;
+  int flatNumber;
+  String postalCode;
+
+  Map<String, dynamic> toJson() => {
+        'country': country,
+        'city': city,
+        'street': street,
+        'houseNumber': houseNumber,
+        'flatNumber': flatNumber,
+        'postalCode': postalCode,
+      };
+}
+
+class TicketTypeFormManager {
+  TicketTypeFormManager({
+    String? description,
+    String? maxCount,
+    String? price,
+    String? currency,
+    String? availableFrom,
+  }) {
+    descriptionController.text = description ?? '';
+    maxCountController.text = maxCount ?? '';
+    priceController.text = price ?? '';
+    currencyController.text = currency ?? '';
+    availableFromController.text = availableFrom ?? '';
+  }
+
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController maxCountController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
+  final TextEditingController currencyController = TextEditingController();
+  final TextEditingController availableFromController = TextEditingController();
+  final String id = UniqueKey().toString();
+
+  void dispose() {
+    descriptionController.dispose();
+    maxCountController.dispose();
+    priceController.dispose();
+    currencyController.dispose();
+    availableFromController.dispose();
+  }
+}
 
 class OrganizerNewEventScreen extends StatefulWidget {
-  const OrganizerNewEventScreen({super.key});
+  const OrganizerNewEventScreen({super.key, required this.apiService});
+
+  final ApiService apiService;
 
   @override
   _OrganizerNewEventScreenState createState() =>
       _OrganizerNewEventScreenState();
 }
 
-class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen> {
+class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  int _currentStep = 0;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
-  final _locationNameController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _zipcodeController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _countryController = TextEditingController();
   final _minAgeController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _ticketNameController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _currencyController = TextEditingController();
-  final _ticketCountController = TextEditingController();
-  final _availableFromController = TextEditingController();
 
-  List<String> categories = [];
+  final _streetController = TextEditingController();
+  final _houseNumberController = TextEditingController();
+  final _flatNumberController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _postalCodeController = TextEditingController();
+  final _countryController = TextEditingController();
 
-  void _generateJson() {
-    final eventData = {
-      'name': _nameController.text,
-      'date': {
-        'start': _startDateController.text,
-        'end': _endDateController.text,
-      },
-      'location': {
-        'name': _locationNameController.text,
-        'latitude': double.tryParse(_latitudeController.text) ?? 0.0,
-        'longitude': double.tryParse(_longitudeController.text) ?? 0.0,
-        'address': _addressController.text,
-        'zipcode': _zipcodeController.text,
-        'city': _cityController.text,
-        'country': _countryController.text,
-      },
-      'category': [categories],
-      'minAge': int.tryParse(_minAgeController.text) ?? 0,
-      'description': _descriptionController.text,
-      'tickets': [
-        {
-          'ticketName': _ticketNameController.text,
-          'price': double.tryParse(_priceController.text) ?? 0.0,
-          'currency': _currencyController.text,
-          'count': int.tryParse(_ticketCountController.text) ?? 0,
-          'available_from': _availableFromController.text,
-        }
-      ],
-    };
-    print(jsonEncode(eventData));
-  }
+  final _categoriesController = TextEditingController();
 
-  Future<void> _selectDateUsingDatePicker(
-    BuildContext context,
-    TextEditingController controller,
-  ) async {
-    final nowDate = DateTime.now();
-    final lastDate = DateTime(nowDate.year + 1, nowDate.month, nowDate.day);
+  List<TicketTypeFormManager> _ticketForms = [TicketTypeFormManager()];
 
-    final DateTime? selectedDate = await showDatePicker(
-      context: context,
-      firstDate: nowDate,
-      lastDate: lastDate,
-    );
-
-    if (selectedDate != null && context.mounted) {
-      final TimeOfDay? selectedTime = await showTimePicker(
-        context: context,
-        initialTime:
-            TimeOfDay(hour: selectedDate.hour, minute: selectedDate.minute),
-      );
-
-      if (selectedTime != null) {
-        controller.text = DateFormat('yyyy-MM-dd HH:mm').format(selectedDate);
-      }
-    }
-  }
-
-  String? _validateDateConstraints(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Wprowadź datę';
-    }
-    final startDate =
-        DateFormat('yyyy-MM-dd HH:mm').parse(_startDateController.text);
-    final endDate =
-        DateFormat('yyyy-MM-dd HH:mm').parse(_endDateController.text);
-    final availableFrom =
-        DateFormat('yyyy-MM-dd HH:mm').parse(_availableFromController.text);
-    final now = DateTime.now();
-
-    if (availableFrom.isAfter(startDate)) {
-      return 'Dostępne od musi być wcześniejsze niż data rozpoczęcia.';
-    }
-
-    if (startDate.isBefore(now)) {
-      return 'Data rozpoczęcia musi być późniejsza niż obecny czas.';
-    }
-
-    if (startDate.isAfter(endDate)) {
-      return 'Data rozpoczęcia musi być wcześniejsza niż data zakończenia.';
-    }
-
-    return null;
-  }
+  final String _displayDateFormat = 'yyyy-MM-dd HH:mm';
 
   @override
   void initState() {
     super.initState();
-// DEBUG mode inital values
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
+
     if (kDebugMode) {
-      _nameController.text = 'Test Event';
-      _startDateController.text = '2025-03-21 12:00';
-      _endDateController.text = '2025-03-21 15:00';
-      _locationNameController.text = 'Test Location';
-      _latitudeController.text = '52.2298';
-      _longitudeController.text = '21.0118';
-      _addressController.text = 'Some Address';
-      _zipcodeController.text = '00-000';
-      _cityController.text = 'Warsaw';
-      _countryController.text = 'Poland';
+      _nameController.text = 'Summer Music Fest 2025';
+      _descriptionController.text = 'Ale jazda normlanie, ale jazda';
+      _startDateController.text = DateFormat(_displayDateFormat)
+          .format(DateTime.now().add(const Duration(days: 60, hours: 2)));
+      _endDateController.text = DateFormat(_displayDateFormat)
+          .format(DateTime.now().add(const Duration(days: 60, hours: 5)));
       _minAgeController.text = '18';
-      _descriptionController.text = 'Test description';
-      _ticketNameController.text = 'Regular Ticket';
-      _priceController.text = '49.99';
-      _currencyController.text = 'PLN';
-      _ticketCountController.text = '100';
-      _availableFromController.text = '2025-03-01 10:00';
-      categories = ['Live', 'Music'];
+
+      _streetController.text = 'Pl. Politechniki';
+      _houseNumberController.text = '244';
+      _flatNumberController.text = '11';
+      _cityController.text = 'Warszawa';
+      _postalCodeController.text = '01-234';
+      _countryController.text = 'Polska';
+
+      _categoriesController.text = '';
+
+      _ticketForms[0].descriptionController.text = 'VIP';
+      _ticketForms[0].maxCountController.text = '100';
+      _ticketForms[0].priceController.text = '99.99';
+      _ticketForms[0].currencyController.text = 'PLN';
+      _ticketForms[0].availableFromController.text =
+          DateFormat(_displayDateFormat)
+              .format(DateTime.now().add(const Duration(days: 30)));
     }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _startDateController.dispose();
+    _endDateController.dispose();
+    _minAgeController.dispose();
+    _streetController.dispose();
+    _houseNumberController.dispose();
+    _flatNumberController.dispose();
+    _cityController.dispose();
+    _postalCodeController.dispose();
+    _countryController.dispose();
+    _categoriesController.dispose();
+    for (final form_ in _ticketForms) {
+      form_.dispose();
+    }
+    super.dispose();
+  }
+
+  String? _isoFormat(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return null;
+    }
+    try {
+      final DateTime dateTime =
+          DateFormat(_displayDateFormat).parse(dateString);
+      return dateTime.toUtc().toIso8601String();
+    } catch (err) {
+      return null;
+    }
+  }
+
+  Future<void> _selectDateTime(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(DateTime.now().year + 5),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AppColors.primary,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null && context.mounted) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(
+          controller.text.isNotEmpty
+              ? DateFormat(_displayDateFormat).parse(controller.text)
+              : DateTime.now(),
+        ),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                    primary: AppColors.primary,
+                  ),
+            ),
+            child: child!,
+          );
+        },
+      );
+      if (pickedTime != null) {
+        controller.text = DateFormat(_displayDateFormat).format(
+          DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          ),
+        );
+      }
+    }
+  }
+
+  void _addTicketType() {
+    setState(() {
+      _ticketForms.add(TicketTypeFormManager());
+    });
+  }
+
+  void _removeTicketType(int index) {
+    setState(() {
+      _ticketForms[index].dispose();
+      _ticketForms.removeAt(index);
+      if (_ticketForms.isEmpty) {
+        _addTicketType();
+      }
+    });
+  }
+
+  String? _validateNotEmpty(String? value, String fieldName) {
+    if (value == null || value.isEmpty) {
+      return '$fieldName nie może być puste';
+    }
+    return null;
+  }
+
+  String? _validateNumber(
+    String? value,
+    String fieldName, {
+    bool allowDecimal = false,
+  }) {
+    if (value == null || value.isEmpty) {
+      return '$fieldName nie może być puste';
+    }
+    if (allowDecimal) {
+      if (double.tryParse(value) == null) {
+        return '$fieldName musi być liczbą';
+      }
+    } else {
+      if (int.tryParse(value) == null) {
+        return '$fieldName musi być liczbą całkowitą';
+      }
+    }
+    if (allowDecimal && double.tryParse(value)! < 0) {
+      return '$fieldName nie może być ujemne';
+    }
+    return null;
+  }
+
+  String? _validateDate(String? value, String fieldName) {
+    if (value == null || value.isEmpty) {
+      return '$fieldName nie może być pusta';
+    }
+    try {
+      DateFormat(_displayDateFormat).parse(value);
+      return null;
+    } catch (err) {
+      return 'Nieprawidłowy format daty ($fieldName)';
+    }
+  }
+
+  String? _validateDateOrder(String? startDateStr, String? endDateStr) {
+    if (startDateStr == null ||
+        startDateStr.isEmpty ||
+        endDateStr == null ||
+        endDateStr.isEmpty) {
+      return null;
+    }
+    try {
+      final startDate = DateFormat(_displayDateFormat).parse(startDateStr);
+      final endDate = DateFormat(_displayDateFormat).parse(endDateStr);
+      if (startDate.isAfter(endDate)) {
+        return 'Data rozpoczęcia musi być przed datą zakończenia';
+      }
+      if (startDate.isBefore(DateTime.now())) {
+        return 'Data rozpoczęcia nie może być w przeszłości';
+      }
+    } catch (err) {
+      return 'Nieprawidłowe daty';
+    }
+    return null;
+  }
+
+  String? _validateTicketAvailableFrom(
+    String? availableFromStr,
+    String? eventStartDateStr,
+  ) {
+    if (availableFromStr == null ||
+        availableFromStr.isEmpty ||
+        eventStartDateStr == null ||
+        eventStartDateStr.isEmpty) {
+      return null;
+    }
+    try {
+      final availableFrom =
+          DateFormat(_displayDateFormat).parse(availableFromStr);
+      final eventStartDate =
+          DateFormat(_displayDateFormat).parse(eventStartDateStr);
+      if (availableFrom.isAfter(eventStartDate)) {
+        return 'Dostępne od musi być przed lub w dniu rozpoczęcia wydarzenia';
+      }
+    } catch (err) {
+      return 'Nieprawidłowe daty (dostępne od / rozpoczęcie)';
+    }
+    return null;
+  }
+
+  Future<void> _submitForm(String token) async {
+    if (!_formKey.currentState!.validate()) {
+      _showErrorSnackBar('W formularzu znajdują się błędy');
+      return;
+    }
+
+    final dateOrderError =
+        _validateDateOrder(_startDateController.text, _endDateController.text);
+    if (dateOrderError != null) {
+      _showErrorSnackBar(dateOrderError);
+      return;
+    }
+
+    for (final ticketForm in _ticketForms) {
+      final availableFromError = _validateTicketAvailableFrom(
+        ticketForm.availableFromController.text,
+        _startDateController.text,
+      );
+      if (availableFromError != null) {
+        _showErrorSnackBar(
+          'Błąd w typie biletu "${ticketForm.descriptionController.text}": $availableFromError',
+        );
+        return;
+      }
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final eventData = CreateEventRequest(
+        name: _nameController.text,
+        description: _descriptionController.text,
+        startDate: _isoFormat(_startDateController.text)!,
+        endDate: _isoFormat(_endDateController.text)!,
+        minimumAge: int.parse(_minAgeController.text),
+        categories: _categoriesController.text
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .map((name) => EventCategoryRequest(categoryName: name))
+            .toList(),
+        createAddress: EventAddressRequest(
+          country: _countryController.text,
+          city: _cityController.text,
+          street: _streetController.text,
+          houseNumber: int.parse(_houseNumberController.text),
+          flatNumber: int.tryParse(_flatNumberController.text) ?? 0,
+          postalCode: _postalCodeController.text,
+        ),
+        ticketTypes: _ticketForms.map((form) {
+          return TicketTypeRequest(
+            description: form.descriptionController.text,
+            maxCount: int.parse(form.maxCountController.text),
+            price: double.parse(form.priceController.text),
+            currency: form.currencyController.text,
+            availableFrom: _isoFormat(form.availableFromController.text)!,
+          );
+        }).toList(),
+      );
+
+      final response = await widget.apiService.createEvent(
+        token: token,
+        eventData: eventData.toJson(),
+      );
+
+      if (!response.success) {
+        if (mounted) {
+          _showErrorSnackBar(
+            'Błąd podczas tworzenia wydarzenia: ${response.message ?? 'Nieznany błąd'}',
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        _showSuccessSnackBar('Wydarzenie utworzone pomyślnie!');
+        Navigator.of(context).pop();
+        // _resetForm();
+      }
+    } catch (err) {
+      if (mounted) {
+        _showErrorSnackBar('Błąd podczas tworzenia wydarzenia: $err');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    _categoriesController.clear();
+    setState(() {
+      _currentStep = 0;
+      for (final f in _ticketForms) {
+        f.dispose();
+      }
+      _ticketForms = [TicketTypeFormManager()];
+    });
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: const Color(0xFF00B894),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: const Color(0xFFE17055),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nowe Wydarzenie'),
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: _buildAppBar(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          children: [
+            _buildProgressIndicator(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    child: _buildCurrentStep(),
+                  ),
+                ),
+              ),
+            ),
+            _buildNavigationButtons(),
+          ],
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            key: _formKey,
-            child: Column(
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.white,
+      foregroundColor: const Color(0xFF2D3436),
+      title: const Text(
+        'Nowe Wydarzenie',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      centerTitle: true,
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(4, (index) {
+          final isActive = index <= _currentStep;
+
+          return Expanded(
+            child: Row(
               children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration:
-                      const InputDecoration(labelText: 'Nazwa wydarzenia'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Wprowadź nazwę wydarzenia';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _startDateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Data rozpoczęcia (RRRR-MM-DD GG:MM)',
-                  ),
-                  readOnly: true,
-                  onTap: () =>
-                      _selectDateUsingDatePicker(context, _startDateController),
-                  validator: _validateDateConstraints,
-                ),
-                TextFormField(
-                  controller: _endDateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Data zakończenia (RRRR-MM-DD GG:MM)',
-                  ),
-                  readOnly: true,
-                  onTap: () =>
-                      _selectDateUsingDatePicker(context, _endDateController),
-                  validator: _validateDateConstraints,
-                ),
-                TextFormField(
-                  controller: _locationNameController,
-                  decoration: const InputDecoration(labelText: 'Nazwa miejsca'),
-                ),
-                TextFormField(
-                  controller: _latitudeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Szerokość geograficzna',
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppColors.primary
+                          : const Color(0xFFE9ECEF),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-                TextFormField(
-                  controller: _longitudeController,
-                  decoration:
-                      const InputDecoration(labelText: 'Długość geograficzna'),
-                ),
-                TextFormField(
-                  controller: _addressController,
-                  decoration: const InputDecoration(labelText: 'Adres'),
-                ),
-                TextFormField(
-                  controller: _zipcodeController,
-                  decoration: const InputDecoration(labelText: 'Kod pocztowy'),
-                ),
-                TextFormField(
-                  controller: _cityController,
-                  decoration: const InputDecoration(labelText: 'Miasto'),
-                ),
-                TextFormField(
-                  controller: _countryController,
-                  decoration: const InputDecoration(labelText: 'Kraj'),
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Kategoria (oddzielone przecinkami)',
+                if (index < 3) const SizedBox(width: 8),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildCurrentStep() {
+    switch (_currentStep) {
+      case 0:
+        return _buildBasicInfoStep();
+      case 1:
+        return _buildAddressStep();
+      case 2:
+        return _buildCategoriesStep();
+      case 3:
+        return _buildTicketsStep();
+      default:
+        return _buildBasicInfoStep();
+    }
+  }
+
+  Widget _buildBasicInfoStep() {
+    return _buildStepContainer(
+      title: 'Podstawowe Informacje',
+      icon: Icons.event,
+      children: [
+        _buildModernTextField(
+          _nameController,
+          'Nazwa wydarzenia',
+          validator: (v) => _validateNotEmpty(v, 'Nazwa'),
+        ),
+        _buildModernTextField(
+          _descriptionController,
+          'Opis wydarzenia',
+          maxLines: 4,
+          validator: (v) => _validateNotEmpty(v, 'Opis'),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDateTimeField(
+                _startDateController,
+                'Data rozpoczęcia',
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildDateTimeField(
+                _endDateController,
+                'Data zakończenia',
+              ),
+            ),
+          ],
+        ),
+        _buildModernTextField(
+          _minAgeController,
+          'Minimalny wiek',
+          keyboardType: TextInputType.number,
+          validator: (v) => _validateNumber(v, 'Minimalny wiek'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddressStep() {
+    return _buildStepContainer(
+      title: 'Lokalizacja Wydarzenia',
+      icon: Icons.location_on,
+      children: [
+        _buildModernTextField(
+          _streetController,
+          'Ulica',
+          validator: (v) => _validateNotEmpty(v, 'Ulica'),
+        ),
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: _buildModernTextField(
+                _houseNumberController,
+                'Numer domu',
+                validator: (v) => _validateNotEmpty(v, 'Numer domu'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildModernTextField(
+                _flatNumberController,
+                'Nr mieszkania',
+              ),
+            ),
+          ],
+        ),
+        _buildModernTextField(
+          _cityController,
+          'Miasto',
+          validator: (v) => _validateNotEmpty(v, 'Miasto'),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildModernTextField(
+                _postalCodeController,
+                'Kod pocztowy',
+                validator: (v) => _validateNotEmpty(v, 'Kod pocztowy'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildModernTextField(
+                _countryController,
+                'Kraj',
+                validator: (v) => _validateNotEmpty(v, 'Kraj'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoriesStep() {
+    return _buildStepContainer(
+      title: 'Kategorie Wydarzenia',
+      icon: Icons.category,
+      children: [
+        const Text(
+          'Wybierz kategorie dla swojego wydarzenia:',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF636E72),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F3F4),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            constraints: const BoxConstraints(
+              minHeight: 100,
+            ),
+            child: BlocBuilder<CategoriesCubit, CategoriesState>(
+                builder: (context, state) {
+              if (state is CategoriesLoaded) {
+                final selectedCategories = _categoriesController.text
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty)
+                    .toSet();
+
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: state.categories.map((category) {
+                    final isSelected = selectedCategories.contains(category);
+                    return _buildSelectableCategoryChip(category, isSelected);
+                  }).toList(),
+                );
+              } else if (state is CategoriesLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (state is CategoriesError) {
+                return Text(
+                  'Błąd ładowania kategorii: ${state.message}',
+                  style: const TextStyle(color: Colors.red),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectableCategoryChip(String category, bool isSelected) {
+    return FilterChip(
+      showCheckmark: false,
+      selected: isSelected,
+      onSelected: (selected) {
+        final currentText = _categoriesController.text;
+        final categories = currentText.split(',').map((s) => s.trim()).toList();
+
+        if (selected) {
+          if (!categories.contains(category)) {
+            categories.add(category);
+          }
+        } else {
+          categories.remove(category);
+        }
+
+        _categoriesController.text =
+            categories.where((s) => s.isNotEmpty).join(', ');
+        setState(() {});
+      },
+      label: Text(
+        category,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+          color: isSelected ? Colors.white : AppColors.primary,
+        ),
+      ),
+      backgroundColor: Colors.white,
+      selectedColor: AppColors.primary,
+      side: BorderSide(
+        color:
+            isSelected ? AppColors.primary : AppColors.primary.withAlpha(100),
+        width: 1.5,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    );
+  }
+
+  Widget _buildTicketsStep() {
+    return _buildStepContainer(
+      title: 'Typy Biletów',
+      icon: Icons.confirmation_number,
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _ticketForms.length,
+          itemBuilder: (context, index) => _buildModernTicketForm(index),
+        ),
+        const SizedBox(height: 16),
+        _buildAddTicketButton(),
+      ],
+    );
+  }
+
+  Widget _buildStepContainer({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withAlpha(50),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      categories =
-                          value.split(',').map((e) => e.trim()).toList();
-                    });
-                  },
-                ),
-                TextFormField(
-                  controller: _minAgeController,
-                  decoration:
-                      const InputDecoration(labelText: 'Minimalny wiek'),
-                ),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Opis',
+                  child: Icon(
+                    icon,
+                    color: AppColors.primary,
+                    size: 24,
                   ),
-                  maxLines: null,
-                  minLines: 1,
                 ),
-                TextFormField(
-                  controller: _ticketNameController,
-                  decoration: const InputDecoration(labelText: 'Nazwa biletu'),
-                ),
-                TextFormField(
-                  controller: _priceController,
-                  decoration: const InputDecoration(labelText: 'Cena'),
-                ),
-                TextFormField(
-                  controller: _currencyController,
-                  decoration: const InputDecoration(labelText: 'Waluta'),
-                ),
-                TextFormField(
-                  controller: _ticketCountController,
-                  decoration:
-                      const InputDecoration(labelText: 'Liczba biletów'),
-                ),
-                TextFormField(
-                  controller: _availableFromController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dostępne od (RRRR-MM-DD GG:MM)',
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2D3436),
+                    ),
                   ),
-                  readOnly: true,
-                  onTap: () => _selectDateUsingDatePicker(
-                    context,
-                    _availableFromController,
-                  ),
-                  validator: _validateDateConstraints,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    if (!(_formKey.currentState?.validate() ?? false)) {
-                      return;
-                    }
-                    _generateJson();
-                  },
-                  child: const Text('Wyślij'),
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernTextField(
+    TextEditingController controller,
+    String label, {
+    int? maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        keyboardType: keyboardType,
+        validator: validator,
+        style: const TextStyle(fontSize: 16),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+          filled: true,
+          fillColor: const Color(0xFFFAFBFC),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateTimeField(
+    TextEditingController controller,
+    String label,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        readOnly: true,
+        onTap: () => _selectDateTime(context, controller),
+        validator: (v) => _validateDate(v, label),
+        style: const TextStyle(fontSize: 16),
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon:
+              const Icon(Icons.calendar_today, color: AppColors.primary),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+          filled: true,
+          fillColor: const Color(0xFFFAFBFC),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String category) {
+    return OutlinedButton(
+      onPressed: () {
+        final currentText = _categoriesController.text;
+        final categories = currentText.split(',').map((s) => s.trim()).toList();
+
+        if (categories.contains(category)) {
+          categories.remove(category);
+        } else {
+          categories.add(category);
+        }
+
+        _categoriesController.text =
+            categories.where((s) => s.isNotEmpty).join(', ');
+      },
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: AppColors.primary.withAlpha(50)),
+        backgroundColor: AppColors.primary.withAlpha(50),
+        foregroundColor: AppColors.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Text(
+          category,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildModernTicketForm(int index) {
+    final ticketForm = _ticketForms[index];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFBFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE9ECEF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withAlpha(50),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.confirmation_number,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Typ Biletu ${index + 1}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3436),
+                    ),
+                  ),
+                ],
+              ),
+              if (_ticketForms.length > 1)
+                IconButton(
+                  onPressed: () => _removeTicketType(index),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Color(0xFFE17055),
+                    size: 20,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFFE17055).withOpacity(0.1),
+                    padding: const EdgeInsets.all(6),
+                    minimumSize: const Size(32, 32),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildModernTextField(
+            ticketForm.descriptionController,
+            'Nazwa typu biletu',
+            validator: (v) => _validateNotEmpty(v, 'Nazwa typu biletu'),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildModernTextField(
+                  ticketForm.maxCountController,
+                  'Ilość',
+                  keyboardType: TextInputType.number,
+                  validator: (v) => _validateNumber(v, 'Ilość'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildModernTextField(
+                  ticketForm.priceController,
+                  'Cena',
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  validator: (v) =>
+                      _validateNumber(v, 'Cena', allowDecimal: true),
+                ),
+              ),
+            ],
+          ),
+          _buildModernTextField(
+            ticketForm.currencyController,
+            'Waluta (np. PLN, USD)',
+            validator: (v) => _validateNotEmpty(v, 'Waluta'),
+          ),
+          _buildDateTimeField(
+            ticketForm.availableFromController,
+            'Dostępne od',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddTicketButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _addTicketType,
+        icon: const Icon(
+          Icons.add_circle_outline,
+          color: AppColors.primary,
+        ),
+        label: const Text(
+          'Dodaj kolejny typ biletu',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.primaryLight, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          backgroundColor: AppColors.primary.withAlpha(30),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavigationButtons() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (_currentStep > 0)
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _currentStep--;
+                  });
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  side: const BorderSide(color: AppColors.primary),
+                ),
+                child: const Text(
+                  'Wstecz',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          if (_currentStep > 0) const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      if (_currentStep < 3) {
+                        setState(() {
+                          _currentStep++;
+                        });
+                      } else {
+                        _submitForm(context.read<AuthCubit>().token);
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      _currentStep < 3 ? 'Dalej' : 'Utwórz Wydarzenie',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
