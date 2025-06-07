@@ -21,6 +21,17 @@ class Address extends Equatable {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'country': country,
+      'city': city,
+      'street': street,
+      'houseNumber': houseNumber,
+      'flatNumber': flatNumber,
+      'postalCode': postalCode,
+    };
+  }
+
   final String country;
   final String city;
   final String postalCode;

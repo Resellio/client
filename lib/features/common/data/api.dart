@@ -196,6 +196,27 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> getOrganizerEvents({
+    required String token,
+    required int page,
+    required int pageSize,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerGetEvents,
+      method: 'GET',
+      queryParameters: queryParams,
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> createEvent({
     required String token,
     required Map<String, dynamic> eventData,
@@ -207,7 +228,20 @@ class ApiService {
         ...defaultHeaders,
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(eventData),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getOrganizerEventDetails({
+    required String token,
+    required String id,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerGetEventDetails(id),
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
     );
   }
 

@@ -98,7 +98,9 @@ class OrganizerEventDetailRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return OrganizerEventDetailsScreen(eventId: eventId);
+    return OrganizerEventDetailsScreen(
+      id: eventId,
+    );
   }
 }
 
