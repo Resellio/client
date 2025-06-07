@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/common/model/Event/customer_event.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 
 String getDateString(DateTime dateTime) {

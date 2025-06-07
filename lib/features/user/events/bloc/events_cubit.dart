@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
-import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/common/model/Event/customer_event.dart';
 import 'package:resellio/features/common/model/paginated.dart';
 import 'package:resellio/features/user/events/bloc/events_state.dart';
 

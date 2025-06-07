@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/common/model/Event/customer_event.dart';
 
 enum EventsStatus { initial, loading, success, failure }
 

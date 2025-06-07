@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/common/model/Event/customer_event.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_state.dart';
 
