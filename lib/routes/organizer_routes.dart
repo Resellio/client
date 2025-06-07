@@ -78,13 +78,15 @@ class OrganizerEventsRoute extends GoRouteData {
 }
 
 class OrganizerEventDetailRoute extends GoRouteData {
-  OrganizerEventDetailRoute({required this.eventId});
+  const OrganizerEventDetailRoute({required this.eventId});
 
   final String eventId;
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const OrganizerEventDetailsScreen();
+    return OrganizerEventDetailsScreen(
+      id: eventId,
+    );
   }
 }
 

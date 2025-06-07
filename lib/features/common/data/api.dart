@@ -202,6 +202,20 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> getOrganizerEventDetails({
+    required String token,
+    required String id,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerGetEventDetails(id),
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     print('Response Status: ${response.statusCode}');
     print('Response Body: ${response.body}');

@@ -5,15 +5,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/model/ticket_type.dart';
 import 'package:resellio/features/organizer/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/organizer/events/bloc/event_details_state.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/auth/bloc/auth_state.dart';
 
 class OrganizerEventDetailsScreen extends StatelessWidget {
-  const OrganizerEventDetailsScreen({super.key});
+  const OrganizerEventDetailsScreen({super.key, required this.id});
 
+  final String id;
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
-        return OrganizerEventDetailsCubit()..fetchEventDetails(' ', ' ');
+        final authState = context.read<AuthCubit>().state;
+        if (authState is AuthorizedOrganizer) {
+          return OrganizerEventDetailsCubit(apiService: context.read())
+            ..fetchEventDetails(authState.user.token, id);
+        }
+        return OrganizerEventDetailsCubit(apiService: context.read());
       },
       child: const OrganizerEventDetailsView(),
     );
