@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/user/cart/views/cart_screen.dart';
 import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
@@ -21,7 +22,9 @@ part 'customer_routes.g.dart';
   branches: [
     TypedStatefulShellBranch<CustomerHomeBranchData>(
       routes: [
-        TypedGoRoute<CustomerHomeRoute>(path: '/app'),
+        TypedGoRoute<CustomerHomeRoute>(
+          path: '/app',
+        ),
       ],
     ),
     TypedStatefulShellBranch<CustomerSearchBranchData>(
@@ -158,5 +161,15 @@ class CustomerProfileRoute extends GoRouteData {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return const CustomerProfileScreen();
+  }
+}
+
+@TypedGoRoute<CustomerShoppingCartRoute>(path: '/app/cart')
+class CustomerShoppingCartRoute extends GoRouteData {
+  const CustomerShoppingCartRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return const CustomerShoppingCartScreen();
   }
 }
