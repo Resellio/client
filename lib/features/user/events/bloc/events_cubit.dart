@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
@@ -15,25 +16,27 @@ class EventsCubit extends Cubit<EventsState> {
 
   Future<void> fetchNextPage(String token) async {
     if (state.status == EventsStatus.loading || state.hasReachedMax) {
-      print(
-          'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}');
+      debugPrint(
+        'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}',
+      );
       return;
     }
 
-    print('Fetching next page...');
+    debugPrint('Fetching next page...');
     emit(state.copyWith(status: EventsStatus.loading));
 
     try {
       final pageToFetch = state.currentPage + 1;
 
-      print(
-          'Fetching events - Page: $pageToFetch, Query: "${state.searchQuery}", StartDate: ${state.startDateFilter}, EndDate: ${state.endDateFilter}, MinPrice: ${state.minPriceFilter}, MaxPrice: ${state.maxPriceFilter}, City: "${state.cityFilter}", Category: "${state.categoryFilter}"');
+      debugPrint(
+        'Fetching events - Page: $pageToFetch, Query: "${state.searchQuery}", StartDate: ${state.startDateFilter}, EndDate: ${state.endDateFilter}, MinPrice: ${state.minPriceFilter}, MaxPrice: ${state.maxPriceFilter}, City: "${state.cityFilter}", Category: "${state.categoryFilter}"',
+      );
 
       final response = await _apiService.getEvents(
         token: token,
         page: pageToFetch,
         pageSize: _pageSize,
-        name: state.searchQuery,
+        query: state.searchQuery,
         startDate: state.startDateFilter,
         endDate: state.endDateFilter,
         minPrice: state.minPriceFilter,
@@ -61,10 +64,11 @@ class EventsCubit extends Cubit<EventsState> {
           totalResults: totalResults,
         ),
       );
-      print(
-          'Fetch successful. New count: ${state.events.length}. HasReachedMax: $hasReachedMax');
+      debugPrint(
+        'Fetch successful. New count: ${state.events.length}. HasReachedMax: $hasReachedMax',
+      );
     } on ApiException catch (err) {
-      print('ApiException fetching next page: $err');
+      debugPrint('ApiException fetching next page: $err');
       emit(
         state.copyWith(
           status: EventsStatus.failure,
@@ -72,8 +76,8 @@ class EventsCubit extends Cubit<EventsState> {
         ),
       );
     } catch (err, st) {
-      print('Unknown Error fetching next page: $err');
-      print(st);
+      debugPrint('Unknown Error fetching next page: $err');
+      debugPrint(st.toString());
       emit(
         state.copyWith(
           status: EventsStatus.failure,
@@ -93,7 +97,7 @@ class EventsCubit extends Cubit<EventsState> {
     String? city,
     List<String>? categories,
   }) async {
-    print('Applying filters and fetching first page...');
+    debugPrint('Applying filters and fetching first page...');
 
     emit(
       EventsState(
@@ -111,14 +115,15 @@ class EventsCubit extends Cubit<EventsState> {
     try {
       const firstPage = 0;
 
-      print(
-          'Fetching filtered events - Page: $firstPage, Query: "$searchQuery", StartDate: $startDate, EndDate: $endDate, MinPrice: $minPrice, MaxPrice: $maxPrice, City: "$city", Category: "$categories"');
+      debugPrint(
+        'Fetching filtered events - Page: $firstPage, Query: "$searchQuery", StartDate: $startDate, EndDate: $endDate, MinPrice: $minPrice, MaxPrice: $maxPrice, City: "$city", Category: "$categories"',
+      );
 
       final response = await _apiService.getEvents(
         token: token,
         page: firstPage,
         pageSize: _pageSize,
-        name: searchQuery,
+        query: searchQuery,
         startDate: startDate,
         endDate: endDate,
         minPrice: minPrice,
@@ -136,17 +141,20 @@ class EventsCubit extends Cubit<EventsState> {
       final bool hasReachedMax = !paginatedData.hasNextPage;
       final int totalResults = paginatedData.paginationDetails.allElementsCount;
 
-      emit(state.copyWith(
-        status: EventsStatus.success,
-        events: newEvents,
-        hasReachedMax: hasReachedMax,
-        currentPage: paginatedData.pageNumber,
-        totalResults: totalResults,
-      ));
-      print(
-          'Filter fetch successful. Count: ${state.events.length}. HasReachedMax: $hasReachedMax');
+      emit(
+        state.copyWith(
+          status: EventsStatus.success,
+          events: newEvents,
+          hasReachedMax: hasReachedMax,
+          currentPage: paginatedData.pageNumber,
+          totalResults: totalResults,
+        ),
+      );
+      debugPrint(
+        'Filter fetch successful. Count: ${state.events.length}. HasReachedMax: $hasReachedMax',
+      );
     } on ApiException catch (err) {
-      print('ApiException applying filters: $err');
+      debugPrint('ApiException applying filters: $err');
       emit(
         state.copyWith(
           status: EventsStatus.failure,
@@ -157,8 +165,8 @@ class EventsCubit extends Cubit<EventsState> {
         ),
       );
     } catch (err, st) {
-      print('Unknown Error applying filters: $err');
-      print(st);
+      debugPrint('Unknown Error applying filters: $err');
+      debugPrint(st.toString());
       emit(
         state.copyWith(
           status: EventsStatus.failure,

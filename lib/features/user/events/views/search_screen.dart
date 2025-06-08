@@ -1,34 +1,18 @@
 import 'dart:async';
-import 'package:flutter/gestures.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
+import 'package:resellio/features/common/bloc/categories_cubit.dart';
+import 'package:resellio/features/common/bloc/categories_state.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/event_card.dart'; // Ensure correct path
+import 'package:resellio/features/common/widgets/search_widgets.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_state.dart'; // Ensure correct path
 import 'package:resellio/routes/customer_routes.dart';
-
-class Debouncer {
-  Debouncer({required this.milliseconds});
-
-  final int milliseconds;
-  VoidCallback? action;
-  Timer? _timer;
-
-  void run(VoidCallback action) {
-    if (_timer != null) {
-      _timer!.cancel();
-    }
-    _timer = Timer(Duration(milliseconds: milliseconds), action);
-  }
-
-  void dispose() {
-    _timer?.cancel();
-  }
-}
 
 class CustomerSearchScreen extends StatelessWidget {
   const CustomerSearchScreen({super.key});
@@ -56,7 +40,8 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   final List<String> _selectedCategories = [];
 
   final TextEditingController _searchController = TextEditingController();
-  final List<String> _categories = ['Koncert', 'Rock', 'Rap', 'Inne'];
+
+  @override
   // TEMP
   final List<String> _cities = [
     'Warszawa',
@@ -359,15 +344,24 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildSearchBar(context),
+          SearchBarWidget(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              onClear: () {
+                setState(() {
+                  _searchController.clear();
+                  _triggerSearch();
+                });
+              }),
           const SizedBox(height: 8),
           _buildFilterBar(context),
           // const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildResultsCount(state),
-              if (isAnyFilterActive) _buildClearFiltersButton(),
+              ResultsCountWidget(totalResults: state.totalResults),
+              if (isAnyFilterActive)
+                ClearFiltersButton(onPressed: _clearAllFilters),
             ],
           ),
         ],
@@ -375,45 +369,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
-    return TextField(
-      controller: _searchController,
-      onChanged: _onSearchChanged,
-      decoration: InputDecoration(
-        hintText: 'Szukaj wydarzeń...',
-        hintStyle: TextStyle(color: Colors.grey[600], fontSize: 15),
-        prefixIcon: Icon(Icons.search, color: Colors.grey[700], size: 22),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: Icon(Icons.clear, color: Colors.grey[600], size: 20),
-                onPressed: () {
-                  _searchController.clear();
-                  _triggerSearch();
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
-            width: 1.5,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      ),
-      onSubmitted: (_) => _triggerSearch(),
-      textInputAction: TextInputAction.search,
-    );
-  }
-
   Widget _buildFilterBar(BuildContext context) {
-    var dateLabel = 'Data';
     if (_selectedDateRange != null) {
       final formatter = DateFormat('d MMM', 'pl_PL');
       final startFormatted = formatter.format(_selectedDateRange!.start);
@@ -422,65 +378,88 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
               _selectedDateRange!.end.year &&
           _selectedDateRange!.start.month == _selectedDateRange!.end.month &&
           _selectedDateRange!.start.day == _selectedDateRange!.end.day;
-      dateLabel =
-          isSameDay ? startFormatted : '$startFormatted - $endFormatted';
-    }
-
-    var priceLabel = 'Cena';
-    if (_selectedPriceRange != null) {
-      final start = _selectedPriceRange!.start.round();
-      final end = _selectedPriceRange!.end.round();
-      if (start == 0 && end < 1000) {
-        priceLabel = '< $end zł';
-      } else if (start > 0 && end == 1000) {
-        priceLabel = '> $start zł';
-      } else if (start > 0 && end < 1000) {
-        priceLabel = '$start - $end zł';
-      }
     }
 
     final cityLabel = _selectedCity ?? 'Miasto';
 
     return SizedBox(
       height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        children: [
-          _buildFilterChip(
-            context,
-            dateLabel,
-            isSelected: _selectedDateRange != null,
-            onPressed: () => _selectDateRange(context),
-          ),
-          const SizedBox(width: 8),
-          _buildFilterChip(
-            context,
-            priceLabel,
-            isSelected: _selectedPriceRange != null,
-            onPressed: () => _showPriceFilterDialog(context),
-          ),
-          const SizedBox(width: 8),
-          _buildFilterChip(
-            context,
-            cityLabel,
-            isSelected: _selectedCity != null,
-            isDropdown: true,
-            onPressed: () => _showCityFilterDialog(context),
-          ),
-          const SizedBox(width: 8),
-          ..._categories.map(
-            (category) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildFilterChip(
-                context,
-                category,
-                isSelected: _selectedCategories.contains(category),
-                onPressed: () => _onCategoryFilterPressed(category),
-              ),
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          dragDevices: {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.mouse,
+          },
+        ),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          children: [
+            DateRangeFilterWidget(
+              selectedDateRange: _selectedDateRange,
+              onDateRangeChanged: (range) {
+                setState(() {
+                  _selectedDateRange = range;
+                });
+                _triggerSearch();
+              },
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            PriceRangeFilterWidget(
+              selectedPriceRange: _selectedPriceRange,
+              onPriceRangeChanged: (range) {
+                setState(() {
+                  _selectedPriceRange = range;
+                });
+                print(
+                    'Selected price range: ${range?.start.round()} - ${range?.end.round()}');
+                _triggerSearch();
+              },
+            ),
+            const SizedBox(width: 8),
+            CityFilterWidget(
+              selectedCity: _selectedCity,
+              onCityChanged: (city) {
+                setState(() {
+                  _selectedCity = city;
+                });
+                print('Selected city: $_selectedCity');
+                _triggerSearch();
+              },
+              cities: _cities,
+            ),
+            const SizedBox(width: 8),
+            BlocBuilder<CategoriesCubit, CategoriesState>(
+              builder: (context, state) {
+                return switch (state) {
+                  CategoriesInitial() => const SizedBox.shrink(),
+                  CategoriesLoading() => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  CategoriesLoaded(categories: final categories) => Row(
+                      children: categories.map((category) {
+                        final isSelected =
+                            _selectedCategories.contains(category);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _buildFilterChip(
+                            context,
+                            category,
+                            isSelected: isSelected,
+                            onPressed: () => _onCategoryFilterPressed(category),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  CategoriesError() => const SizedBox.shrink(),
+                };
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -519,40 +498,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
-    );
-  }
-
-  Widget _buildResultsCount(EventsState state) {
-    final total = state.totalResults ?? '..';
-
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Text(
-        'Znaleziono: $total wyników',
-        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      ),
-    );
-  }
-
-  Widget _buildClearFiltersButton() {
-    return TextButton.icon(
-      icon: const Icon(
-        Icons.clear_all_rounded,
-        size: 18,
-        color: AppColors.primary,
-      ),
-      label: const Text(
-        'Wyczyść filtry',
-        style: TextStyle(fontSize: 12, color: AppColors.primary),
-      ),
-      onPressed: _clearAllFilters,
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.compact,
-      ),
     );
   }
 

@@ -165,7 +165,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
 
   final _categoriesController = TextEditingController();
 
-  List<TicketTypeFormManager> _ticketForms = [TicketTypeFormManager()];
+  final _ticketForms = [TicketTypeFormManager()];
 
   final String _displayDateFormat = 'yyyy-MM-dd HH:mm';
 
@@ -492,18 +492,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     }
   }
 
-  void _resetForm() {
-    _formKey.currentState?.reset();
-    _categoriesController.clear();
-    setState(() {
-      _currentStep = 0;
-      for (final f in _ticketForms) {
-        f.dispose();
-      }
-      _ticketForms = [TicketTypeFormManager()];
-    });
-  }
-
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -761,34 +749,35 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
               minHeight: 100,
             ),
             child: BlocBuilder<CategoriesCubit, CategoriesState>(
-                builder: (context, state) {
-              if (state is CategoriesLoaded) {
-                final selectedCategories = _categoriesController.text
-                    .split(',')
-                    .map((s) => s.trim())
-                    .where((s) => s.isNotEmpty)
-                    .toSet();
+              builder: (context, state) {
+                if (state is CategoriesLoaded) {
+                  final selectedCategories = _categoriesController.text
+                      .split(',')
+                      .map((s) => s.trim())
+                      .where((s) => s.isNotEmpty)
+                      .toSet();
 
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: state.categories.map((category) {
-                    final isSelected = selectedCategories.contains(category);
-                    return _buildSelectableCategoryChip(category, isSelected);
-                  }).toList(),
-                );
-              } else if (state is CategoriesLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              } else if (state is CategoriesError) {
-                return Text(
-                  'Błąd ładowania kategorii: ${state.message}',
-                  style: const TextStyle(color: Colors.red),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: state.categories.map((category) {
+                      final isSelected = selectedCategories.contains(category);
+                      return _buildSelectableCategoryChip(category, isSelected);
+                    }).toList(),
+                  );
+                } else if (state is CategoriesLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (state is CategoriesError) {
+                  return Text(
+                    'Błąd ładowania kategorii: ${state.message}',
+                    style: const TextStyle(color: Colors.red),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ),
       ],
@@ -986,45 +975,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     );
   }
 
-  Widget _buildCategoryChip(String category) {
-    return OutlinedButton(
-      onPressed: () {
-        final currentText = _categoriesController.text;
-        final categories = currentText.split(',').map((s) => s.trim()).toList();
-
-        if (categories.contains(category)) {
-          categories.remove(category);
-        } else {
-          categories.add(category);
-        }
-
-        _categoriesController.text =
-            categories.where((s) => s.isNotEmpty).join(', ');
-      },
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: AppColors.primary.withAlpha(50)),
-        backgroundColor: AppColors.primary.withAlpha(50),
-        foregroundColor: AppColors.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(
-          category,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildModernTicketForm(int index) {
     final ticketForm = _ticketForms[index];
     return Container(
@@ -1075,7 +1025,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                     size: 20,
                   ),
                   style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFE17055).withOpacity(0.1),
+                    backgroundColor: const Color(0xFFE17055).withAlpha(30),
                     padding: const EdgeInsets.all(6),
                     minimumSize: const Size(32, 32),
                     shape: RoundedRectangleBorder(

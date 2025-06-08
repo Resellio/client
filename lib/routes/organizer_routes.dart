@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/organizer/events/bloc/events_cubit.dart';
 import 'package:resellio/features/organizer/events/views/event_details.dart';
 import 'package:resellio/features/organizer/events/views/events_screen.dart';
 import 'package:resellio/features/organizer/events/views/new_event_screen.dart';
@@ -49,7 +51,12 @@ class OrganizerShellRouteData extends StatefulShellRouteData {
   ) {
     return MultiProvider(
       providers: [
-        Provider<CategoriesCubit>(
+        BlocProvider<OrganizerEventsCubit>(
+          create: (_) => OrganizerEventsCubit(
+            apiService: context.read<ApiService>(),
+          )..fetchNextPage(context.read<AuthCubit>().token),
+        ),
+        BlocProvider<CategoriesCubit>(
           create: (_) => CategoriesCubit(
             context.read<ApiService>(),
             context.read<AuthCubit>(),

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:resellio/features/common/model/address.dart';
+import 'package:resellio/features/user/events/views/event_details.dart';
 
 class Event extends Equatable {
   const Event({
@@ -16,6 +17,7 @@ class Event extends Equatable {
     required this.categories,
     required this.status,
     required this.address,
+    this.tickets = const [],
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -39,9 +41,11 @@ class Event extends Equatable {
       endDate: tryParseDate(json['endDate'] as String?),
       minimumAge: json['minimumAge'] as int? ?? 0,
       minimumPrice: (json['minimumPrice']?['price'] as num?)?.toDouble() ?? 0.0,
-      minimumPriceCurrency: (json['minimumPrice']?['currency'] as String?) ?? '',
+      minimumPriceCurrency:
+          (json['minimumPrice']?['currency'] as String?) ?? '',
       maximumPrice: (json['maximumPrice']?['price'] as num?)?.toDouble() ?? 0.0,
-      maximumPriceCurrency: (json['maximumPrice']?['currency'] as String?) ?? '',
+      maximumPriceCurrency:
+          (json['maximumPrice']?['currency'] as String?) ?? '',
       categories: (json['categories'] as List<dynamic>?)
               ?.map((item) =>
                   (item as Map<String, dynamic>?)?['name'] as String? ?? '')
@@ -49,6 +53,10 @@ class Event extends Equatable {
           [],
       status: json['status'] as int? ?? 0,
       address: Address.fromJson(json['address'] as Map<String, dynamic>? ?? {}),
+      tickets: (json['ticketTypes'] as List<dynamic>?)
+              ?.map((item) => TicketType.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -67,6 +75,7 @@ class Event extends Equatable {
   final Address address;
   // TODO: image url
   // TODO: tickets list
+  final List<TicketType> tickets;
 
   @override
   List<Object?> get props => [
