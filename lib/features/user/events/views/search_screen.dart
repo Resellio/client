@@ -9,7 +9,7 @@ import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_state.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/event_card.dart'; // Ensure correct path
-import 'package:resellio/features/common/widgets/search.dart';
+import 'package:resellio/features/common/widgets/search_widgets.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_state.dart'; // Ensure correct path
 import 'package:resellio/routes/customer_routes.dart';

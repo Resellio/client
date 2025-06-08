@@ -32,7 +32,7 @@ class SearchBarWidget extends StatelessWidget {
   });
 
   final TextEditingController controller;
-  final Function(String) onChanged;
+  final void Function(String) onChanged;
   final VoidCallback onClear;
   final String hintText;
 
@@ -55,7 +55,9 @@ class SearchBarWidget extends StatelessWidget {
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(
+            color: Colors.black.withAlpha(20),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -72,11 +74,6 @@ class SearchBarWidget extends StatelessWidget {
 }
 
 class FilterChipWidget extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final bool isDropdown;
-  final VoidCallback? onPressed;
-
   const FilterChipWidget({
     super.key,
     required this.label,
@@ -84,6 +81,11 @@ class FilterChipWidget extends StatelessWidget {
     this.isDropdown = false,
     this.onPressed,
   });
+
+  final String label;
+  final bool isSelected;
+  final bool isDropdown;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -119,22 +121,24 @@ class FilterChipWidget extends StatelessWidget {
 }
 
 class DateRangeFilterWidget extends StatelessWidget {
-  final DateTimeRange? selectedDateRange;
-  final Function(DateTimeRange?) onDateRangeChanged;
-
   const DateRangeFilterWidget({
     super.key,
     required this.selectedDateRange,
     required this.onDateRangeChanged,
   });
 
+  final DateTimeRange? selectedDateRange;
+  final void Function(DateTimeRange?) onDateRangeChanged;
+
   String get _dateLabel {
-    if (selectedDateRange == null) return 'Data';
+    if (selectedDateRange == null) {
+      return 'Data';
+    }
 
     final formatter = DateFormat('d MMM', 'pl_PL');
     final startFormatted = formatter.format(selectedDateRange!.start);
     final endFormatted = formatter.format(selectedDateRange!.end);
-    bool isSameDay =
+    final isSameDay =
         selectedDateRange!.start.year == selectedDateRange!.end.year &&
             selectedDateRange!.start.month == selectedDateRange!.end.month &&
             selectedDateRange!.start.day == selectedDateRange!.end.day;
@@ -157,8 +161,8 @@ class DateRangeFilterWidget extends StatelessWidget {
 
     if (picked != null && picked != selectedDateRange) {
       final newRange = DateTimeRange(
-        start: DateTime(
-            picked.start.year, picked.start.month, picked.start.day, 0, 0),
+        start:
+            DateTime(picked.start.year, picked.start.month, picked.start.day),
         end:
             DateTime(picked.end.year, picked.end.month, picked.end.day, 23, 59),
       );
@@ -177,17 +181,19 @@ class DateRangeFilterWidget extends StatelessWidget {
 }
 
 class PriceRangeFilterWidget extends StatelessWidget {
-  final RangeValues? selectedPriceRange;
-  final Function(RangeValues?) onPriceRangeChanged;
-
   const PriceRangeFilterWidget({
     super.key,
     required this.selectedPriceRange,
     required this.onPriceRangeChanged,
   });
 
+  final RangeValues? selectedPriceRange;
+  final void Function(RangeValues?) onPriceRangeChanged;
+
   String get _priceLabel {
-    if (selectedPriceRange == null) return 'Cena';
+    if (selectedPriceRange == null) {
+      return 'Cena';
+    }
 
     final start = selectedPriceRange!.start.round();
     final end = selectedPriceRange!.end.round();
@@ -240,8 +246,9 @@ class PriceRangeFilterWidget extends StatelessWidget {
               ),
               actions: <Widget>[
                 TextButton(
-                    child: const Text('Anuluj'),
-                    onPressed: () => Navigator.of(context).pop()),
+                  child: const Text('Anuluj'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
                 if (selectedPriceRange != null)
                   TextButton(
                     child: const Text('Wyczyść cenę'),
@@ -284,10 +291,6 @@ class PriceRangeFilterWidget extends StatelessWidget {
 }
 
 class CityFilterWidget extends StatelessWidget {
-  final String? selectedCity;
-  final List<String> cities;
-  final Function(String?) onCityChanged;
-
   const CityFilterWidget({
     super.key,
     required this.selectedCity,
@@ -295,37 +298,45 @@ class CityFilterWidget extends StatelessWidget {
     required this.onCityChanged,
   });
 
+  final String? selectedCity;
+  final List<String> cities;
+  final void Function(String?) onCityChanged;
+
   Future<void> _showCityFilterDialog(BuildContext context) async {
     final String? result = await showDialog<String>(
-        context: context,
-        builder: (BuildContext context) {
-          return SimpleDialog(
-            title: const Text('Wybierz miasto'),
-            children: <Widget>[
-              SimpleDialogOption(
-                onPressed: () {
-                  Navigator.pop(context, null);
-                },
-                child: const Text('Wszystkie miasta',
-                    style: TextStyle(color: AppColors.primary)),
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: const Text('Wybierz miasto'),
+          children: <Widget>[
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Wszystkie miasta',
+                style: TextStyle(color: AppColors.primary),
               ),
-              ...cities.map(
-                (city) => SimpleDialogOption(
-                  onPressed: () {
-                    Navigator.pop(context, city);
-                  },
-                  child: Text(
-                    city,
-                    style: TextStyle(
-                        fontWeight: selectedCity == city
-                            ? FontWeight.bold
-                            : FontWeight.normal),
+            ),
+            ...cities.map(
+              (city) => SimpleDialogOption(
+                onPressed: () {
+                  Navigator.pop(context, city);
+                },
+                child: Text(
+                  city,
+                  style: TextStyle(
+                    fontWeight: selectedCity == city
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ),
-            ],
-          );
-        });
+            ),
+          ],
+        );
+      },
+    );
 
     if (result != selectedCity) {
       onCityChanged(result);
@@ -372,12 +383,12 @@ class ResultsCountWidget extends StatelessWidget {
 }
 
 class ClearFiltersButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
   const ClearFiltersButton({
     super.key,
     required this.onPressed,
   });
+
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -402,16 +413,16 @@ class ClearFiltersButton extends StatelessWidget {
 }
 
 class PlaceholderWidget extends StatelessWidget {
-  final IconData icon;
-  final String message;
-  final Color? iconColor;
-
   const PlaceholderWidget({
     super.key,
     required this.icon,
     required this.message,
     this.iconColor,
   });
+
+  final IconData icon;
+  final String message;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {

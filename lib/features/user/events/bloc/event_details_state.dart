@@ -3,10 +3,6 @@ import 'package:resellio/features/common/model/event.dart';
 enum EventDetailsStatus { initial, loading, success, failure }
 
 class EventDetailsState {
-  final EventDetailsStatus status;
-  final Event? event;
-  final String? errorMessage;
-
   const EventDetailsState({
     required this.status,
     this.event,
@@ -16,6 +12,10 @@ class EventDetailsState {
   factory EventDetailsState.initial() {
     return const EventDetailsState(status: EventDetailsStatus.initial);
   }
+
+  final EventDetailsStatus status;
+  final Event? event;
+  final String? errorMessage;
 
   EventDetailsState copyWith({
     EventDetailsStatus? status,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
@@ -15,19 +16,21 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
 
   Future<void> fetchNextPage(String token) async {
     if (state.status == EventsStatus.loading || state.hasReachedMax) {
-      print(
-          'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}');
+      debugPrint(
+        'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}',
+      );
       return;
     }
 
-    print('Fetching next page of organizer events...');
+    debugPrint('Fetching next page of organizer events...');
     emit(state.copyWith(status: EventsStatus.loading));
 
     try {
       final pageToFetch = state.currentPage + 1;
 
-      print(
-          'Fetching organizer events - Page: $pageToFetch, Query: "${state.searchQuery}", StartDate: ${state.startDateFilter}, EndDate: ${state.endDateFilter}');
+      debugPrint(
+        'Fetching organizer events - Page: $pageToFetch, Query: "${state.searchQuery}", StartDate: ${state.startDateFilter}, EndDate: ${state.endDateFilter}',
+      );
 
       final response = await _apiService.getOrganizerEvents(
         token: token,
@@ -57,10 +60,11 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
           totalResults: totalResults,
         ),
       );
-      print(
-          'Fetch successful. New count: ${state.events.length}. HasReachedMax: $hasReachedMax');
+      debugPrint(
+        'Fetch successful. New count: ${state.events.length}. HasReachedMax: $hasReachedMax',
+      );
     } on ApiException catch (err) {
-      print('ApiException fetching organizer events: $err');
+      debugPrint('ApiException fetching organizer events: $err');
       emit(
         state.copyWith(
           status: EventsStatus.failure,
@@ -68,8 +72,8 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
         ),
       );
     } catch (err, st) {
-      print('Unknown Error fetching organizer events: $err');
-      print(st);
+      debugPrint('Unknown Error fetching organizer events: $err');
+      debugPrint(st.toString());
       emit(
         state.copyWith(
           status: EventsStatus.failure,
@@ -89,7 +93,7 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
     DateTime? minEndDate,
     DateTime? maxEndDate,
   }) async {
-    print('Applying filters and fetching organizer events...');
+    debugPrint('Applying filters and fetching organizer events...');
 
     emit(
       EventsState(
@@ -103,8 +107,9 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
     try {
       const firstPage = 0;
 
-      print(
-          'Fetching filtered organizer events - Page: $firstPage, Query: "$searchQuery", StartDate: $startDate, EndDate: $endDate');
+      debugPrint(
+        'Fetching filtered organizer events - Page: $firstPage, Query: "$searchQuery", StartDate: $startDate, EndDate: $endDate',
+      );
 
       final response = await _apiService.getOrganizerEvents(
         token: token,
@@ -128,17 +133,20 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
       final bool hasReachedMax = !paginatedData.hasNextPage;
       final int totalResults = paginatedData.paginationDetails.allElementsCount;
 
-      emit(state.copyWith(
-        status: EventsStatus.success,
-        events: newEvents,
-        hasReachedMax: hasReachedMax,
-        currentPage: paginatedData.pageNumber,
-        totalResults: totalResults,
-      ));
-      print(
-          'Filter fetch successful. Count: ${state.events.length}. HasReachedMax: $hasReachedMax');
+      emit(
+        state.copyWith(
+          status: EventsStatus.success,
+          events: newEvents,
+          hasReachedMax: hasReachedMax,
+          currentPage: paginatedData.pageNumber,
+          totalResults: totalResults,
+        ),
+      );
+      debugPrint(
+        'Filter fetch successful. Count: ${state.events.length}. HasReachedMax: $hasReachedMax',
+      );
     } on ApiException catch (err) {
-      print('ApiException applying organizer filters: $err');
+      debugPrint('ApiException applying organizer filters: $err');
       emit(
         state.copyWith(
           status: EventsStatus.failure,
@@ -149,8 +157,8 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
         ),
       );
     } catch (err, st) {
-      print('Unknown Error applying organizer filters: $err');
-      print(st);
+      debugPrint('Unknown Error applying organizer filters: $err');
+      debugPrint(st.toString());
       emit(
         state.copyWith(
           status: EventsStatus.failure,
@@ -164,7 +172,7 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
   }
 
   Future<void> refreshEvents(String token) async {
-    print('Refreshing organizer events...');
+    debugPrint('Refreshing organizer events...');
 
     final currentFilters = EventsState(
       searchQuery: state.searchQuery,

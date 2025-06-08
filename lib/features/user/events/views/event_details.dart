@@ -7,12 +7,12 @@ import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 
 class CustomerEventDetailsScreen extends StatefulWidget {
-  final String eventId;
-
   const CustomerEventDetailsScreen({
     super.key,
     required this.eventId,
   });
+
+  final String eventId;
 
   @override
   State<CustomerEventDetailsScreen> createState() => _EventDetailsScreenState();
@@ -49,7 +49,6 @@ class _EventDetailsScreenState extends State<CustomerEventDetailsScreen> {
   }
 }
 
-// Loading View
 class _LoadingView extends StatelessWidget {
   const _LoadingView();
 
@@ -63,15 +62,14 @@ class _LoadingView extends StatelessWidget {
   }
 }
 
-// Error View
 class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
   const _ErrorView({
     required this.message,
     required this.onRetry,
   });
+
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -104,18 +102,17 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-// Event Details View
 class _EventDetailsView extends StatelessWidget {
-  final Event event;
-
   const _EventDetailsView({required this.event});
+
+  final Event event;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          _EventAppBar(event: event),
+          _SliverEventAppBar(event: event),
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,11 +131,10 @@ class _EventDetailsView extends StatelessWidget {
   }
 }
 
-// Event App Bar with Image
-class _EventAppBar extends StatelessWidget {
-  final Event event;
+class _SliverEventAppBar extends StatelessWidget {
+  const _SliverEventAppBar({required this.event});
 
-  const _EventAppBar({required this.event});
+  final Event event;
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +163,7 @@ class _EventAppBar extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withAlpha(150),
                   ],
                 ),
               ),
@@ -179,11 +175,10 @@ class _EventAppBar extends StatelessWidget {
   }
 }
 
-// Event Header with Title and Categories
 class _EventHeader extends StatelessWidget {
-  final Event event;
-
   const _EventHeader({required this.event});
+
+  final Event event;
 
   @override
   Widget build(BuildContext context) {
@@ -192,18 +187,20 @@ class _EventHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (event.categories?.isNotEmpty == true) ...[
+          if (event.categories.isNotEmpty == true) ...[
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: event.categories!
-                  .map((category) => Chip(
-                        label: Text(category),
-                        backgroundColor: Theme.of(context)
-                            .colorScheme
-                            .primaryContainer
-                            .withOpacity(0.5),
-                      ))
+              children: event.categories
+                  .map(
+                    (category) => Chip(
+                      label: Text(category),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer
+                          .withAlpha(150),
+                    ),
+                  )
                   .toList(),
             ),
             const SizedBox(height: 16),
@@ -220,11 +217,10 @@ class _EventHeader extends StatelessWidget {
   }
 }
 
-// Event Info Section
 class _EventInfo extends StatelessWidget {
-  final Event event;
-
   const _EventInfo({required this.event});
+
+  final Event event;
 
   @override
   Widget build(BuildContext context) {
@@ -266,34 +262,40 @@ class _EventInfo extends StatelessWidget {
 
   String _formatAddress(Address address) {
     final parts = <String>[];
-    if (address.street.isNotEmpty) parts.add(address.street);
-    if (address.houseNumber > 0) parts.add(address.houseNumber.toString());
-    if (address.city.isNotEmpty) parts.add(address.city);
+    if (address.street.isNotEmpty) {
+      parts.add(address.street);
+    }
+    if (address.houseNumber > 0) {
+      parts.add(address.houseNumber.toString());
+    }
+    if (address.city.isNotEmpty) {
+      parts.add(address.city);
+    }
     return parts.join(', ');
   }
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'Brak informacji';
+    if (date == null) {
+      return 'Brak informacji';
+    }
     return DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl_PL').format(date);
   }
 }
 
-// Info Row Component
 class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String content;
-
   const _InfoRow({
     required this.icon,
     required this.title,
     required this.content,
   });
 
+  final IconData icon;
+  final String title;
+  final String content;
+
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
           icon,
@@ -324,15 +326,16 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// Event Description Section
 class _EventDescription extends StatelessWidget {
-  final Event event;
-
   const _EventDescription({required this.event});
+
+  final Event event;
 
   @override
   Widget build(BuildContext context) {
-    if (event.description.isEmpty) return const SizedBox.shrink();
+    if (event.description.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -358,14 +361,14 @@ class _EventDescription extends StatelessWidget {
 
 // Ticket Section
 class _TicketSection extends StatelessWidget {
-  final Event event;
-
   const _TicketSection({required this.event});
+
+  final Event event;
 
   @override
   Widget build(BuildContext context) {
-    print(event.tickets);
-    if (event.tickets == null || event.tickets!.isEmpty) {
+    debugPrint(event.tickets.toString());
+    if (event.tickets.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(20),
         child: Text(
@@ -389,7 +392,7 @@ class _TicketSection extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          ...event.tickets!.map((ticket) => _TicketCard(ticket: ticket)),
+          ...event.tickets.map((ticket) => _TicketCard(ticket: ticket)),
         ],
       ),
     );
@@ -397,12 +400,6 @@ class _TicketSection extends StatelessWidget {
 }
 
 class TicketType {
-  final String id;
-  final String description;
-  final double price;
-  final String currency;
-  final int amountAvailable;
-
   const TicketType({
     required this.id,
     required this.description,
@@ -420,12 +417,18 @@ class TicketType {
       amountAvailable: json['amountAvailable'] as int? ?? 0,
     );
   }
+
+  final String id;
+  final String description;
+  final double price;
+  final String currency;
+  final int amountAvailable;
 }
 
 class _TicketCard extends StatelessWidget {
-  final TicketType ticket;
-
   const _TicketCard({required this.ticket});
+
+  final TicketType ticket;
 
   @override
   Widget build(BuildContext context) {
@@ -439,10 +442,10 @@ class _TicketCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withAlpha(150),
         ),
       ),
       child: Padding(

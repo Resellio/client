@@ -23,7 +23,7 @@ class CategoriesCubit extends Cubit<CategoriesState> {
 
       final categories = [
         for (final category in (response.data?['data'] as List<dynamic>))
-          (category as Map<String, dynamic>)['categoryName'] as String
+          (category as Map<String, dynamic>)['categoryName'] as String,
       ];
 
       emit(CategoriesLoaded(categories));

@@ -5,7 +5,7 @@ import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/model/event.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/event_card.dart';
-import 'package:resellio/features/common/widgets/search.dart';
+import 'package:resellio/features/common/widgets/search_widgets.dart';
 import 'package:resellio/features/organizer/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_state.dart';
 import 'package:resellio/routes/organizer_routes.dart';
@@ -48,15 +48,18 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   @override
   void dispose() {
     _searchController.dispose();
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _debouncer.dispose();
     super.dispose();
   }
 
   void _loadEvents() {
     final authState = context.read<AuthCubit>().state;
-    if (authState is! AuthorizedOrganizer) return;
+    if (authState is! AuthorizedOrganizer) {
+      return;
+    }
 
     final query = _searchController.text.trim();
     final (
@@ -143,7 +146,9 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   }
 
   void _onScroll() {
-    if (!_scrollController.hasClients) return;
+    if (!_scrollController.hasClients) {
+      return;
+    }
 
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.offset;
@@ -179,7 +184,9 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
       _selectedStatusFilter != EventStatusFilter.all;
 
   void _clearFilters() {
-    if (!_hasActiveFilters) return;
+    if (!_hasActiveFilters) {
+      return;
+    }
 
     setState(() {
       _selectedDateRange = null;
@@ -197,7 +204,7 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   }
 
   void _deleteEvent(Event event) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Usuń wydarzenie'),
@@ -305,7 +312,9 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
         );
       }).toList(),
       onChanged: (filter) {
-        if (filter != null) _onStatusFilterChanged(filter);
+        if (filter != null) {
+          _onStatusFilterChanged(filter);
+        }
       },
     );
   }
@@ -442,7 +451,7 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   }
 
   void _showEventActions(Event event) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
