@@ -15,10 +15,11 @@ import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/style/app_theme.dart';
+import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
+import 'package:resellio/routes/admin_routes.dart';
 import 'package:resellio/routes/auth_routes.dart' as auth_routes;
 import 'package:resellio/routes/customer_routes.dart';
 import 'package:resellio/routes/organizer_routes.dart';
-import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 
 GoRouter? _router;
 
@@ -82,6 +83,7 @@ class _MyAppState extends State<MyApp> {
         $customerShellRouteData,
         $customerShoppingCartRoute,
         $organizerShellRouteData,
+        $adminShellRouteData,
       ],
       redirect: (context, state) {
         debugPrint('[AuthState] ${authCubit.state.runtimeType}');
@@ -125,6 +127,11 @@ class _MyAppState extends State<MyApp> {
                 '[Redirect] Logged in Organizer on auth page, going to Organizer Home',
               );
               return const OrganizerHomeRoute().location;
+            } else if (authCubit.isAdmin) {
+              debugPrint(
+                '[Redirect] Logged in Admin on auth page, going to Admin Home',
+              );
+              return const AdminHomeRoute().location;
             }
           }
 
@@ -144,6 +151,19 @@ class _MyAppState extends State<MyApp> {
               '[Redirect] Organizer trying to access Customer routes, going to Organizer Home',
             );
             return const OrganizerHomeRoute().location;
+          }
+
+          // If non-admin is trying to access admin routes
+          if (state.matchedLocation.startsWith('/admin') &&
+              !authCubit.isAdmin) {
+            debugPrint(
+              '[Redirect] Non-admin trying to access Admin routes, redirecting to appropriate home',
+            );
+            if (authCubit.isCustomer) {
+              return const CustomerHomeRoute().location;
+            } else if (authCubit.isOrganizer) {
+              return const OrganizerHomeRoute().location;
+            }
           }
         }
 

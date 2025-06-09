@@ -6,6 +6,8 @@ import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
+import 'package:resellio/features/common/data/api_exceptions.dart';
+import 'package:resellio/features/common/model/Users/admin.dart';
 import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
@@ -26,6 +28,7 @@ class AuthCubit extends HydratedCubit<AuthState>
   bool get isOrganizerRegistrationNeeded =>
       state is AuthorizedOrganizerRegistrationNeeded;
   bool get isUnverifiedOrganizer => state is AuthorizedUnverifiedOrganizer;
+  bool get isAdmin => state is AuthorizedAdmin;
 
   String get token {
     if (state is AuthorizedCustomer) {
@@ -36,6 +39,8 @@ class AuthCubit extends HydratedCubit<AuthState>
       return (state as AuthorizedUnverifiedOrganizer).user.token;
     } else if (state is AuthorizedOrganizerRegistrationNeeded) {
       return (state as AuthorizedOrganizerRegistrationNeeded).user.token;
+    } else if (state is AuthorizedAdmin) {
+      return (state as AuthorizedAdmin).user.token;
     } else {
       throw Exception('No token available for the current state');
     }
@@ -117,6 +122,36 @@ class AuthCubit extends HydratedCubit<AuthState>
           emitPresentation(AuthenticatedEvent(user));
           emit(AuthorizedUnverifiedOrganizer(user));
         }
+      }
+    } catch (err) {
+      emitPresentation(AuthErrorEvent(err.toString()));
+    }
+  }
+
+  Future<void> adminSignInWithGoogle() async {
+    try {
+      final googleUser = await _signInWithGoogle();
+      final googleAuth = await googleUser.authentication;
+
+      final response = await apiService.googleLogin(
+        accessToken: googleAuth.accessToken!,
+        endpoint: ApiEndpoints.adminGoogleLogin,
+      );
+
+      final user = Admin(
+        email: googleUser.email,
+        token: response.data?['token'] as String,
+      );
+
+      emitPresentation(AuthenticatedEvent(user));
+      emit(AuthorizedAdmin(user));
+    } on ApiException catch (err) {
+      if (err.toString().contains('404')) {
+        emitPresentation(
+          const AuthErrorEvent('Błąd: Nie jesteś administratorem'),
+        );
+      } else {
+        emitPresentation(AuthErrorEvent(err.toString()));
       }
     } catch (err) {
       emitPresentation(AuthErrorEvent(err.toString()));
