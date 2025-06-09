@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/routes/customer_routes.dart';
 
 class CustomerShellScreen extends StatelessWidget {

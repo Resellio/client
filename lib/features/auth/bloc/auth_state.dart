@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:resellio/features/common/model/Users/admin.dart';
 import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
@@ -115,6 +116,23 @@ class AuthorizedOrganizerRegistrationNeeded extends AuthState {
         _kTypeKey: 'AuthorizedOrganizerRegistrationNeeded',
         ..._$AuthorizedOrganizerRegistrationNeededToJson(this),
       };
+
+  @override
+  List<Object> get props => [user];
+}
+
+@JsonSerializable(explicitToJson: true)
+class AuthorizedAdmin extends AuthState {
+  const AuthorizedAdmin(this.user);
+
+  factory AuthorizedAdmin.fromJson(Map<String, dynamic> json) =>
+      _$AuthorizedAdminFromJson(json);
+
+  final Admin user;
+
+  @override
+  Map<String, dynamic> toJson() =>
+      {_kTypeKey: 'AuthorizedAdmin', ..._$AuthorizedAdminToJson(this)};
 
   @override
   List<Object> get props => [user];
