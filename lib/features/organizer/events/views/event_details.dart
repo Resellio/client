@@ -3,13 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
-import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
+import 'package:resellio/features/organizer/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 
 class OrganizerEventDetailsScreen extends StatelessWidget {
-  const OrganizerEventDetailsScreen({super.key});
+  const OrganizerEventDetailsScreen({super.key, required this.id});
 
+  final String id;
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -18,8 +19,10 @@ class OrganizerEventDetailsScreen extends StatelessWidget {
     );
   }
 
-  EventDetailsCubit _createCubit(BuildContext context) {
-    final cubit = EventDetailsCubit(context.read(), context.read<AuthCubit>());
+  OrganizerEventDetailsCubit _createCubit(BuildContext context) {
+    final cubit =
+        OrganizerEventDetailsCubit(context.read(), context.read<AuthCubit>())
+          ..loadOrganizerEventDetails(id);
     return cubit;
   }
 }
@@ -105,7 +108,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
             ),
           ],
         ),
-        body: BlocBuilder<EventDetailsCubit, EventDetailsState>(
+        body: BlocBuilder<OrganizerEventDetailsCubit, EventDetailsState>(
             builder: (context, state) {
           if (state.status == EventDetailsStatus.loading) {
             return const Center(
@@ -164,11 +167,11 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: eventDetails.status.statusColor,
+                                  color: eventDetails.statusColor,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  eventDetails.status.statusText,
+                                  eventDetails.statusText,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -212,13 +215,19 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildStatCard('Revenue', '\$2,340',
-                                    Icons.attach_money, Colors.purple),
+                                child: _buildStatCard(
+                                    'Revenue',
+                                    '\$${eventDetails.revenue}',
+                                    Icons.attach_money,
+                                    Colors.purple),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: _buildStatCard('Tickets Sold', '89',
-                                    Icons.confirmation_number, Colors.green),
+                                child: _buildStatCard(
+                                    'Tickets Sold',
+                                    '${eventDetails.ticketsSold}',
+                                    Icons.confirmation_number,
+                                    Colors.green),
                               ),
                             ],
                           ),

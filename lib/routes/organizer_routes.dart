@@ -105,7 +105,7 @@ class OrganizerEventDetailRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const OrganizerEventDetailsScreen();
+    return OrganizerEventDetailsScreen(id: eventId);
   }
 }
 
