@@ -14,7 +14,7 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
   final ApiService _apiService;
   final int _pageSize = 10;
 
-  Future<void> fetchNextPage(String token) async {
+  Future<void> fetchNextPage() async {
     if (state.status == EventsStatus.loading || state.hasReachedMax) {
       debugPrint(
         'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}',
@@ -33,7 +33,6 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
       );
 
       final response = await _apiService.getOrganizerEvents(
-        token: token,
         page: pageToFetch,
         pageSize: _pageSize,
         query: state.searchQuery,
@@ -84,7 +83,6 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
   }
 
   Future<void> applyFiltersAndFetch({
-    required String token,
     String? searchQuery,
     DateTime? startDate,
     DateTime? endDate,
@@ -112,7 +110,6 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
       );
 
       final response = await _apiService.getOrganizerEvents(
-        token: token,
         page: firstPage,
         pageSize: _pageSize,
         query: searchQuery,
@@ -171,7 +168,7 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
     }
   }
 
-  Future<void> refreshEvents(String token) async {
+  Future<void> refreshEvents() async {
     debugPrint('Refreshing organizer events...');
 
     final currentFilters = EventsState(
@@ -183,7 +180,6 @@ class OrganizerEventsCubit extends Cubit<EventsState> {
     emit(currentFilters.copyWith(status: EventsStatus.loading));
 
     await applyFiltersAndFetch(
-      token: token,
       searchQuery: state.searchQuery,
       startDate: state.startDateFilter,
       endDate: state.endDateFilter,

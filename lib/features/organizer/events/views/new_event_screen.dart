@@ -402,7 +402,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     return null;
   }
 
-  Future<void> _submitForm(String token) async {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       _showErrorSnackBar('W formularzu znajdują się błędy');
       return;
@@ -462,10 +462,8 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         }).toList(),
       );
 
-      final response = await widget.apiService.createEvent(
-        token: token,
-        eventData: eventData.toJson(),
-      );
+      final response =
+          await widget.apiService.createEvent(eventData: eventData.toJson());
 
       if (!response.success) {
         if (mounted) {
@@ -1157,7 +1155,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                           _currentStep++;
                         });
                       } else {
-                        _submitForm(context.read<AuthCubit>().token);
+                        _submitForm();
                       }
                     },
               style: ElevatedButton.styleFrom(

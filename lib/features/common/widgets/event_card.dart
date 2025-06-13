@@ -48,7 +48,7 @@ class EventCard extends StatelessWidget {
                       ),
                       child: CachedNetworkImage(
                         imageUrl:
-                            'https://picsum.photos/200/300?random=${event.id}',
+                            'https://picsum.photos/800/400?random=${event.id}',
                         fit: BoxFit.cover,
                         width: double.infinity,
                       ),

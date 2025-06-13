@@ -90,7 +90,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     if (authState is AuthorizedCustomer) {
       context.read<EventsCubit>().applyFiltersAndFetch(
-            token: authState.user.token,
             searchQuery: query,
             startDate: startDate,
             endDate: endDate,
@@ -121,7 +120,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       print("Reached bottom, loading more events...");
       final authState = context.read<AuthCubit>().state;
       if (authState is AuthorizedCustomer) {
-        context.read<EventsCubit>().fetchNextPage(authState.user.token);
+        context.read<EventsCubit>().fetchNextPage();
       }
     }
   }

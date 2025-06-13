@@ -1,6 +1,6 @@
-import 'package:resellio/features/common/model/Cart/cart_item.dart';
+import 'package:resellio/features/user/cart/model/cart_item.dart';
 
-abstract class CartState {}
+sealed class CartState {}
 
 class CartInitialState extends CartState {}
 
@@ -13,4 +13,8 @@ class CartLoadedState extends CartState {
   final double totalPrice;
 }
 
-class CartErrorState extends CartState {}
+class CartErrorState extends CartState {
+  CartErrorState({required this.message});
+
+  final String message;
+}

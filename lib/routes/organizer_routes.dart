@@ -54,12 +54,11 @@ class OrganizerShellRouteData extends StatefulShellRouteData {
         BlocProvider<OrganizerEventsCubit>(
           create: (_) => OrganizerEventsCubit(
             apiService: context.read<ApiService>(),
-          )..fetchNextPage(context.read<AuthCubit>().token),
+          )..fetchNextPage(),
         ),
         BlocProvider<CategoriesCubit>(
           create: (_) => CategoriesCubit(
             context.read<ApiService>(),
-            context.read<AuthCubit>(),
           )..getCategories(),
         ),
       ],

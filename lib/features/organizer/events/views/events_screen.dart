@@ -72,7 +72,6 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
     ) = _getApiDateFilters();
 
     context.read<OrganizerEventsCubit>().applyFiltersAndFetch(
-          token: authState.user.token,
           searchQuery: query.isEmpty ? null : query,
           startDate: startDate,
           endDate: endDate,
@@ -164,7 +163,7 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   void _loadNextPage() {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthorizedOrganizer) {
-      context.read<OrganizerEventsCubit>().fetchNextPage(authState.user.token);
+      context.read<OrganizerEventsCubit>().fetchNextPage();
     }
   }
 
@@ -199,7 +198,7 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   void _refreshEvents() {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthorizedOrganizer) {
-      context.read<OrganizerEventsCubit>().refreshEvents(authState.user.token);
+      context.read<OrganizerEventsCubit>().refreshEvents();
     }
   }
 
@@ -229,12 +228,7 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
 
   void _performDeleteEvent(Event event) {
     final authState = context.read<AuthCubit>().state;
-    if (authState is AuthorizedOrganizer) {
-      // context.read<OrganizerEventsCubit>().deleteEvent(
-      //       token: authState.user.token,
-      //       eventId: event.id,
-      //     );
-    }
+    if (authState is AuthorizedOrganizer) {}
   }
 
   @override

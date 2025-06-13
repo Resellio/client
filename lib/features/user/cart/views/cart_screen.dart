@@ -1,42 +1,34 @@
 // shopping_cart_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:resellio/features/common/model/Cart/cart_item.dart';
-import 'package:resellio/features/common/model/Cart/new_cart_ticket.dart';
-import 'package:resellio/features/common/model/Cart/resell_cart_ticket.dart';
+import 'package:resellio/features/user/cart/model/cart_item.dart';
+import 'package:resellio/features/user/cart/model/new_cart_ticket.dart';
+import 'package:resellio/features/user/cart/model/resell_cart_ticket.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 
-class CustomerShoppingCartScreen extends StatefulWidget {
-  const CustomerShoppingCartScreen({super.key});
+class CustomerCartScreen extends StatefulWidget {
+  const CustomerCartScreen({super.key});
 
   @override
-  State<CustomerShoppingCartScreen> createState() =>
-      _CustomerShoppingCartScreenState();
+  State<CustomerCartScreen> createState() => _CustomerCartScreenState();
 }
 
-class _CustomerShoppingCartScreenState
-    extends State<CustomerShoppingCartScreen> {
+class _CustomerCartScreenState extends State<CustomerCartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Koszyk'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-      ),
       body: BlocBuilder<CartCubit, CartState>(
         builder: (context, state) {
-          if (state is CartLoadingState) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is CartLoadedState) {
-            return state.items.isEmpty
-                ? _buildEmptyCart()
-                : _buildCartWithItems(context, state);
-          } else if (state is CartErrorState) {
-            return const Text('Error');
-          }
-          return const Text('unknown');
+          return switch (state) {
+            CartInitialState() =>
+              const Center(child: CircularProgressIndicator()),
+            CartLoadingState() =>
+              const Center(child: CircularProgressIndicator()),
+            CartLoadedState() when state.items.isEmpty => _buildEmptyCart(),
+            CartLoadedState() => _buildCartWithItems(context, state),
+            CartErrorState() => _buildCartError(context),
+          };
         },
       ),
       bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
@@ -46,6 +38,35 @@ class _CustomerShoppingCartScreenState
           }
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+
+  Center _buildCartError(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 80,
+            color: Colors.red,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Wystąpił błąd',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.read<CartCubit>().fetchCart(),
+            child: const Text('Spróbuj ponownie'),
+          ),
+        ],
       ),
     );
   }

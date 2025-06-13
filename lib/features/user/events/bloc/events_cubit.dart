@@ -14,7 +14,7 @@ class EventsCubit extends Cubit<EventsState> {
   final ApiService _apiService;
   final int _pageSize = 3;
 
-  Future<void> fetchNextPage(String token) async {
+  Future<void> fetchNextPage() async {
     if (state.status == EventsStatus.loading || state.hasReachedMax) {
       debugPrint(
         'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}',
@@ -33,7 +33,6 @@ class EventsCubit extends Cubit<EventsState> {
       );
 
       final response = await _apiService.getEvents(
-        token: token,
         page: pageToFetch,
         pageSize: _pageSize,
         query: state.searchQuery,
@@ -88,7 +87,6 @@ class EventsCubit extends Cubit<EventsState> {
   }
 
   Future<void> applyFiltersAndFetch({
-    required String token,
     String? searchQuery,
     DateTime? startDate,
     DateTime? endDate,
@@ -120,7 +118,6 @@ class EventsCubit extends Cubit<EventsState> {
       );
 
       final response = await _apiService.getEvents(
-        token: token,
         page: firstPage,
         pageSize: _pageSize,
         query: searchQuery,

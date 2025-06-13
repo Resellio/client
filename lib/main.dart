@@ -15,7 +15,6 @@ import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/style/app_theme.dart';
-import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/routes/admin_routes.dart';
 import 'package:resellio/routes/auth_routes.dart' as auth_routes;
 import 'package:resellio/routes/customer_routes.dart';
@@ -36,19 +35,34 @@ void main() async {
     runApp(
       MultiProvider(
         providers: [
-          Provider(
-            create: (context) => ApiService(
-              baseUrl: ApiEndpoints.baseUrl,
-              client: http.Client(),
-            ),
-          ),
           BlocProvider<AuthCubit>(
             create: (context) => AuthCubit(
-              apiService: context.read(),
               googleSignIn: GoogleSignIn(),
             ),
           ),
-          BlocProvider<CartCubit>(create: (context) => CartCubit()),
+          Provider(
+            create: (context) {
+              final authCubit = context.read<AuthCubit>();
+              return ApiService(
+                baseUrl: ApiEndpoints.baseUrl,
+                client: http.Client(),
+                tokenProvider: () {
+                  try {
+                    return authCubit.isAuthenticated ? authCubit.token : null;
+                  } catch (err) {
+                    return null;
+                  }
+                },
+              );
+            },
+          ),
+          BlocProvider<AuthCubit>(
+            create: (context) {
+              final authCubit = context.read<AuthCubit>()
+                ..setApiService(context.read<ApiService>());
+              return authCubit;
+            },
+          ),
         ],
         child: Builder(
           builder: (context) => MyApp(authCubit: context.read<AuthCubit>()),
@@ -81,7 +95,6 @@ class _MyAppState extends State<MyApp> {
       routes: [
         ...auth_routes.$appRoutes,
         $customerShellRouteData,
-        $customerShoppingCartRoute,
         $organizerShellRouteData,
         $adminShellRouteData,
       ],
@@ -121,7 +134,7 @@ class _MyAppState extends State<MyApp> {
               debugPrint(
                 '[Redirect] Logged in Customer on auth page, going to Customer Home',
               );
-              return const CustomerHomeRoute().location;
+              return const CustomerEventsRoute().location;
             } else if (authCubit.isOrganizer) {
               debugPrint(
                 '[Redirect] Logged in Organizer on auth page, going to Organizer Home',
@@ -141,7 +154,7 @@ class _MyAppState extends State<MyApp> {
             debugPrint(
               '[Redirect] Customer trying to access Organizer routes, going to Customer Home',
             );
-            return const CustomerHomeRoute().location;
+            return const CustomerEventsRoute().location;
           }
 
           // If organizer is trying to access customer routes
@@ -160,7 +173,7 @@ class _MyAppState extends State<MyApp> {
               '[Redirect] Non-admin trying to access Admin routes, redirecting to appropriate home',
             );
             if (authCubit.isCustomer) {
-              return const CustomerHomeRoute().location;
+              return const CustomerEventsRoute().location;
             } else if (authCubit.isOrganizer) {
               return const OrganizerHomeRoute().location;
             }
