@@ -17,27 +17,29 @@ class CustomerCartScreen extends StatefulWidget {
 class _CustomerCartScreenState extends State<CustomerCartScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<CartCubit, CartState>(
-        builder: (context, state) {
-          return switch (state) {
-            CartInitialState() =>
-              const Center(child: CircularProgressIndicator()),
-            CartLoadingState() =>
-              const Center(child: CircularProgressIndicator()),
-            CartLoadedState() when state.items.isEmpty => _buildEmptyCart(),
-            CartLoadedState() => _buildCartWithItems(context, state),
-            CartErrorState() => _buildCartError(context),
-          };
-        },
-      ),
-      bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
-        builder: (context, state) {
-          if (state is CartLoadedState && state.items.isNotEmpty) {
-            return _buildCheckoutBar(context, state);
-          }
-          return const SizedBox.shrink();
-        },
+    return SafeArea(
+      child: Scaffold(
+        body: BlocBuilder<CartCubit, CartState>(
+          builder: (context, state) {
+            return switch (state) {
+              CartInitialState() =>
+                const Center(child: CircularProgressIndicator()),
+              CartLoadingState() =>
+                const Center(child: CircularProgressIndicator()),
+              CartLoadedState() when state.items.isEmpty => _buildEmptyCart(),
+              CartLoadedState() => _buildCartWithItems(context, state),
+              CartErrorState() => _buildCartError(context),
+            };
+          },
+        ),
+        bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
+          builder: (context, state) {
+            if (state is CartLoadedState && state.items.isNotEmpty) {
+              return _buildCheckoutBar(context, state);
+            }
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }
@@ -251,54 +253,52 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
           ),
         ],
       ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Łącznie:',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Łącznie:',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                Text(
-                  '${calculatedTotal.toStringAsFixed(2)} PLN',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
+              ),
+              Text(
+                '${calculatedTotal.toStringAsFixed(2)} PLN',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _checkout(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _checkout(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Przejdź do płatności',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+              ),
+              child: const Text(
+                'Przejdź do płatności',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
