@@ -8,7 +8,7 @@ class ApiEndpoints {
   static const String shoppingCarts = 'ShoppingCarts';
   static const String checkout = '$shoppingCarts/checkout';
   static const String checkoutDue = '$shoppingCarts/due';
-
+  static const String tickets = 'Tickets';
   static const String organizerEvents = '$events/organizer';
   static const String adminGoogleLogin = '$admins/google-login';
   static const String customerGoogleLogin = '$customers/google-login';

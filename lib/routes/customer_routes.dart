@@ -15,6 +15,8 @@ import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
 import 'package:resellio/features/user/profile/views/profile_screen.dart';
 import 'package:resellio/features/user/shell_screen.dart';
+import 'package:resellio/features/user/tickets/bloc/ticket_details_cubit.dart';
+import 'package:resellio/features/user/tickets/bloc/tickets_cubit.dart';
 import 'package:resellio/features/user/tickets/views/ticket_screen.dart';
 import 'package:resellio/features/user/tickets/views/tickets_screen.dart';
 
@@ -44,7 +46,7 @@ part 'customer_routes.g.dart';
         TypedGoRoute<CustomerTicketsRoute>(
           path: '/app/tickets',
           routes: [
-            TypedGoRoute<TicketDetailRoute>(path: ':ticketId'),
+            TypedGoRoute<CustomerTicketDetailRoute>(path: ':ticketId'),
           ],
         ),
       ],
@@ -157,18 +159,28 @@ class CustomerTicketsRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const CustomerTicketsScreen();
+    return BlocProvider(
+      create: (context) => TicketsCubit(
+        apiService: context.read<ApiService>(),
+      ),
+      child: const CustomerTicketsScreen(),
+    );
   }
 }
 
-class TicketDetailRoute extends GoRouteData {
-  const TicketDetailRoute({required this.ticketId});
+class CustomerTicketDetailRoute extends GoRouteData {
+  const CustomerTicketDetailRoute({required this.ticketId});
 
   final String ticketId;
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return CustomerTicketScreen(ticketId: ticketId);
+    return BlocProvider(
+      create: (context) => TicketDetailsCubit(
+        apiService: context.read<ApiService>(),
+      ),
+      child: CustomerTicketScreen(ticketId: ticketId),
+    );
   }
 }
 

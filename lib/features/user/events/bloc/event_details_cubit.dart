@@ -36,16 +36,20 @@ class EventDetailsCubit extends Cubit<EventDetailsState> {
           errorMessage: err.toString(),
         ),
       );
-    }  }
+    }
+  }
 
   void updateTicketAvailabilityLocally(String ticketId, int decreaseBy) {
     if (state.status != EventDetailsStatus.success || state.event == null) {
       return;
     }
 
-    final currentEvent = state.event!;    final updatedTickets = currentEvent.tickets.map((ticket) {
+    final currentEvent = state.event!;
+    final updatedTickets = currentEvent.tickets.map((ticket) {
       if (ticket.id == ticketId) {
-        final newAmount = (ticket.amountAvailable - decreaseBy).clamp(0, double.infinity).toInt();
+        final newAmount = (ticket.amountAvailable - decreaseBy)
+            .clamp(0, double.infinity)
+            .toInt();
         return TicketType(
           id: ticket.id,
           description: ticket.description,

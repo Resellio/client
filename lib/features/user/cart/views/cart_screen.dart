@@ -20,6 +20,10 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Koszyk'),
+          foregroundColor: Colors.white,
+        ),
         body: BlocBuilder<CartCubit, CartState>(
           builder: (context, state) {
             return switch (state) {

@@ -35,7 +35,7 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
               routes: [
                 GoRouteData.$route(
                   path: ':ticketId',
-                  factory: $TicketDetailRouteExtension._fromState,
+                  factory: $CustomerTicketDetailRouteExtension._fromState,
                 ),
               ],
             ),
@@ -127,8 +127,9 @@ extension $CustomerTicketsRouteExtension on CustomerTicketsRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $TicketDetailRouteExtension on TicketDetailRoute {
-  static TicketDetailRoute _fromState(GoRouterState state) => TicketDetailRoute(
+extension $CustomerTicketDetailRouteExtension on CustomerTicketDetailRoute {
+  static CustomerTicketDetailRoute _fromState(GoRouterState state) =>
+      CustomerTicketDetailRoute(
         ticketId: state.pathParameters['ticketId']!,
       );
 

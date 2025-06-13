@@ -297,6 +297,7 @@ class ApiService {
       method: 'GET',
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> checkout({
     required double amount,
     required String currency,
@@ -313,6 +314,59 @@ class ApiService {
         'cardNumber': cardNumber,
         'cardExpiry': cardExpiry,
         'cvv': cvv,
+      }),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getTickets({
+    required int page,
+    required int pageSize,
+    int? usage,
+    int? resell,
+    String? eventName,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    if (usage != null) {
+      queryParams['Usage'] = usage.toString();
+    }
+    if (resell != null) {
+      queryParams['Resell'] = resell.toString();
+    }
+    if (eventName != null && eventName.trim().isNotEmpty) {
+      queryParams['EventName'] = eventName.trim();
+    }
+
+    return makeRequest(
+      endpoint: ApiEndpoints.tickets,
+      method: 'GET',
+      queryParameters: queryParams,
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getTicketDetails({
+    required String ticketId,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.tickets}/$ticketId',
+      method: 'GET',
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> resellTicket({
+    required String ticketId,
+    required double resellPrice,
+    required String resellCurrency,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.tickets}/resell/$ticketId',
+      method: 'POST',
+      body: jsonEncode({
+        'resellPrice': resellPrice,
+        'resellCurrency': resellCurrency,
       }),
     );
   }

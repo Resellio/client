@@ -1,10 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/cart/model/cart_item.dart';
+
+class CardNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text.replaceAll(' ', '');
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < text.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(text[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+class ExpiryDateFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text.replaceAll('/', '');
+
+    if (text.length > 4) {
+      return oldValue;
+    }
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < text.length; i++) {
+      if (i == 2) {
+        buffer.write('/');
+      }
+      buffer.write(text[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 class CustomerCheckoutScreen extends StatefulWidget {
   const CustomerCheckoutScreen({super.key});
@@ -62,7 +115,6 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
               });
             }
             _showErrorSnackBar(state.message);
-            // Refresh cart after error to return to normal state
             context.read<CartCubit>().fetchCart();
           }
         },
@@ -95,8 +147,8 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                     const SizedBox(height: 24),
                     // _buildPersonalInformation(),
                     // const SizedBox(height: 24),
-                    _buildBillingAddress(),
-                    const SizedBox(height: 24),
+                    // _buildBillingAddress(),
+                    // const SizedBox(height: 24),
                     _buildPaymentMethod(),
                     const SizedBox(height: 24),
                     _buildTermsAndConditions(),
@@ -281,9 +333,15 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 child: _buildTextField(
                   controller: _firstNameController,
                   label: 'Imię',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(50),
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Wprowadź imię';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Imię jest za krótkie';
                     }
                     return null;
                   },
@@ -294,9 +352,15 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 child: _buildTextField(
                   controller: _lastNameController,
                   label: 'Nazwisko',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(50),
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Wprowadź nazwisko';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Nazwisko jest za krótkie';
                     }
                     return null;
                   },
@@ -325,9 +389,20 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
             controller: _phoneController,
             label: 'Numer telefonu',
             keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d\s\+\-\(\)]')),
+              LengthLimitingTextInputFormatter(20),
+            ],
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Wprowadź numer telefonu';
+              }
+              final phoneNumber = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+              if (phoneNumber.length < 9) {
+                return 'Numer telefonu jest za krótki';
+              }
+              if (!RegExp(r'^[\+]?[\d]+$').hasMatch(phoneNumber)) {
+                return 'Nieprawidłowy format numeru telefonu';
               }
               return null;
             },
@@ -350,6 +425,9 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
               if (value == null || value.isEmpty) {
                 return 'Wprowadź adres';
               }
+              if (value.trim().length < 5) {
+                return 'Adres jest za krótki';
+              }
               return null;
             },
           ),
@@ -360,9 +438,15 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 child: _buildTextField(
                   controller: _billingCityController,
                   label: 'Miasto',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(50),
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Wprowadź miasto';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Nazwa miasta jest za krótka';
                     }
                     return null;
                   },
@@ -373,9 +457,18 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 child: _buildTextField(
                   controller: _billingPostalCodeController,
                   label: 'Kod pocztowy',
+                  keyboardType: TextInputType.text,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d\s\-]')),
+                    LengthLimitingTextInputFormatter(10),
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Wprowadź kod pocztowy';
+                    }
+                    if (!RegExp(r'^\d{2}-?\d{3}$')
+                        .hasMatch(value.replaceAll(' ', ''))) {
+                      return 'Format: 00-000';
                     }
                     return null;
                   },
@@ -427,12 +520,25 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           controller: _cardNumberController,
           label: 'Numer karty',
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(19), // 16 digits + 3 spaces
+            CardNumberFormatter(),
+          ],
+          maxLength: 19,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Wprowadź numer karty';
             }
-            if (value.replaceAll(' ', '').length < 13) {
-              return 'Numer karty jest za krótki';
+            final cardNumber = value.replaceAll(' ', '');
+            if (cardNumber.length < 13 || cardNumber.length > 19) {
+              return 'Numer karty musi mieć 13-19 cyfr';
+            }
+            if (!RegExp(r'^\d+$').hasMatch(cardNumber)) {
+              return 'Numer karty może zawierać tylko cyfry';
+            }
+            if (!_isValidCardNumber(cardNumber)) {
+              return 'Nieprawidłowy numer karty';
             }
             return null;
           },
@@ -443,15 +549,43 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
             Expanded(
               child: _buildTextField(
                 controller: _cardExpiryController,
-                label: 'MM/YY',
+                label: 'Data ważności (MM/RR)',
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                  ExpiryDateFormatter(),
+                ],
+                maxLength: 5,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Wprowadź datę ważności';
                   }
                   if (!RegExp(r'^\d{2}/\d{2}$').hasMatch(value)) {
-                    return 'Format: MM/YY';
+                    return 'Format: MM/RR';
                   }
+
+                  final parts = value.split('/');
+                  final month = int.tryParse(parts[0]);
+                  final year = int.tryParse(parts[1]);
+
+                  if (month == null || month < 1 || month > 12) {
+                    return 'Nieprawidłowy miesiąc (01-12)';
+                  }
+
+                  if (year == null) {
+                    return 'Nieprawidłowy rok';
+                  }
+
+                  final now = DateTime.now();
+                  final currentYear = now.year % 100;
+                  final currentMonth = now.month;
+
+                  if (year < currentYear ||
+                      (year == currentYear && month < currentMonth)) {
+                    return 'Karta jest przeterminowana';
+                  }
+
                   return null;
                 },
               ),
@@ -462,12 +596,20 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 controller: _cvvController,
                 label: 'CVV',
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
+                maxLength: 4,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Wprowadź CVV';
                   }
-                  if (value.length < 3) {
-                    return 'CVV musi mieć 3-4 cyfry';
+                  if (value.length < 3 || value.length > 4) {
+                    return 'CVV: 3-4 cyfry';
+                  }
+                  if (!RegExp(r'^\d+$').hasMatch(value)) {
+                    return 'CVV może zawierać tylko cyfry';
                   }
                   return null;
                 },
@@ -745,11 +887,15 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     required String label,
     String? Function(String?)? validator,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    int? maxLength,
   }) {
     return TextFormField(
       controller: controller,
       validator: validator,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(
@@ -772,8 +918,30 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
         fillColor: const Color(0xFFFAFBFC),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        counterText: maxLength != null ? '' : null,
       ),
     );
+  }
+
+  bool _isValidCardNumber(String cardNumber) {
+    var sum = 0;
+    var isEven = false;
+
+    for (var i = cardNumber.length - 1; i >= 0; i--) {
+      var digit = int.parse(cardNumber[i]);
+
+      if (isEven) {
+        digit *= 2;
+        if (digit > 9) {
+          digit = digit ~/ 10 + digit % 10;
+        }
+      }
+
+      sum += digit;
+      isEven = !isEven;
+    }
+
+    return sum % 10 == 0;
   }
 
   Future<void> _processPayment(CartLoadedState state) async {
