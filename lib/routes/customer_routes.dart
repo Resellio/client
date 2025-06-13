@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/views/cart_screen.dart';
+import 'package:resellio/features/user/cart/views/checkout_screen.dart';
 import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
@@ -49,7 +51,12 @@ part 'customer_routes.g.dart';
     ),
     TypedStatefulShellBranch<CustomerCartBranchData>(
       routes: [
-        TypedGoRoute<CustomerCartRoute>(path: '/app/cart'),
+        TypedGoRoute<CustomerCartRoute>(
+          path: '/app/cart',
+          routes: [
+            TypedGoRoute<CustomerCheckoutRoute>(path: 'checkout'),
+          ],
+        ),
       ],
     ),
     TypedStatefulShellBranch<CustomerProfileBranchData>(
@@ -180,5 +187,14 @@ class CustomerCartRoute extends GoRouteData {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return const CustomerCartScreen();
+  }
+}
+
+class CustomerCheckoutRoute extends GoRouteData {
+  const CustomerCheckoutRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return const CustomerCheckoutScreen();
   }
 }

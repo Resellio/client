@@ -46,6 +46,12 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
             GoRouteData.$route(
               path: '/app/cart',
               factory: $CustomerCartRouteExtension._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'checkout',
+                  factory: $CustomerCheckoutRouteExtension._fromState,
+                ),
+              ],
             ),
           ],
         ),
@@ -146,6 +152,24 @@ extension $CustomerCartRouteExtension on CustomerCartRoute {
 
   String get location => GoRouteData.$location(
         '/app/cart',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+extension $CustomerCheckoutRouteExtension on CustomerCheckoutRoute {
+  static CustomerCheckoutRoute _fromState(GoRouterState state) =>
+      const CustomerCheckoutRoute();
+
+  String get location => GoRouteData.$location(
+        '/app/cart/checkout',
       );
 
   void go(BuildContext context) => context.go(location);

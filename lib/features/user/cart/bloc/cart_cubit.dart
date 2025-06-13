@@ -31,15 +31,16 @@ class CartCubit extends Cubit<CartState> {
     }
   }
 
-  Future<void> addTicketToCart(String ticketTypeId, int quantity) async {
+  Future<bool> addTicketToCart(String ticketTypeId, int quantity) async {
     try {
       await apiService.addTicket(
         ticketTypeId: ticketTypeId,
         quantity: quantity,
       );
       await fetchCart();
+      return true;
     } catch (err) {
-      emit(CartErrorState(message: 'Failed to add ticket: $err'));
+      return false;
     }
   }
 
@@ -138,6 +139,36 @@ class CartCubit extends Cubit<CartState> {
   }
 
   double _calculateTotalPrice(List<CartItem> items) {
-    return items.fold(0, (sum, item) => sum + item.totalPrice);
+    final total = items.fold<double>(0, (sum, item) => sum + item.totalPrice);
+    return double.parse(total.toStringAsFixed(2));
+  }
+
+  Future<bool> processCheckout({
+    required double amount,
+    required String currency,
+    required String cardNumber,
+    required String cardExpiry,
+    required String cvv,
+  }) async {
+    try {
+      final response = await apiService.checkout(
+        amount: amount,
+        currency: currency,
+        cardNumber: cardNumber,
+        cardExpiry: cardExpiry,
+        cvv: cvv,
+      );
+
+      if (response.success) {
+        await fetchCart();
+        return true;
+      } else {
+        emit(CartErrorState(message: 'Payment failed: ${response.message}'));
+        return false;
+      }
+    } catch (err) {
+      emit(CartErrorState(message: 'Payment failed: $err'));
+      return false;
+    }
   }
 }

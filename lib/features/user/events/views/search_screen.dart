@@ -41,7 +41,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
   final TextEditingController _searchController = TextEditingController();
 
-  @override
   // TEMP
   final List<String> _cities = [
     'Warszawa',
@@ -49,7 +48,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     'Gdańsk',
     'Wrocław',
     'Poznań',
-    'Łódź'
+    'Łódź',
   ];
 
   late final Debouncer _debouncer;
@@ -514,11 +513,24 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
           case EventsStatus.failure:
             return Center(
-              child: _buildPlaceholder(
-                icon: Icons.error_outline,
-                message:
-                    'Wystąpił błąd podczas ładowania wydarzeń.\n${state.errorMessage ?? 'Spróbuj ponownie później.'}',
-                iconColor: Colors.red.shade400,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildPlaceholder(
+                    icon: Icons.error_outline,
+                    message:
+                        'Wystąpił błąd podczas ładowania wydarzeń.\n${state.errorMessage ?? 'Spróbuj ponownie później.'}',
+                    iconColor: Colors.red.shade400,
+                  ),
+                  ElevatedButton(
+                    onPressed: _triggerSearch,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Odśwież'),
+                  ),
+                ],
               ),
             );
 

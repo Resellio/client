@@ -291,6 +291,32 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> getDueAmount() async {
+    return makeRequest(
+      endpoint: ApiEndpoints.checkoutDue,
+      method: 'GET',
+    );
+  }
+  Future<ApiResponse<Map<String, dynamic>>> checkout({
+    required double amount,
+    required String currency,
+    required String cardNumber,
+    required String cardExpiry,
+    required String cvv,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.checkout,
+      method: 'POST',
+      body: jsonEncode({
+        'amount': double.parse(amount.toStringAsFixed(2)),
+        'currency': currency,
+        'cardNumber': cardNumber,
+        'cardExpiry': cardExpiry,
+        'cvv': cvv,
+      }),
+    );
+  }
+
   ApiResponse<Map<String, dynamic>> _handleResponse(http.Response response) {
     print('Response Status: ${response.statusCode}');
     print('Response Body: ${response.body}');

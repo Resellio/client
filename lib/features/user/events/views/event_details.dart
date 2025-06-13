@@ -42,7 +42,10 @@ class _EventDetailsScreenState extends State<CustomerEventDetailsScreen> {
                   .read<EventDetailsCubit>()
                   .loadEventDetails(widget.eventId),
             ),
-          EventDetailsStatus.success => _EventDetailsView(event: state.event!),
+          EventDetailsStatus.success => _EventDetailsView(
+              event: state.event!,
+              eventId: widget.eventId,
+            ),
         };
       },
     );
@@ -102,9 +105,13 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _EventDetailsView extends StatelessWidget {
-  const _EventDetailsView({required this.event});
+  const _EventDetailsView({
+    required this.event,
+    required this.eventId,
+  });
 
   final Event event;
+  final String eventId;
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +125,7 @@ class _EventDetailsView extends StatelessWidget {
               _EventHeader(event: event),
               _EventInfo(event: event),
               _EventDescription(event: event),
-              _TicketSection(event: event),
+              _TicketSection(event: event, eventId: eventId),
               const SizedBox(height: 32),
             ],
           ),
@@ -366,9 +373,13 @@ class _EventDescription extends StatelessWidget {
 }
 
 class _TicketSection extends StatelessWidget {
-  const _TicketSection({required this.event});
+  const _TicketSection({
+    required this.event,
+    required this.eventId,
+  });
 
   final Event event;
+  final String eventId;
 
   @override
   Widget build(BuildContext context) {
@@ -397,7 +408,12 @@ class _TicketSection extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          ...event.tickets.map((ticket) => _TicketCard(ticket: ticket)),
+          ...event.tickets.map(
+            (ticket) => _TicketCard(
+              ticket: ticket,
+              eventId: eventId,
+            ),
+          ),
         ],
       ),
     );
@@ -431,9 +447,13 @@ class TicketType {
 }
 
 class _TicketCard extends StatelessWidget {
-  const _TicketCard({required this.ticket});
+  const _TicketCard({
+    required this.ticket,
+    required this.eventId,
+  });
 
   final TicketType ticket;
+  final String eventId;
 
   @override
   Widget build(BuildContext context) {
@@ -521,21 +541,47 @@ class _TicketCard extends StatelessWidget {
     );
   }
 
-  void _addToCart(BuildContext context, TicketType ticket) {
-    context.read<CartCubit>().addTicketToCart(ticket.id, 1);
+  Future<void> _addToCart(BuildContext context, TicketType ticket) async {
+    final success =
+        await context.read<CartCubit>().addTicketToCart(ticket.id, 1);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Dodano bilet do koszyka: ${ticket.description}'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        action: SnackBarAction(
-          label: 'Zobacz koszyk',
-          textColor: Colors.white,
-          onPressed: () => const CustomerCartRoute().go(context),
+    if (!context.mounted) {
+      return;
+    }
+
+    if (success) {
+      context
+          .read<EventDetailsCubit>()
+          .updateTicketAvailabilityLocally(ticket.id, 1);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Dodano bilet do koszyka: ${ticket.description}'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          action: SnackBarAction(
+            label: 'Zobacz koszyk',
+            textColor: Colors.white,
+            onPressed: () => const CustomerCartRoute().go(context),
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Nie udało się dodać biletu do koszyka: ${ticket.description}',
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Spróbuj ponownie',
+            textColor: Colors.white,
+            onPressed: () => _addToCart(context, ticket),
+          ),
+        ),
+      );
+    }
   }
 }
 

@@ -1,11 +1,12 @@
 // shopping_cart_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:resellio/features/user/cart/model/cart_item.dart';
-import 'package:resellio/features/user/cart/model/new_cart_ticket.dart';
-import 'package:resellio/features/user/cart/model/resell_cart_ticket.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
+
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
+import 'package:resellio/features/user/cart/model/cart_item.dart';
+import 'package:resellio/routes/customer_routes.dart';
 
 class CustomerCartScreen extends StatefulWidget {
   const CustomerCartScreen({super.key});
@@ -74,51 +75,65 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
   }
 
   Widget _buildEmptyCart() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 80,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Twój koszyk jest pusty',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.shopping_cart_outlined,
+              size: 64,
+              color: Colors.grey[400],
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Dodaj bilety do koszyka, aby kontynuować',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
+            const SizedBox(height: 16),
+            Text(
+              'Koszyk jest pusty',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Dodaj jakieś bilety do koszyka',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => const CustomerEventsRoute().go(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Szukaj wydarzeń'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCartWithItems(BuildContext context, CartLoadedState state) {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: state.items.length,
-            itemBuilder: (context, index) {
-              final item = state.items[index];
-              return _buildCartItemCard(context, item, index);
-            },
-          ),
-        ),
-      ],
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: state.items.length,
+      itemBuilder: (context, index) {
+        final item = state.items[index];
+        return _buildCartItemCard(context, item, index);
+      },
     );
   }
 
@@ -228,18 +243,19 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
   }
 
   Widget _buildCheckoutBar(BuildContext context, CartLoadedState state) {
-    // Calculate total with current quantities from the cart state
-    double calculatedTotal = 0.0;
-    for (int i = 0; i < state.items.length; i++) {
+    var calculatedTotal = 0.0;
+    for (var i = 0; i < state.items.length; i++) {
       final item = state.items[i];
       if (item.isResell) {
         calculatedTotal += item.totalPrice;
       } else {
         final newItem = item as NewCartItem;
         final quantity = newItem.ticket.quantity;
-        calculatedTotal += newItem.ticket.unitPrice * quantity;
+        final itemTotal = newItem.ticket.unitPrice * quantity;
+        calculatedTotal += double.parse(itemTotal.toStringAsFixed(2));
       }
     }
+    calculatedTotal = double.parse(calculatedTotal.toStringAsFixed(2));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -280,7 +296,7 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => _checkout(context),
+              onPressed: () => const CustomerCheckoutRoute().go(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
@@ -318,21 +334,9 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
       const SnackBar(content: Text('Usunięto bilet z koszyka')),
     );
   }
-
-  void _checkout(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Przechodzenie do płatności...')),
-    );
-  }
 }
 
 class QuantityControlsWidget extends StatefulWidget {
-  final int index;
-  final int initialQuantity;
-  final int maxQuantity;
-  final Function(int) onQuantityUpdate;
-  final VoidCallback onRemoveItem;
-
   const QuantityControlsWidget({
     super.key,
     required this.index,
@@ -341,6 +345,12 @@ class QuantityControlsWidget extends StatefulWidget {
     required this.onQuantityUpdate,
     required this.onRemoveItem,
   });
+
+  final int index;
+  final int initialQuantity;
+  final int maxQuantity;
+  final void Function(int) onQuantityUpdate;
+  final VoidCallback onRemoveItem;
 
   @override
   State<QuantityControlsWidget> createState() => _QuantityControlsWidgetState();
@@ -360,7 +370,6 @@ class _QuantityControlsWidgetState extends State<QuantityControlsWidget> {
   @override
   void didUpdateWidget(QuantityControlsWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update when the initial quantity changes (after successful update from cubit)
     if (widget.initialQuantity != oldWidget.initialQuantity) {
       _currentQuantity = widget.initialQuantity;
       _originalQuantity = widget.initialQuantity;
