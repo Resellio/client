@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
@@ -33,7 +34,7 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
                 const Center(child: CircularProgressIndicator()),
               CartLoadedState() when state.items.isEmpty => _buildEmptyCart(),
               CartLoadedState() => _buildCartWithItems(context, state),
-              CartErrorState() => _buildCartError(context),
+              CartErrorState() => _buildCartError(context, state),
             };
           },
         ),
@@ -49,32 +50,11 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
     );
   }
 
-  Center _buildCartError(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 80,
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Wystąpił błąd',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.red,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => context.read<CartCubit>().fetchCart(),
-            child: const Text('Spróbuj ponownie'),
-          ),
-        ],
-      ),
+  Widget _buildCartError(BuildContext context, CartErrorState state) {
+    return CommonErrorWidget(
+      message: state.message,
+      onRetry: () => context.read<CartCubit>().fetchCart(),
+      showBackButton: false,
     );
   }
 
@@ -326,17 +306,13 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
   void _updateQuantity(BuildContext context, int index, int newQuantity) {
     context.read<CartCubit>().updateQuantity(index, newQuantity);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Zaktualizowano ilość na $newQuantity')),
-    );
+    SuccessSnackBar.show(context, 'Zaktualizowano ilość na $newQuantity');
   }
 
   void _removeItem(BuildContext context, int index) {
     context.read<CartCubit>().removeItem(index);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Usunięto bilet z koszyka')),
-    );
+    SuccessSnackBar.show(context, 'Usunięto bilet z koszyka');
   }
 }
 

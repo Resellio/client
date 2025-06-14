@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/cart/model/cart_item.dart';
@@ -115,7 +116,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 _isProcessingPayment = false;
               });
             }
-            _showErrorSnackBar(state.message);
+            ErrorSnackBar.show(context, state.message);
             context.read<CartCubit>().fetchCart();
           }
         },
@@ -124,9 +125,11 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
             if (state is CartLoadingState && !_isProcessingPayment) {
               return const Center(child: CircularProgressIndicator());
             }
-
             if (state is CartErrorState) {
-              return _buildErrorView(state.message);
+              return CommonErrorWidget(
+                message: state.message,
+                onRetry: () => context.read<CartCubit>().fetchCart(),
+              );
             }
 
             if (state is! CartLoadedState) {
@@ -502,7 +505,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           _buildPaymentOption(
             value: 'card',
             title: 'Karta płatnicza',
-            subtitle: 'Visa, Mastercard, BLIK',
+            subtitle: 'Visa, Mastercard',
             icon: Icons.credit_card,
           ),
           if (_selectedPaymentMethod == 'card') ...[
@@ -599,15 +602,15 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(4),
+                  LengthLimitingTextInputFormatter(3),
                 ],
-                maxLength: 4,
+                maxLength: 3,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Wprowadź CVV';
                   }
                   if (value.length < 3 || value.length > 4) {
-                    return 'CVV: 3-4 cyfry';
+                    return 'CVV: 3 cyfry';
                   }
                   if (!RegExp(r'^\d+$').hasMatch(value)) {
                     return 'CVV może zawierać tylko cyfry';
@@ -951,7 +954,10 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     }
 
     if (!_agreeToTerms) {
-      _showErrorSnackBar('Musisz zaakceptować regulamin aby kontynuować');
+      ErrorSnackBar.show(
+        context,
+        'Musisz zaakceptować regulamin aby kontynuować',
+      );
       return;
     }
 
@@ -959,7 +965,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       if (_cardNumberController.text.isEmpty ||
           _cardExpiryController.text.isEmpty ||
           _cvvController.text.isEmpty) {
-        _showErrorSnackBar('Wypełnij wszystkie pola karty płatniczej');
+        ErrorSnackBar.show(context, 'Wypełnij wszystkie pola karty płatniczej');
         return;
       }
     }
@@ -981,11 +987,13 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
         if (success) {
           _showSuccessDialog();
         }
-        // Error handling is done in the cubit, no need to show error here
       }
-    } catch (error) {
+    } catch (err) {
       if (mounted) {
-        _showErrorSnackBar('Wystąpił błąd podczas przetwarzania płatności');
+        ErrorSnackBar.show(
+          context,
+          'Wystąpił błąd podczas przetwarzania płatności',
+        );
       }
     } finally {
       if (mounted) {
@@ -1061,78 +1069,6 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           ),
         );
       },
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFFE17055),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  Widget _buildErrorView(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Wystąpił błąd',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Wróć'),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: () => context.read<CartCubit>().fetchCart(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Spróbuj ponownie'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

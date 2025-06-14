@@ -8,10 +8,11 @@ import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_state.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
-import 'package:resellio/features/common/widgets/event_card.dart'; // Ensure correct path
+import 'package:resellio/features/common/widgets/error_widget.dart';
+import 'package:resellio/features/common/widgets/event_card.dart';
 import 'package:resellio/features/common/widgets/search_widgets.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
-import 'package:resellio/features/user/events/bloc/events_state.dart'; // Ensure correct path
+import 'package:resellio/features/user/events/bloc/events_state.dart';
 import 'package:resellio/routes/customer_routes.dart';
 
 class CustomerSearchScreen extends StatelessWidget {
@@ -510,28 +511,13 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                 child: CircularProgressIndicator(),
               ),
             );
-
           case EventsStatus.failure:
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildPlaceholder(
-                    icon: Icons.error_outline,
-                    message:
-                        'Wystąpił błąd podczas ładowania wydarzeń.\n${state.errorMessage ?? 'Spróbuj ponownie później.'}',
-                    iconColor: Colors.red.shade400,
-                  ),
-                  ElevatedButton(
-                    onPressed: _triggerSearch,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Odśwież'),
-                  ),
-                ],
-              ),
+            return CommonErrorWidget(
+              message: state.errorMessage ??
+                  'Wystąpił błąd podczas ładowania wydarzeń',
+              onRetry: _triggerSearch,
+              showBackButton: false,
+              retryText: 'Odśwież',
             );
 
           case EventsStatus.loading:

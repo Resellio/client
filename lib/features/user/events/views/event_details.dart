@@ -4,11 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/common/model/address.dart';
 import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
-import 'package:resellio/routes/customer_routes.dart';
 
 class CustomerEventDetailsScreen extends StatefulWidget {
   const CustomerEventDetailsScreen({
@@ -37,11 +37,14 @@ class _EventDetailsScreenState extends State<CustomerEventDetailsScreen> {
           EventDetailsStatus.initial ||
           EventDetailsStatus.loading =>
             const _LoadingView(),
-          EventDetailsStatus.failure => _ErrorView(
-              message: state.errorMessage ?? 'Wystąpił błąd',
-              onRetry: () => context
-                  .read<EventDetailsCubit>()
-                  .loadEventDetails(widget.eventId),
+          EventDetailsStatus.failure => Scaffold(
+              body: CommonErrorWidget(
+                message: state.errorMessage ?? 'Wystąpił błąd',
+                onRetry: () => context
+                    .read<EventDetailsCubit>()
+                    .loadEventDetails(widget.eventId),
+                onBack: () => Navigator.of(context).pop(),
+              ),
             ),
           EventDetailsStatus.success => _EventDetailsView(
               event: state.event!,
@@ -61,45 +64,6 @@ class _LoadingView extends StatelessWidget {
     return const Scaffold(
       body: Center(
         child: CircularProgressIndicator(),
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({
-    required this.message,
-    required this.onRetry,
-  });
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Spróbuj ponownie'),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -555,34 +519,11 @@ class _TicketCard extends StatelessWidget {
       context
           .read<EventDetailsCubit>()
           .updateTicketAvailabilityLocally(ticket.id, 1);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Dodano bilet do koszyka: ${ticket.description}'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          action: SnackBarAction(
-            label: 'Zobacz koszyk',
-            textColor: Colors.white,
-            onPressed: () => const CustomerCartRoute().go(context),
-          ),
-        ),
-      );
+      SuccessSnackBar.show(
+          context, 'Dodano bilet do koszyka: ${ticket.description}');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Nie udało się dodać biletu do koszyka: ${ticket.description}',
-          ),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Spróbuj ponownie',
-            textColor: Colors.white,
-            onPressed: () => _addToCart(context, ticket),
-          ),
-        ),
-      );
+      ErrorSnackBar.show(context,
+          'Nie udało się dodać biletu do koszyka: ${ticket.description}');
     }
   }
 }

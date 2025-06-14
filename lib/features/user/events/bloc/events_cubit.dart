@@ -175,4 +175,18 @@ class EventsCubit extends Cubit<EventsState> {
       );
     }
   }
+
+  Future<void> refreshEvents() async {
+    debugPrint('Refreshing events...');
+
+    await applyFiltersAndFetch(
+      searchQuery: state.searchQuery,
+      startDate: state.startDateFilter,
+      endDate: state.endDateFilter,
+      minPrice: state.minPriceFilter,
+      maxPrice: state.maxPriceFilter,
+      city: state.cityFilter,
+      categories: state.categoryFilter,
+    );
+  }
 }

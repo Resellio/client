@@ -4,6 +4,7 @@ import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/model/event.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/common/widgets/event_card.dart';
 import 'package:resellio/features/common/widgets/search_widgets.dart';
 import 'package:resellio/features/organizer/events/bloc/events_cubit.dart';
@@ -235,7 +236,14 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () => const OrganizerNewEventRoute().go(context),
+        onPressed: () async {
+          final cubit = context.read<OrganizerEventsCubit>();
+          final result =
+              await const OrganizerNewEventRoute().push<bool>(context);
+          if ((result ?? false) && mounted) {
+            await cubit.refreshEvents();
+          }
+        },
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -348,37 +356,10 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   }
 
   Widget _buildErrorState(String? errorMessage) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-          const SizedBox(height: 16),
-          Text(
-            'Wystąpił błąd podczas ładowania',
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          if (errorMessage != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              errorMessage,
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _refreshEvents,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Spróbuj ponownie'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
+    return CommonErrorWidget(
+      message: errorMessage ?? 'Wystąpił błąd podczas ładowania',
+      onRetry: _refreshEvents,
+      showBackButton: false,
     );
   }
 
@@ -465,9 +446,7 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
               onTap: () {
                 Navigator.pop(context);
                 // TODO: Navigate to edit screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edycja - do implementacji')),
-                );
+                ErrorSnackBar.show(context, 'Edycja - do implementacji');
               },
             ),
             ListTile(

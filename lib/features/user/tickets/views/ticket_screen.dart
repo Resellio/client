@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/user/tickets/bloc/ticket_details_cubit.dart';
 import 'package:resellio/features/user/tickets/bloc/ticket_details_state.dart';
 import 'package:resellio/features/user/tickets/model/ticket_details.dart';
@@ -50,7 +51,6 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
     ApiService apiService,
   ) {
     _resellPriceController.text = ticket.price.toString();
-    _resellCurrencyController.text = ticket.currency;
 
     showDialog<void>(
       context: context,
@@ -58,7 +58,7 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Odsprzedaj bilet',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -69,16 +69,7 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
               decoration: const InputDecoration(
                 labelText: 'Cena odsprzedaży',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.monetization_on),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _resellCurrencyController,
-              decoration: const InputDecoration(
-                labelText: 'Waluta',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.currency_exchange),
+                suffixText: 'PLN',
               ),
             ),
           ],
@@ -92,47 +83,30 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
             onPressed: () async {
               final price = double.tryParse(_resellPriceController.text);
               if (price == null || price <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Podaj prawidłową cenę')),
-                );
+                ErrorSnackBar.show(context, 'Podaj prawidłową cenę');
                 return;
               }
-
               final navigator = Navigator.of(context);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
 
               try {
                 final response = await apiService.resellTicket(
                   ticketId: widget.ticketId,
                   resellPrice: price,
-                  resellCurrency: _resellCurrencyController.text,
+                  resellCurrency: 'PLN',
                 );
                 if (mounted) {
                   if (response.success) {
                     navigator.pop();
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Bilet został wystawiony na odsprzedaż!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    SuccessSnackBar.show(
+                        this.context, 'Bilet został wystawiony na odsprzedaż!');
                   } else {
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: Text(response.message ?? 'Wystąpił błąd'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    ErrorSnackBar.show(
+                        this.context, response.message ?? 'Wystąpił błąd');
                   }
                 }
-              } catch (e) {
+              } catch (err) {
                 if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text('Błąd: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  ErrorSnackBar.show(this.context, 'Błąd: $err');
                 }
               }
             },
@@ -151,7 +125,7 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
     Uint8List? qrBytes;
     try {
       qrBytes = base64Decode(ticket.qrcode);
-    } catch (e) {
+    } catch (err) {
       // If it's not base64, assume it's a URL
     }
 
@@ -170,68 +144,33 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
             ),
           ],
         ),
-        child: Column(
-          children: [
-            Text(
-              'Kod QR biletu',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
+        child: GestureDetector(
+          onTap: _toggleFullscreen,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth:
+                  _isFullscreen ? MediaQuery.of(context).size.width * 0.8 : 200,
+              maxHeight: _isFullscreen
+                  ? MediaQuery.of(context).size.height * 0.6
+                  : 200,
             ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _toggleFullscreen,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: _isFullscreen
-                          ? MediaQuery.of(context).size.width * 0.8
-                          : 200,
-                      maxHeight: _isFullscreen
-                          ? MediaQuery.of(context).size.height * 0.6
-                          : 200,
+            child: qrBytes != null
+                ? Image.memory(
+                    qrBytes,
+                    fit: BoxFit.contain,
+                  )
+                : CachedNetworkImage(
+                    imageUrl: ticket.qrcode,
+                    fit: BoxFit.contain,
+                    placeholder: (context, url) =>
+                        const CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => const Icon(
+                      Icons.error,
+                      size: 50,
+                      color: Colors.red,
                     ),
-                    child: qrBytes != null
-                        ? Image.memory(
-                            qrBytes,
-                            fit: BoxFit.contain,
-                          )
-                        : CachedNetworkImage(
-                            imageUrl: ticket.qrcode,
-                            fit: BoxFit.contain,
-                            placeholder: (context, url) =>
-                                const CircularProgressIndicator(),
-                            errorWidget: (context, url, error) => const Icon(
-                              Icons.error,
-                              size: 50,
-                              color: Colors.red,
-                            ),
-                          ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Dotknij kod QR, aby wyświetlić na pełnym ekranie',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -253,13 +192,6 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +231,8 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          _buildDetailRow(Icons.person, 'Imię na bilecie', ticket.nameOnTicket),
+          _buildDetailRow(
+              Icons.person, 'Nazwa na bilecie', ticket.nameOnTicket),
           const SizedBox(height: 12),
           _buildDetailRow(
             Icons.monetization_on,
@@ -322,7 +255,7 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
           _buildDetailRow(
             Icons.location_on,
             'Lokalizacja',
-            '${ticket.address.street}, ${ticket.address.city}',
+            '${ticket.address.street} ${ticket.address.houseNumber}, ${ticket.address.postalCode} ${ticket.address.city}',
           ),
         ],
       ),
@@ -348,7 +281,6 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.8),
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 2),
@@ -357,7 +289,6 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -444,10 +375,7 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
         appBar: _isFullscreen
             ? null
             : AppBar(
-                title: const Text(
-                  'Szczegóły biletu',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                title: const Text('Szczegóły biletu'),
                 backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
                 elevation: 0,
@@ -456,57 +384,16 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
           builder: (context, state) {
             if (state is TicketDetailsLoadingState) {
               return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Ładowanie szczegółów biletu...'),
-                  ],
-                ),
+                child: CircularProgressIndicator(),
               );
             }
-
             if (state is TicketDetailsErrorState) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Błąd',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context
-                            .read<TicketDetailsCubit>()
-                            .loadTicketDetails(widget.ticketId);
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Spróbuj ponownie'),
-                    ),
-                  ],
-                ),
+              return CommonErrorWidget(
+                message: state.message,
+                onRetry: () => context
+                    .read<TicketDetailsCubit>()
+                    .loadTicketDetails(widget.ticketId),
+                showBackButton: false,
               );
             }
 
@@ -535,12 +422,12 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
                       ),
                     ),
                     Positioned(
-                      top: 40,
-                      right: 20,
+                      top: 20,
+                      left: 20,
                       child: IconButton(
                         onPressed: _toggleFullscreen,
                         icon: const Icon(
-                          Icons.fullscreen_exit,
+                          Icons.close,
                           color: Colors.white,
                           size: 32,
                         ),
@@ -563,6 +450,16 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
                       _buildTicketDetails(ticket),
                       if (!ticket.used) ...[
                         _buildQRSection(ticket),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Dotknij kod QR, aby wyświetlić na pełnym ekranie',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                         Container(
                           margin: const EdgeInsets.all(16),
                           width: double.infinity,
@@ -572,16 +469,14 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
                               ticket,
                               context.read<ApiService>(),
                             ),
-                            icon: const Icon(Icons.sell),
                             label: const Text(
                               'Odsprzedaj bilet',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
+                              backgroundColor: Theme.of(context).primaryColor,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(

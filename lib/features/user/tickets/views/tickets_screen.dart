@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/user/tickets/bloc/tickets_cubit.dart';
 import 'package:resellio/features/user/tickets/bloc/tickets_state.dart';
 import 'package:resellio/features/user/tickets/model/ticket.dart';
@@ -353,43 +354,13 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
   }
 
   Widget _buildErrorState(TicketsErrorState state) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red[400],
+    return CommonErrorWidget(
+      message: state.message,
+      onRetry: () => context.read<TicketsCubit>().refreshTickets(
+            eventName: _searchQuery.isNotEmpty ? _searchQuery : null,
+            used: _usedFilter,
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Wystąpił błąd',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.red[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            state.message,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => context.read<TicketsCubit>().refreshTickets(
-                  eventName: _searchQuery.isNotEmpty ? _searchQuery : null,
-                  used: _usedFilter,
-                ),
-            child: const Text('Spróbuj ponownie'),
-          ),
-        ],
-      ),
+      showBackButton: false,
     );
   }
 }
