@@ -30,7 +30,6 @@ void main() async {
         ? HydratedStorageDirectory.web
         : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
-
   await initializeDateFormatting('pl_PL').then((_) {
     runApp(
       MultiProvider(
@@ -43,7 +42,7 @@ void main() async {
           Provider(
             create: (context) {
               final authCubit = context.read<AuthCubit>();
-              return ApiService(
+              final apiService = ApiService(
                 baseUrl: ApiEndpoints.baseUrl,
                 client: http.Client(),
                 tokenProvider: () {
@@ -54,13 +53,8 @@ void main() async {
                   }
                 },
               );
-            },
-          ),
-          BlocProvider<AuthCubit>(
-            create: (context) {
-              final authCubit = context.read<AuthCubit>()
-                ..setApiService(context.read<ApiService>());
-              return authCubit;
+              authCubit.setApiService(apiService);
+              return apiService;
             },
           ),
         ],

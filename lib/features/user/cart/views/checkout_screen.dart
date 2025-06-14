@@ -6,6 +6,7 @@ import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/cart/model/cart_item.dart';
+import 'package:resellio/routes/customer_routes.dart';
 
 class CardNumberFormatter extends TextInputFormatter {
   @override
@@ -1042,7 +1043,8 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close dialog
+                    Navigator.of(context).pop();
+                    const CustomerTicketsRoute().go(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
