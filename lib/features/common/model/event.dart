@@ -113,8 +113,6 @@ class Event extends Equatable {
   final double revenue;
   final int ticketsSold;
   final String? imageUrl;
-  // TODO: image url
-  // TODO: tickets list
   final List<TicketType> tickets;
 
   @override

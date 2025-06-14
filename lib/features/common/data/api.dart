@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
 import 'package:resellio/features/common/data/api_response.dart';
-import 'dart:typed_data';
-import 'package:mime/mime.dart';
-import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   ApiService({
@@ -107,17 +106,14 @@ class ApiService {
 
       final request = http.MultipartRequest(method.toUpperCase(), uri);
 
-      // Add headers (excluding Content-Type as it's set automatically for multipart)
       if (headers != null) {
-        final filteredHeaders = Map<String, String>.from(headers);
-        filteredHeaders.remove('Content-Type');
+        final filteredHeaders = Map<String, String>.from(headers)
+          ..remove('Content-Type');
         request.headers.addAll(filteredHeaders);
       }
 
-      // Add fields
       request.fields.addAll(fields);
 
-      // Add files
       if (files != null) {
         request.files.addAll(files);
       }
@@ -331,7 +327,6 @@ class ApiService {
     Uint8List? imageBytes,
     String? imageName,
   }) async {
-    // Always use multipart form data
     final fields = <String, String>{};
 
     void addFieldsRecursively(Map<String, dynamic> data, String prefix) {
@@ -349,8 +344,11 @@ class ApiService {
               fields['$fieldKey[$i]'] = value[i].toString();
             }
           }
-        } else if (value != null) {
-          fields[fieldKey] = value.toString();
+          if (value.isEmpty) {
+            fields[fieldKey] = '';
+          }
+        } else {
+          fields[fieldKey] = value?.toString() ?? '';
         }
       });
     }
@@ -361,7 +359,7 @@ class ApiService {
 
     if (imageBytes != null) {
       final imageFile = http.MultipartFile.fromBytes(
-        'image', // Field name - adjust according to your API
+        'image',
         imageBytes,
         filename: imageName ?? 'event_image.jpg',
       );

@@ -151,7 +151,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // Form Controllers
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _startDateController = TextEditingController();
@@ -169,7 +168,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
 
   final _ticketForms = [TicketTypeFormManager()];
 
-  // New state variables for the image
   Uint8List? _imageBytes;
   String? _imageName;
 
@@ -495,7 +493,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         }).toList(),
       );
 
-      // MODIFIED: Pass image bytes and name to the API service
       final response = await widget.apiService.createEvent(
         token: token,
         eventData: eventData.toJson(),
@@ -658,7 +655,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     }
   }
 
-  // --- New Widget for Image Picker ---
   Widget _buildImagePicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -724,8 +720,11 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                             borderRadius: BorderRadius.circular(12),
                             child: const Padding(
                               padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close,
-                                  color: Colors.white, size: 18),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                           ),
                         ),
@@ -738,7 +737,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     );
   }
 
-  // MODIFIED: Added the image picker to this step
   Widget _buildBasicInfoStep() {
     return _buildStepContainer(
       title: 'Podstawowe Informacje',
