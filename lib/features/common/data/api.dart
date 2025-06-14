@@ -357,23 +357,13 @@ class ApiService {
 
     addFieldsRecursively(eventData, '');
 
-    // Create list of files (empty if no image)
     final files = <http.MultipartFile>[];
 
     if (imageBytes != null) {
-      final String? mimeType = lookupMimeType(
-        imageName ?? 'image.png',
-        headerBytes: imageBytes,
-      );
-
-      final contentType =
-          MediaType.parse(mimeType ?? 'application/octet-stream');
-
       final imageFile = http.MultipartFile.fromBytes(
         'image', // Field name - adjust according to your API
         imageBytes,
         filename: imageName ?? 'event_image.jpg',
-        contentType: contentType,
       );
       files.add(imageFile);
     }

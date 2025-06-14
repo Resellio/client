@@ -693,7 +693,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Wybierz lub upuść zdjęcie',
+                        'Wybierz zdjęcie',
                         style: TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w500,
