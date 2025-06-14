@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -158,17 +159,18 @@ class _SliverEventAppBar extends StatelessWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              'https://picsum.photos/800/400?random=${event.id}',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                child: const Icon(
-                  Icons.image_not_supported,
-                  size: 64,
-                ),
+            if (event.imageUrl == null)
+              CachedNetworkImage(
+                imageUrl: 'https://picsum.photos/800/400?random=${event.id}',
+                fit: BoxFit.cover,
+                width: double.infinity,
+              )
+            else
+              Image.network(
+                event.imageUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
               ),
-            ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

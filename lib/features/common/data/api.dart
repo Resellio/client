@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
@@ -89,6 +91,65 @@ class ApiService {
       throw ApiException.networkError();
     } catch (err) {
       print('Unknown Error in makeRequest: $err');
+      throw ApiException.unknown(err.toString());
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> makeMultipartRequest({
+    required String endpoint,
+    required String method,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    required Map<String, String> fields,
+    List<http.MultipartFile>? files,
+  }) async {
+    try {
+      final Map<String, String>? stringQueryParameters =
+          queryParameters?.map((key, value) => MapEntry(key, value.toString()));
+
+      final uri = Uri.parse('$_baseUrl/$endpoint')
+          .replace(queryParameters: stringQueryParameters);
+
+      print('Making multipart request to: $uri');
+      print('Method: $method');
+      print('Fields: $fields');
+      if (files != null) print('Files count: ${files.length}');
+
+      final request = http.MultipartRequest(method.toUpperCase(), uri);
+
+      if (headers != null) {
+        final filteredHeaders = Map<String, String>.from(headers)
+          ..remove('Content-Type');
+        request.headers.addAll(filteredHeaders);
+      }
+
+      request.fields.addAll(fields);
+
+      if (files != null) {
+        request.files.addAll(files);
+      }
+
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on ApiException {
+      rethrow;
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw ApiException.failedToConnect();
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw ApiException.timeout();
+    } on FormatException catch (e) {
+      print('FormatException: $e');
+      throw ApiException.invalidResponse();
+    } on http.ClientException catch (e) {
+      print('ClientException: $e');
+      throw ApiException.networkError();
+    } catch (err) {
+      print('Unknown Error in makeMultipartRequest: $err');
       throw ApiException.unknown(err.toString());
     }
   }
@@ -246,13 +307,65 @@ class ApiService {
     );
   }
 
-  Future<ApiResponse<Map<String, dynamic>>> createEvent({
-    required Map<String, dynamic> eventData,
+  Future<ApiResponse<Map<String, dynamic>>> getOrganizerEventDetails({
+    required String token,
+    required String eventId,
   }) async {
     return makeRequest(
+      endpoint: '${ApiEndpoints.organizerEvents}/$eventId',
+      method: 'GET',
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> createEvent({
+    required Map<String, dynamic> eventData,
+    Uint8List? imageBytes,
+    String? imageName,
+  }) async {
+    final fields = <String, String>{};
+
+    void addFieldsRecursively(Map<String, dynamic> data, String prefix) {
+      data.forEach((key, value) {
+        final fieldKey = prefix.isEmpty ? key : '$prefix.$key';
+
+        if (value is Map<String, dynamic>) {
+          addFieldsRecursively(value, fieldKey);
+        } else if (value is List) {
+          for (int i = 0; i < value.length; i++) {
+            if (value[i] is Map<String, dynamic>) {
+              addFieldsRecursively(
+                  value[i] as Map<String, dynamic>, '$fieldKey[$i]');
+            } else {
+              fields['$fieldKey[$i]'] = value[i].toString();
+            }
+          }
+          if (value.isEmpty) {
+            fields[fieldKey] = '';
+          }
+        } else {
+          fields[fieldKey] = value?.toString() ?? '';
+        }
+      });
+    }
+
+    addFieldsRecursively(eventData, '');
+
+    final files = <http.MultipartFile>[];
+
+    if (imageBytes != null) {
+      final imageFile = http.MultipartFile.fromBytes(
+        'image',
+        imageBytes,
+        filename: imageName ?? 'event_image.jpg',
+      );
+      files.add(imageFile);
+    }
+
+    return makeMultipartRequest(
       endpoint: ApiEndpoints.events,
       method: 'POST',
-      body: jsonEncode(eventData),
+      fields: fields,
+      files: files.isNotEmpty ? files : null,
     );
   }
 
