@@ -49,7 +49,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
           title: Row(
             children: [
@@ -57,7 +57,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEF4444).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.warning_outlined,
@@ -93,7 +93,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                   vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: const Text(
@@ -117,7 +117,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                   vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 elevation: 0,
               ),
@@ -142,7 +142,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: const Icon(
                 Icons.check_circle_outline,
@@ -166,7 +166,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
         backgroundColor: const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         margin: const EdgeInsets.all(16),
         elevation: 8,
@@ -198,7 +198,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               color: const Color(0xFF3B82F6).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
               onPressed: () {
@@ -210,25 +210,25 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                     backgroundColor: const Color(0xFF3B82F6),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 );
               },
               icon: const Icon(Icons.edit_outlined, color: Color(0xFF3B82F6)),
-              iconSize: 22,
+              iconSize: 20,
             ),
           ),
           Container(
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: const Color(0xFFEF4444).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
               onPressed: _showDeleteConfirmation,
               icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
-              iconSize: 22,
+              iconSize: 20,
             ),
           ),
         ],
@@ -272,7 +272,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEF4444).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(
                         Icons.error_outline_rounded,
@@ -312,7 +312,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                           vertical: 12,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),
@@ -331,20 +331,13 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white,
-                          Color(0xFFF8FAFC),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF64748B).withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                          color: const Color(0xFF64748B).withOpacity(0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -361,10 +354,10 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                                 child: Text(
                                   eventDetails.name,
                                   style: const TextStyle(
-                                    fontSize: 28,
+                                    fontSize: 24,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF1E293B),
-                                    height: 1.2,
+                                    height: 1.3,
                                   ),
                                 ),
                               ),
@@ -393,10 +386,10 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF3B82F6).withOpacity(0.05),
+                              color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                                color: const Color(0xFFE2E8F0),
                               ),
                             ),
                             constraints:
@@ -418,12 +411,12 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF64748B).withOpacity(0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -439,7 +432,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                                 decoration: BoxDecoration(
                                   color:
                                       const Color(0xFF3B82F6).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
                                   Icons.analytics_outlined,
@@ -488,12 +481,12 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF64748B).withOpacity(0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -509,7 +502,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                                 decoration: BoxDecoration(
                                   color:
                                       const Color(0xFFF59E0B).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
                                   Icons.info_outline,
@@ -551,12 +544,12 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF64748B).withOpacity(0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -572,7 +565,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                                 decoration: BoxDecoration(
                                   color:
                                       const Color(0xFFEF4444).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
                                   Icons.location_on_outlined,
@@ -598,7 +591,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                                 const BoxConstraints(minWidth: double.infinity),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: const Color(0xFFE2E8F0),
                               ),
@@ -636,17 +629,17 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24), // Ticket Types Card
+                  const SizedBox(height: 24),
                   if (eventDetails.tickets.isNotEmpty)
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF64748B).withOpacity(0.08),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -662,7 +655,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF8B5CF6)
                                         .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
                                     Icons.local_activity_outlined,
@@ -709,20 +702,28 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF64748B).withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 12),
           Text(
@@ -755,7 +756,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
@@ -810,8 +811,8 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
   Widget _buildTicketTypeCard(TicketType ticket) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
