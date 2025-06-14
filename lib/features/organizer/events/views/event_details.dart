@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
-import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/organizer/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
@@ -38,24 +37,25 @@ class OrganizerEventDetailsView extends StatefulWidget {
 class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
   String formatDate(DateTime date) {
     try {
-      return DateFormat('MMM dd, yyyy - HH:mm').format(date);
-    } catch (e) {
-      return 'error';
+      return DateFormat('dd.MM.yyyy - HH:mm').format(date);
+    } catch (err) {
+      return 'błąd';
     }
   }
 
   void _showDeleteConfirmation() {
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: const Text('Delete Event'),
+          title: const Text('Usuń wydarzenie'),
           content: const Text(
-              'Are you sure you want to delete this event? This action cannot be undone.'),
+            'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja nie może zostać cofnięta.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Anuluj'),
             ),
             TextButton(
               onPressed: () {
@@ -63,7 +63,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
                 _deleteEvent();
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
+              child: const Text('Usuń'),
             ),
           ],
         );
@@ -75,7 +75,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
     // TODO: Implement delete API call
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Event deleted successfully'),
+        content: Text('Wydarzenie zostało pomyślnie usunięte'),
         backgroundColor: Colors.green,
       ),
     );
@@ -85,272 +85,292 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.grey[50],
-        appBar: AppBar(
-          title: const Text('Event Details'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 1,
-          actions: [
-            IconButton(
-              onPressed: () {
-                // TODO: Implement edit functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Edit functionality coming soon')),
-                );
-              },
-              icon: const Icon(Icons.edit),
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('Szczegóły wydarzenia'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        actions: [
+          IconButton(
+            onPressed: () {
+              // TODO: Implement edit functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Funkcja edycji będzie wkrótce dostępna'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.edit),
+          ),
+          IconButton(
+            onPressed: _showDeleteConfirmation,
+            icon: const Icon(Icons.delete, color: Colors.red),
+          ),
+        ],
+      ),
+      body: BlocBuilder<OrganizerEventDetailsCubit, EventDetailsState>(
+          builder: (context, state) {
+        if (state.status == EventDetailsStatus.loading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        if (state.status == EventDetailsStatus.failure) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Colors.red[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  state.errorMessage ?? 'nieznany błąd',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
             ),
-            IconButton(
-              onPressed: _showDeleteConfirmation,
-              icon: const Icon(Icons.delete, color: Colors.red),
-            ),
-          ],
-        ),
-        body: BlocBuilder<OrganizerEventDetailsCubit, EventDetailsState>(
-            builder: (context, state) {
-          if (state.status == EventDetailsStatus.loading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          if (state.status == EventDetailsStatus.failure) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    state.errorMessage ?? 'unknown error',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ],
-              ),
-            );
-          }
-          if (state.status == EventDetailsStatus.success) {
-            final eventDetails = state.event!;
-            final address = eventDetails.address;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Event Header Card
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  eventDetails.name,
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: eventDetails.statusColor,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  eventDetails.statusText,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            eventDetails.description,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Event Statistics Card
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Event Statistics',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildStatCard(
-                                    'Revenue',
-                                    '\$${eventDetails.revenue}',
-                                    Icons.attach_money,
-                                    Colors.purple),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildStatCard(
-                                    'Tickets Sold',
-                                    '${eventDetails.ticketsSold}',
-                                    Icons.confirmation_number,
-                                    Colors.green),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Event Details Card
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Event Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildInfoRow(Icons.calendar_today, 'Start Date',
-                              formatDate(eventDetails.startDate!)),
-                          _buildInfoRow(Icons.calendar_today, 'End Date',
-                              formatDate(eventDetails.endDate!)),
-                          _buildInfoRow(Icons.person, 'Minimum Age',
-                              '${eventDetails.minimumAge} years'),
-                          if (eventDetails.categories.isNotEmpty)
-                            _buildCategoriesRow(eventDetails.categories),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Address Card
-
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Location',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.location_on,
-                                  color: Colors.red, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${address.street} ${address.houseNumber}${address.flatNumber != null && address.flatNumber != 0 ? '/${address.flatNumber}' : ''}',
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                    Text(
-                                      '${address.postalCode} ${address.city}',
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                    Text(
-                                      address.country,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Ticket Types Card
-                  if (eventDetails.tickets.isNotEmpty)
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+          );
+        }
+        if (state.status == EventDetailsStatus.success) {
+          final eventDetails = state.event!;
+          final address = eventDetails.address;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Event Header Card
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Ticket Types',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Text(
+                                eventDetails.name,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            ...eventDetails.tickets
-                                .map(_buildTicketTypeCard)
-                                .toList(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: eventDetails.statusColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                eventDetails.statusText,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        Text(
+                          eventDetails.description,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Event Statistics Card
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Statystyki wydarzenia',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                'Przychód',
+                                '\$${eventDetails.revenue}',
+                                Icons.attach_money,
+                                Colors.purple,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Sprzedane bilety',
+                                '${eventDetails.ticketsSold}',
+                                Icons.confirmation_number,
+                                Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Event Details Card
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Informacje o wydarzeniu',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          Icons.calendar_today,
+                          'Data rozpoczęcia',
+                          formatDate(eventDetails.startDate!),
+                        ),
+                        _buildInfoRow(
+                          Icons.calendar_today,
+                          'Data zakończenia',
+                          formatDate(eventDetails.endDate!),
+                        ),
+                        _buildInfoRow(
+                          Icons.person,
+                          'Minimalny wiek',
+                          '${eventDetails.minimumAge} lat',
+                        ),
+                        if (eventDetails.categories.isNotEmpty)
+                          _buildCategoriesRow(eventDetails.categories),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Address Card
+
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Lokalizacja',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${address.street} ${address.houseNumber}${address.flatNumber != null && address.flatNumber != 0 ? '/${address.flatNumber}' : ''}',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  Text(
+                                    '${address.postalCode} ${address.city}',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  Text(
+                                    address.country,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Ticket Types Card
+                if (eventDetails.tickets.isNotEmpty)
+                  Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Rodzaje biletów',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ...eventDetails.tickets.map(_buildTicketTypeCard),
+                        ],
                       ),
                     ),
-                ],
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        }));
+                  ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      }),
+    );
   }
 
   Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -385,7 +405,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Icon(icon, size: 20, color: Colors.grey[600]),
@@ -410,14 +430,14 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
 
   Widget _buildCategoriesRow(List<String> categories) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.category, size: 20, color: Colors.grey[600]),
           const SizedBox(width: 12),
           const Text(
-            'Categories: ',
+            'Kategorie: ',
             style: TextStyle(
               fontWeight: FontWeight.w500,
               fontSize: 16,
@@ -485,14 +505,9 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Available: ${ticket.amountAvailable}',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
+          Text(
+            'Dostępne: ${ticket.amountAvailable}',
+            style: TextStyle(color: Colors.grey[600]),
           ),
         ],
       ),
