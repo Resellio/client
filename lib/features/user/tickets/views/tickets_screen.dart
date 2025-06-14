@@ -142,7 +142,8 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ),          const SizedBox(height: 12),
+          ),
+          const SizedBox(height: 12),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -157,7 +158,8 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
                   selected: _usedFilter == null,
                   onSelected: (_) => _onFilterChanged(null),
                 ),
-                const SizedBox(width: 8),                FilterChip(
+                const SizedBox(width: 8),
+                FilterChip(
                   label: const Text('Użyte'),
                   selected: (_usedFilter ?? false) == true,
                   onSelected: (_) => _onFilterChanged(true),
@@ -200,7 +202,9 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
         },
       ),
     );
-  }  Widget _buildTicketCard(Ticket ticket) {
+  }
+
+  Widget _buildTicketCard(Ticket ticket) {
     final startDate =
         DateFormat('dd.MM.yyyy HH:mm').format(ticket.eventStartDate);
     final endDate = DateFormat('dd.MM.yyyy HH:mm').format(ticket.eventEndDate);
@@ -239,7 +243,8 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
                           ? Colors.grey.withOpacity(0.2)
                           : AppColors.primary.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
-                    ),                    child: Text(
+                    ),
+                    child: Text(
                       ticket.used ? 'Użyty' : 'Aktywny',
                       style: TextStyle(
                         color:
