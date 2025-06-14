@@ -321,6 +321,20 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> getOrganizerEventDetails({
+    required String token,
+    required String eventId,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.organizerEvents}/$eventId',
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> createEvent({
     required String token,
     required Map<String, dynamic> eventData,
@@ -375,20 +389,6 @@ class ApiService {
       },
       fields: fields,
       files: files.isNotEmpty ? files : null,
-    );
-  }
-
-  Future<ApiResponse<Map<String, dynamic>>> getOrganizerEventDetails({
-    required String token,
-    required String eventId,
-  }) async {
-    return makeRequest(
-      endpoint: '${ApiEndpoints.organizerEvents}/$eventId',
-      method: 'GET',
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
     );
   }
 
