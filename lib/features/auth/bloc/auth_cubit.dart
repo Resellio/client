@@ -32,6 +32,21 @@ class AuthCubit extends HydratedCubit<AuthState>
 
   void setApiService(ApiService apiService) {
     _apiService = apiService;
+
+    if (isAuthenticated && _apiService != null) {
+      _verifyCurrentUser();
+    }
+  }
+
+  Future<void> _verifyCurrentUser() async {
+    try {
+      if (isOrganizer || isUnverifiedOrganizer) {
+        await apiService.organizerAboutMe(token);
+      }
+    } catch (err) {
+      debugPrint('Failed to verify user state: $err');
+      await logout();
+    }
   }
 
   bool get isAuthenticated => state is! Unauthorized;

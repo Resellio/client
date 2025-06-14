@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
@@ -50,11 +50,12 @@ class ApiService {
 
       final requestHeaders =
           headers ?? (requiresAuth ? _headersWithAuth : defaultHeaders);
-
-      print('Making request to: $uri');
-      print('Method: $method');
-      print('Headers: $requestHeaders');
-      if (body != null) print('Body: $body');
+      debugPrint('Making request to: $uri');
+      debugPrint('Method: $method');
+      debugPrint('Headers: $requestHeaders');
+      if (body != null) {
+        debugPrint('Body: $body');
+      }
 
       switch (method.toUpperCase()) {
         case 'GET':
@@ -102,6 +103,7 @@ class ApiService {
     Map<String, String>? headers,
     required Map<String, String> fields,
     List<http.MultipartFile>? files,
+    bool requiresAuth = true,
   }) async {
     try {
       final Map<String, String>? stringQueryParameters =
@@ -117,11 +119,20 @@ class ApiService {
 
       final request = http.MultipartRequest(method.toUpperCase(), uri);
 
+      if (requiresAuth) {
+        final token = _tokenProvider?.call();
+        if (token != null) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+      }
+
       if (headers != null) {
         final filteredHeaders = Map<String, String>.from(headers)
           ..remove('Content-Type');
         request.headers.addAll(filteredHeaders);
       }
+
+      print('Multipart Headers: ${request.headers}');
 
       request.fields.addAll(fields);
 

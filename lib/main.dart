@@ -30,56 +30,53 @@ void main() async {
         ? HydratedStorageDirectory.web
         : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
-  await initializeDateFormatting('pl_PL').then((_) {
-    runApp(
-      MultiProvider(
-        providers: [
-          BlocProvider<AuthCubit>(
-            create: (context) => AuthCubit(
-              googleSignIn: GoogleSignIn(),
-            ),
-          ),
-          Provider(
-            create: (context) {
-              final authCubit = context.read<AuthCubit>();
-              final apiService = ApiService(
-                baseUrl: ApiEndpoints.baseUrl,
-                client: http.Client(),
-                tokenProvider: () {
-                  try {
-                    return authCubit.isAuthenticated ? authCubit.token : null;
-                  } catch (err) {
-                    return null;
-                  }
-                },
-              );
-              authCubit.setApiService(apiService);
-              return apiService;
-            },
-          ),
-        ],
-        child: Builder(
-          builder: (context) => MyApp(authCubit: context.read<AuthCubit>()),
-        ),
-      ),
-    );
-  });
+
+  await initializeDateFormatting('pl_PL');
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key, required this.authCubit});
-
-  final AuthCubit authCubit;
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
+  late final AuthCubit _authCubit;
+  late final ApiService _apiService;
+
   @override
   void initState() {
     super.initState();
-    _router ??= _createRouter(widget.authCubit);
+
+    _authCubit = AuthCubit(
+      googleSignIn: GoogleSignIn(),
+    );
+
+    _apiService = ApiService(
+      baseUrl: ApiEndpoints.baseUrl,
+      client: http.Client(),
+      tokenProvider: () {
+        try {
+          return _authCubit.isAuthenticated ? _authCubit.token : null;
+        } catch (err) {
+          return null;
+        }
+      },
+    );
+
+    _authCubit.setApiService(_apiService);
+
+    _router ??= _createRouter(_authCubit);
+  }
+
+  @override
+  void dispose() {
+    _authCubit.close();
+    _apiService.client.close();
+    super.dispose();
   }
 
   GoRouter _createRouter(AuthCubit authCubit) {
@@ -187,16 +184,26 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      routerConfig: _router,
-      title: 'Bilety na wydarzenia | Resellio',
-      theme: AppTheme.lightTheme,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+    return MultiProvider(
+      providers: [
+        BlocProvider<AuthCubit>.value(
+          value: _authCubit,
+        ),
+        Provider<ApiService>.value(
+          value: _apiService,
+        ),
       ],
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        routerConfig: _router,
+        title: 'Bilety na wydarzenia | Resellio',
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
     );
   }
 }
