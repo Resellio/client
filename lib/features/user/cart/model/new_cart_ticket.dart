@@ -29,5 +29,8 @@ class NewCartTicket {
   final double unitPrice;
   final String currency;
 
-  double get totalPrice => unitPrice * quantity;
+  double get totalPrice {
+    final total = unitPrice * quantity;
+    return double.parse(total.toStringAsFixed(2));
+  }
 }

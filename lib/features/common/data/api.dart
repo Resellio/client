@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
@@ -12,22 +12,34 @@ class ApiService {
   ApiService({
     required String baseUrl,
     required this.client,
-  }) : _baseUrl = baseUrl;
+    String? Function()? tokenProvider,
+  })  : _baseUrl = baseUrl,
+        _tokenProvider = tokenProvider;
 
   final String _baseUrl;
   final http.Client client;
+  final String? Function()? _tokenProvider;
 
   static const Map<String, String> defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
 
+  Map<String, String> get _headersWithAuth {
+    final token = _tokenProvider?.call();
+    return {
+      ...defaultHeaders,
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> makeRequest({
     required String endpoint,
     required String method,
     Map<String, dynamic>? queryParameters,
-    Map<String, String> headers = defaultHeaders,
+    Map<String, String>? headers,
     String? body,
+    bool requiresAuth = true,
   }) async {
     try {
       final Map<String, String>? stringQueryParameters =
@@ -36,30 +48,30 @@ class ApiService {
       final uri = Uri.parse('$_baseUrl/$endpoint')
           .replace(queryParameters: stringQueryParameters);
 
-      print('Making request to: $uri');
-      print('Method: $method');
-      print('Headers: $headers');
-      if (body != null) print('Body: $body');
+      final requestHeaders =
+          headers ?? (requiresAuth ? _headersWithAuth : defaultHeaders);
+      debugPrint('Making request to: $uri');
+      debugPrint('Method: $method');
+      debugPrint('Headers: $requestHeaders');
+      if (body != null) {
+        debugPrint('Body: $body');
+      }
 
       switch (method.toUpperCase()) {
         case 'GET':
           final response = await client
-              .get(
-                uri,
-                headers: headers,
-              )
+              .get(uri, headers: requestHeaders)
               .timeout(const Duration(seconds: 10));
-
           return _handleResponse(response);
         case 'POST':
           final response = await client
-              .post(
-                uri,
-                headers: headers,
-                body: body,
-              )
+              .post(uri, headers: requestHeaders, body: body)
               .timeout(const Duration(seconds: 10));
-
+          return _handleResponse(response);
+        case 'DELETE':
+          final response = await client
+              .delete(uri, headers: requestHeaders, body: body)
+              .timeout(const Duration(seconds: 10));
           return _handleResponse(response);
         default:
           throw ApiException.unknown('Unsupported method: $method');
@@ -91,6 +103,7 @@ class ApiService {
     Map<String, String>? headers,
     required Map<String, String> fields,
     List<http.MultipartFile>? files,
+    bool requiresAuth = true,
   }) async {
     try {
       final Map<String, String>? stringQueryParameters =
@@ -106,11 +119,20 @@ class ApiService {
 
       final request = http.MultipartRequest(method.toUpperCase(), uri);
 
+      if (requiresAuth) {
+        final token = _tokenProvider?.call();
+        if (token != null) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+      }
+
       if (headers != null) {
         final filteredHeaders = Map<String, String>.from(headers)
           ..remove('Content-Type');
         request.headers.addAll(filteredHeaders);
       }
+
+      print('Multipart Headers: ${request.headers}');
 
       request.fields.addAll(fields);
 
@@ -151,18 +173,13 @@ class ApiService {
       endpoint: endpoint,
       method: 'POST',
       body: jsonEncode({'accessToken': accessToken}),
+      requiresAuth: false,
     );
   }
 
-  Future<ApiResponse<Map<String, dynamic>>> getCategories(
-    String token,
-  ) async {
+  Future<ApiResponse<Map<String, dynamic>>> getCategories() async {
     return makeRequest(
       endpoint: ApiEndpoints.categories,
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
       method: 'GET',
       queryParameters: {
         'page': '0',
@@ -172,7 +189,6 @@ class ApiService {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> createOrganizer({
-    required String token,
     required String firstName,
     required String lastName,
     required String displayName,
@@ -180,10 +196,6 @@ class ApiService {
     return makeRequest(
       endpoint: ApiEndpoints.organizers,
       method: 'POST',
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
       body: jsonEncode({
         'firstName': firstName,
         'lastName': lastName,
@@ -192,9 +204,9 @@ class ApiService {
     );
   }
 
-  Future<ApiResponse<Map<String, dynamic>>> organizerAboutMe({
-    required String token,
-  }) async {
+  Future<ApiResponse<Map<String, dynamic>>> organizerAboutMe(
+    String token,
+  ) async {
     return makeRequest(
       endpoint: ApiEndpoints.organizerAboutMe,
       method: 'GET',
@@ -206,7 +218,6 @@ class ApiService {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> getEvents({
-    required String token,
     required int page,
     required int pageSize,
     String? query,
@@ -241,7 +252,7 @@ class ApiService {
       queryParams['addressCity'] = city.trim();
     }
     if (categories != null && categories.isNotEmpty) {
-      for (int i = 0; i < categories.length; i++) {
+      for (var i = 0; i < categories.length; i++) {
         queryParams['CategoriesNames[$i]'] = categories[i];
       }
     }
@@ -250,15 +261,10 @@ class ApiService {
       endpoint: ApiEndpoints.events,
       method: 'GET',
       queryParameters: queryParams,
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
     );
   }
 
   Future<ApiResponse<Map<String, dynamic>>> getOrganizerEvents({
-    required String token,
     required int page,
     required int pageSize,
     String? query,
@@ -300,24 +306,15 @@ class ApiService {
       endpoint: ApiEndpoints.organizerEvents,
       method: 'GET',
       queryParameters: queryParams,
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
     );
   }
 
   Future<ApiResponse<Map<String, dynamic>>> getEventDetails({
-    required String token,
     required String eventId,
   }) async {
     return makeRequest(
       endpoint: '${ApiEndpoints.events}/$eventId',
       method: 'GET',
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
     );
   }
 
@@ -328,15 +325,10 @@ class ApiService {
     return makeRequest(
       endpoint: '${ApiEndpoints.organizerEvents}/$eventId',
       method: 'GET',
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
     );
   }
 
   Future<ApiResponse<Map<String, dynamic>>> createEvent({
-    required String token,
     required Map<String, dynamic> eventData,
     Uint8List? imageBytes,
     String? imageName,
@@ -383,12 +375,123 @@ class ApiService {
     return makeMultipartRequest(
       endpoint: ApiEndpoints.events,
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
       fields: fields,
       files: files.isNotEmpty ? files : null,
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getCart() async {
+    return makeRequest(
+      endpoint: ApiEndpoints.shoppingCarts,
+      method: 'GET',
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> addTicket({
+    required String ticketTypeId,
+    required int quantity,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.shoppingCarts,
+      method: 'POST',
+      body: jsonEncode({
+        'ticketTypeId': ticketTypeId,
+        'amount': quantity,
+      }),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> removeTicket({
+    required String ticketTypeId,
+    required int quantity,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.shoppingCarts,
+      method: 'DELETE',
+      body: jsonEncode({
+        'ticketTypeId': ticketTypeId,
+        'amount': quantity,
+      }),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getDueAmount() async {
+    return makeRequest(
+      endpoint: ApiEndpoints.checkoutDue,
+      method: 'GET',
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> checkout({
+    required double amount,
+    required String currency,
+    required String cardNumber,
+    required String cardExpiry,
+    required String cvv,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.checkout,
+      method: 'POST',
+      body: jsonEncode({
+        'amount': double.parse(amount.toStringAsFixed(2)),
+        'currency': currency,
+        'cardNumber': cardNumber,
+        'cardExpiry': cardExpiry,
+        'cvv': cvv,
+      }),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getTickets({
+    required int page,
+    required int pageSize,
+    int? usage,
+    int? resell,
+    String? eventName,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    if (usage != null) {
+      queryParams['Usage'] = usage.toString();
+    }
+    if (resell != null) {
+      queryParams['Resell'] = resell.toString();
+    }
+    if (eventName != null && eventName.trim().isNotEmpty) {
+      queryParams['EventName'] = eventName.trim();
+    }
+
+    return makeRequest(
+      endpoint: ApiEndpoints.tickets,
+      method: 'GET',
+      queryParameters: queryParams,
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getTicketDetails({
+    required String ticketId,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.tickets}/$ticketId',
+      method: 'GET',
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> resellTicket({
+    required String ticketId,
+    required double resellPrice,
+    required String resellCurrency,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.tickets}/resell/$ticketId',
+      method: 'POST',
+      body: jsonEncode({
+        'resellPrice': resellPrice,
+        'resellCurrency': resellCurrency,
+      }),
     );
   }
 

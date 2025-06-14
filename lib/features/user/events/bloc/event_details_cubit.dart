@@ -1,16 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/model/event.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
+import 'package:resellio/features/user/events/views/event_details.dart';
 
 class EventDetailsCubit extends Cubit<EventDetailsState> {
-  EventDetailsCubit(this._apiService, this._authCubit)
-      : super(EventDetailsState.initial());
+  EventDetailsCubit(this._apiService) : super(EventDetailsState.initial());
 
   final ApiService _apiService;
-  final AuthCubit _authCubit;
 
   Future<void> loadEventDetails(String eventId) async {
     if (state.status == EventDetailsStatus.loading) {
@@ -21,7 +19,6 @@ class EventDetailsCubit extends Cubit<EventDetailsState> {
 
     try {
       final event = await _apiService.getEventDetails(
-        token: _authCubit.token,
         eventId: eventId,
       );
       final ev = Event.fromJson(event.data!);
@@ -40,5 +37,52 @@ class EventDetailsCubit extends Cubit<EventDetailsState> {
         ),
       );
     }
+  }
+
+  void updateTicketAvailabilityLocally(String ticketId, int decreaseBy) {
+    if (state.status != EventDetailsStatus.success || state.event == null) {
+      return;
+    }
+
+    final currentEvent = state.event!;
+    final updatedTickets = currentEvent.tickets.map((ticket) {
+      if (ticket.id == ticketId) {
+        final newAmount = (ticket.amountAvailable - decreaseBy)
+            .clamp(0, double.infinity)
+            .toInt();
+        return TicketType(
+          id: ticket.id,
+          description: ticket.description,
+          price: ticket.price,
+          currency: ticket.currency,
+          amountAvailable: newAmount,
+        );
+      }
+      return ticket;
+    }).toList();
+
+    final updatedEvent = Event(
+      id: currentEvent.id,
+      name: currentEvent.name,
+      description: currentEvent.description,
+      startDate: currentEvent.startDate,
+      endDate: currentEvent.endDate,
+      minimumAge: currentEvent.minimumAge,
+      minimumPrice: currentEvent.minimumPrice,
+      minimumPriceCurrency: currentEvent.minimumPriceCurrency,
+      maximumPrice: currentEvent.maximumPrice,
+      maximumPriceCurrency: currentEvent.maximumPriceCurrency,
+      categories: currentEvent.categories,
+      status: currentEvent.status,
+      address: currentEvent.address,
+      tickets: updatedTickets,
+    );
+
+    emit(
+      state.copyWith(
+        status: EventDetailsStatus.success,
+        event: updatedEvent,
+      ),
+    );
   }
 }

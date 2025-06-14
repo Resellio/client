@@ -15,12 +15,39 @@ import 'package:resellio/features/common/model/Users/organizer_registration_need
 class AuthCubit extends HydratedCubit<AuthState>
     with BlocPresentationMixin<AuthState, AuthCubitEvent> {
   AuthCubit({
-    required this.apiService,
+    ApiService? apiService,
     required this.googleSignIn,
-  }) : super(const Unauthorized());
+  })  : _apiService = apiService,
+        super(const Unauthorized());
 
-  final ApiService apiService;
+  ApiService? _apiService;
   final GoogleSignIn googleSignIn;
+
+  ApiService get apiService {
+    if (_apiService == null) {
+      throw Exception('ApiService not initialized');
+    }
+    return _apiService!;
+  }
+
+  void setApiService(ApiService apiService) {
+    _apiService = apiService;
+
+    if (isAuthenticated && _apiService != null) {
+      _verifyCurrentUser();
+    }
+  }
+
+  Future<void> _verifyCurrentUser() async {
+    try {
+      if (isOrganizer || isUnverifiedOrganizer) {
+        await apiService.organizerAboutMe(token);
+      }
+    } catch (err) {
+      debugPrint('Failed to verify user state: $err');
+      await logout();
+    }
+  }
 
   bool get isAuthenticated => state is! Unauthorized;
   bool get isCustomer => state is AuthorizedCustomer;
@@ -103,9 +130,7 @@ class AuthCubit extends HydratedCubit<AuthState>
         emitPresentation(AuthenticatedEvent(user));
         emit(AuthorizedOrganizerRegistrationNeeded(user));
       } else {
-        final aboutMeResponse = await apiService.organizerAboutMe(
-          token: token,
-        );
+        final aboutMeResponse = await apiService.organizerAboutMe(token);
 
         final user = Organizer(
           email: googleUser.email,
@@ -170,7 +195,6 @@ class AuthCubit extends HydratedCubit<AuthState>
 
       final currentState = state as AuthorizedOrganizerRegistrationNeeded;
       final response = await apiService.createOrganizer(
-        token: currentState.user.token,
         firstName: firstName,
         lastName: lastName,
         displayName: displayName,

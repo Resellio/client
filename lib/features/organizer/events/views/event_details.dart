@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/organizer/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
@@ -134,45 +135,7 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
 
   void _deleteEvent() {
     // TODO: Implement delete API call
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.check_circle_outline,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Wydarzenie zostało pomyślnie usunięte',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        margin: const EdgeInsets.all(16),
-        elevation: 8,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    SuccessSnackBar.show(context, 'Wydarzenie zostało pomyślnie usunięte');
     Navigator.of(context).pop();
   }
 
@@ -203,17 +166,8 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
             child: IconButton(
               onPressed: () {
                 // TODO: Implement edit functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content:
-                        const Text('Funkcja edycji będzie wkrótce dostępna'),
-                    backgroundColor: const Color(0xFF3B82F6),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
+                ErrorSnackBar.show(
+                    context, 'Funkcja edycji będzie wkrótce dostępna');
               },
               icon: const Icon(Icons.edit_outlined, color: Color(0xFF3B82F6)),
               iconSize: 20,

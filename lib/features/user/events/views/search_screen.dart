@@ -8,10 +8,11 @@ import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_state.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
-import 'package:resellio/features/common/widgets/event_card.dart'; // Ensure correct path
+import 'package:resellio/features/common/widgets/error_widget.dart';
+import 'package:resellio/features/common/widgets/event_card.dart';
 import 'package:resellio/features/common/widgets/search_widgets.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
-import 'package:resellio/features/user/events/bloc/events_state.dart'; // Ensure correct path
+import 'package:resellio/features/user/events/bloc/events_state.dart';
 import 'package:resellio/routes/customer_routes.dart';
 
 class CustomerSearchScreen extends StatelessWidget {
@@ -41,7 +42,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
   final TextEditingController _searchController = TextEditingController();
 
-  @override
   // TEMP
   final List<String> _cities = [
     'Warszawa',
@@ -49,7 +49,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     'Gdańsk',
     'Wrocław',
     'Poznań',
-    'Łódź'
+    'Łódź',
   ];
 
   late final Debouncer _debouncer;
@@ -90,7 +90,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     if (authState is AuthorizedCustomer) {
       context.read<EventsCubit>().applyFiltersAndFetch(
-            token: authState.user.token,
             searchQuery: query,
             startDate: startDate,
             endDate: endDate,
@@ -121,7 +120,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       print("Reached bottom, loading more events...");
       final authState = context.read<AuthCubit>().state;
       if (authState is AuthorizedCustomer) {
-        context.read<EventsCubit>().fetchNextPage(authState.user.token);
+        context.read<EventsCubit>().fetchNextPage();
       }
     }
   }
@@ -512,15 +511,13 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                 child: CircularProgressIndicator(),
               ),
             );
-
           case EventsStatus.failure:
-            return Center(
-              child: _buildPlaceholder(
-                icon: Icons.error_outline,
-                message:
-                    'Wystąpił błąd podczas ładowania wydarzeń.\n${state.errorMessage ?? 'Spróbuj ponownie później.'}',
-                iconColor: Colors.red.shade400,
-              ),
+            return CommonErrorWidget(
+              message: state.errorMessage ??
+                  'Wystąpił błąd podczas ładowania wydarzeń',
+              onRetry: _triggerSearch,
+              showBackButton: false,
+              retryText: 'Odśwież',
             );
 
           case EventsStatus.loading:

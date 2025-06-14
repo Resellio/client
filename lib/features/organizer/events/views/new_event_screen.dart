@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_state.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 
 class CreateEventRequest {
   CreateEventRequest({
@@ -250,7 +250,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Błąd podczas wybierania obrazu: $e');
+        ErrorSnackBar.show(context, 'Błąd podczas wybierania obrazu: $e');
       }
     }
   }
@@ -433,16 +433,16 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     return null;
   }
 
-  Future<void> _submitForm(String token) async {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
-      _showErrorSnackBar('W formularzu znajdują się błędy');
+      ErrorSnackBar.show(context, 'W formularzu znajdują się błędy');
       return;
     }
 
     final dateOrderError =
         _validateDateOrder(_startDateController.text, _endDateController.text);
     if (dateOrderError != null) {
-      _showErrorSnackBar(dateOrderError);
+      ErrorSnackBar.show(context, dateOrderError);
       return;
     }
 
@@ -452,7 +452,8 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         _startDateController.text,
       );
       if (availableFromError != null) {
-        _showErrorSnackBar(
+        ErrorSnackBar.show(
+          context,
           'Błąd w typie biletu "${ticketForm.descriptionController.text}": $availableFromError',
         );
         return;
@@ -494,68 +495,32 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       );
 
       final response = await widget.apiService.createEvent(
-        token: token,
         eventData: eventData.toJson(),
         imageBytes: _imageBytes,
         imageName: _imageName,
       );
-
       if (!response.success) {
         if (mounted) {
-          _showErrorSnackBar(
+          ErrorSnackBar.show(
+            context,
             'Błąd podczas tworzenia wydarzenia: ${response.message ?? 'Nieznany błąd'}',
           );
         }
         return;
       }
-
       if (mounted) {
-        _showSuccessSnackBar('Wydarzenie utworzone pomyślnie!');
-        Navigator.of(context).pop();
+        SuccessSnackBar.show(context, 'Wydarzenie utworzone pomyślnie!');
+        Navigator.of(context).pop(true);
       }
     } catch (err) {
       if (mounted) {
-        _showErrorSnackBar('Błąd podczas tworzenia wydarzenia: $err');
+        ErrorSnackBar.show(context, 'Błąd podczas tworzenia wydarzenia: $err');
       }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF00B894),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFFE17055),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
   }
 
   @override
@@ -1273,7 +1238,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                           _currentStep++;
                         });
                       } else {
-                        _submitForm(context.read<AuthCubit>().token);
+                        _submitForm();
                       }
                     },
               style: ElevatedButton.styleFrom(

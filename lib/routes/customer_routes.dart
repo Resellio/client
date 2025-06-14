@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
+import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/views/cart_screen.dart';
+import 'package:resellio/features/user/cart/views/checkout_screen.dart';
 import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/events_cubit.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
@@ -13,6 +15,8 @@ import 'package:resellio/features/user/events/views/search_screen.dart';
 import 'package:resellio/features/user/home/views/home_screen.dart';
 import 'package:resellio/features/user/profile/views/profile_screen.dart';
 import 'package:resellio/features/user/shell_screen.dart';
+import 'package:resellio/features/user/tickets/bloc/ticket_details_cubit.dart';
+import 'package:resellio/features/user/tickets/bloc/tickets_cubit.dart';
 import 'package:resellio/features/user/tickets/views/ticket_screen.dart';
 import 'package:resellio/features/user/tickets/views/tickets_screen.dart';
 
@@ -20,13 +24,13 @@ part 'customer_routes.g.dart';
 
 @TypedStatefulShellRoute<CustomerShellRouteData>(
   branches: [
-    TypedStatefulShellBranch<CustomerHomeBranchData>(
-      routes: [
-        TypedGoRoute<CustomerHomeRoute>(
-          path: '/app',
-        ),
-      ],
-    ),
+    // TypedStatefulShellBranch<CustomerHomeBranchData>(
+    //   routes: [
+    //     TypedGoRoute<CustomerHomeRoute>(
+    //       path: '/app',
+    //     ),
+    //   ],
+    // ),
     TypedStatefulShellBranch<CustomerSearchBranchData>(
       routes: [
         TypedGoRoute<CustomerEventsRoute>(
@@ -42,7 +46,17 @@ part 'customer_routes.g.dart';
         TypedGoRoute<CustomerTicketsRoute>(
           path: '/app/tickets',
           routes: [
-            TypedGoRoute<TicketDetailRoute>(path: ':ticketId'),
+            TypedGoRoute<CustomerTicketDetailRoute>(path: ':ticketId'),
+          ],
+        ),
+      ],
+    ),
+    TypedStatefulShellBranch<CustomerCartBranchData>(
+      routes: [
+        TypedGoRoute<CustomerCartRoute>(
+          path: '/app/cart',
+          routes: [
+            TypedGoRoute<CustomerCheckoutRoute>(path: 'checkout'),
           ],
         ),
       ],
@@ -68,15 +82,17 @@ class CustomerShellRouteData extends StatefulShellRouteData {
         BlocProvider<EventsCubit>(
           create: (context) => EventsCubit(
             apiService: context.read<ApiService>(),
-          )..applyFiltersAndFetch(
-              token: context.read<AuthCubit>().token,
-            ),
+          )..applyFiltersAndFetch(),
         ),
         BlocProvider<CategoriesCubit>(
           create: (context) => CategoriesCubit(
             context.read<ApiService>(),
-            context.read<AuthCubit>(),
           )..getCategories(),
+        ),
+        BlocProvider<CartCubit>(
+          create: (context) => CartCubit(
+            apiService: context.read<ApiService>(),
+          )..fetchCart(),
         ),
       ],
       child: CustomerShellScreen(navigationShell: navigationShell),
@@ -94,6 +110,10 @@ class CustomerSearchBranchData extends StatefulShellBranchData {
 
 class CustomerTicketsBranchData extends StatefulShellBranchData {
   const CustomerTicketsBranchData();
+}
+
+class CustomerCartBranchData extends StatefulShellBranchData {
+  const CustomerCartBranchData();
 }
 
 class CustomerProfileBranchData extends StatefulShellBranchData {
@@ -128,7 +148,6 @@ class CustomerEventDetailRoute extends GoRouteData {
     return BlocProvider(
       create: (context) => EventDetailsCubit(
         context.read<ApiService>(),
-        context.read<AuthCubit>(),
       )..loadEventDetails(eventId),
       child: CustomerEventDetailsScreen(eventId: eventId),
     );
@@ -140,18 +159,28 @@ class CustomerTicketsRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const CustomerTicketsScreen();
+    return BlocProvider(
+      create: (context) => TicketsCubit(
+        apiService: context.read<ApiService>(),
+      ),
+      child: const CustomerTicketsScreen(),
+    );
   }
 }
 
-class TicketDetailRoute extends GoRouteData {
-  const TicketDetailRoute({required this.ticketId});
+class CustomerTicketDetailRoute extends GoRouteData {
+  const CustomerTicketDetailRoute({required this.ticketId});
 
   final String ticketId;
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return CustomerTicketScreen(ticketId: ticketId);
+    return BlocProvider(
+      create: (context) => TicketDetailsCubit(
+        apiService: context.read<ApiService>(),
+      ),
+      child: CustomerTicketScreen(ticketId: ticketId),
+    );
   }
 }
 
@@ -164,12 +193,20 @@ class CustomerProfileRoute extends GoRouteData {
   }
 }
 
-@TypedGoRoute<CustomerShoppingCartRoute>(path: '/app/cart')
-class CustomerShoppingCartRoute extends GoRouteData {
-  const CustomerShoppingCartRoute();
+class CustomerCartRoute extends GoRouteData {
+  const CustomerCartRoute();
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const CustomerShoppingCartScreen();
+    return const CustomerCartScreen();
+  }
+}
+
+class CustomerCheckoutRoute extends GoRouteData {
+  const CustomerCheckoutRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return const CustomerCheckoutScreen();
   }
 }

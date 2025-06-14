@@ -1,7 +1,15 @@
-import 'package:resellio/features/common/model/Cart/new_cart_ticket.dart';
-import 'package:resellio/features/common/model/Cart/resell_cart_ticket.dart';
+import 'package:resellio/features/user/cart/model/new_cart_ticket.dart';
+import 'package:resellio/features/user/cart/model/resell_cart_ticket.dart';
 
 abstract class CartItem {
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    if (json['isResell'] == true) {
+      return ResellCartItem(ResellCartTicket.fromJson(json));
+    } else {
+      return NewCartItem(NewCartTicket.fromJson(json));
+    }
+  }
+
   String get eventName;
   String get ticketType;
   String get organizerName;

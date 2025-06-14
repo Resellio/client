@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/common/model/address.dart';
 import 'package:resellio/features/common/model/event.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
+import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
+import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 
@@ -28,24 +31,27 @@ class _EventDetailsScreenState extends State<CustomerEventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<EventDetailsCubit, EventDetailsState>(
-        builder: (context, state) {
-          return switch (state.status) {
-            EventDetailsStatus.initial ||
-            EventDetailsStatus.loading =>
-              const _LoadingView(),
-            EventDetailsStatus.failure => _ErrorView(
+    return BlocBuilder<EventDetailsCubit, EventDetailsState>(
+      builder: (context, state) {
+        return switch (state.status) {
+          EventDetailsStatus.initial ||
+          EventDetailsStatus.loading =>
+            const _LoadingView(),
+          EventDetailsStatus.failure => Scaffold(
+              body: CommonErrorWidget(
                 message: state.errorMessage ?? 'Wystąpił błąd',
                 onRetry: () => context
                     .read<EventDetailsCubit>()
                     .loadEventDetails(widget.eventId),
+                onBack: () => Navigator.of(context).pop(),
               ),
-            EventDetailsStatus.success =>
-              _EventDetailsView(event: state.event!),
-          };
-        },
-      ),
+            ),
+          EventDetailsStatus.success => _EventDetailsView(
+              event: state.event!,
+              eventId: widget.eventId,
+            ),
+        };
+      },
     );
   }
 }
@@ -63,71 +69,33 @@ class _LoadingView extends StatelessWidget {
   }
 }
 
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({
-    required this.message,
-    required this.onRetry,
+class _EventDetailsView extends StatelessWidget {
+  const _EventDetailsView({
+    required this.event,
+    required this.eventId,
   });
 
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Spróbuj ponownie'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EventDetailsView extends StatelessWidget {
-  const _EventDetailsView({required this.event});
-
   final Event event;
+  final String eventId;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _SliverEventAppBar(event: event),
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _EventHeader(event: event),
-                _EventInfo(event: event),
-                _EventDescription(event: event),
-                _TicketSection(event: event),
-                const SizedBox(height: 32),
-              ],
-            ),
+    return CustomScrollView(
+      slivers: [
+        _SliverEventAppBar(event: event),
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _EventHeader(event: event),
+              _EventInfo(event: event),
+              _EventDescription(event: event),
+              _TicketSection(event: event, eventId: eventId),
+              const SizedBox(height: 32),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -142,13 +110,22 @@ class _SliverEventAppBar extends StatelessWidget {
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
+      iconTheme: IconThemeData(
+        color: Colors.white,
+        shadows: [
+          Shadow(
+            color: Colors.black.withOpacity(0.8),
+            blurRadius: 4,
+          ),
+        ],
+      ),
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
           children: [
             if (event.imageUrl == null)
               CachedNetworkImage(
-                imageUrl: 'https://picsum.photos/200/300?random=${event.id}',
+                imageUrl: 'https://picsum.photos/800/400?random=${event.id}',
                 fit: BoxFit.cover,
                 width: double.infinity,
               )
@@ -361,11 +338,14 @@ class _EventDescription extends StatelessWidget {
   }
 }
 
-// Ticket Section
 class _TicketSection extends StatelessWidget {
-  const _TicketSection({required this.event});
+  const _TicketSection({
+    required this.event,
+    required this.eventId,
+  });
 
   final Event event;
+  final String eventId;
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +374,12 @@ class _TicketSection extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          ...event.tickets.map((ticket) => _TicketCard(ticket: ticket)),
+          ...event.tickets.map(
+            (ticket) => _TicketCard(
+              ticket: ticket,
+              eventId: eventId,
+            ),
+          ),
         ],
       ),
     );
@@ -428,9 +413,13 @@ class TicketType {
 }
 
 class _TicketCard extends StatelessWidget {
-  const _TicketCard({required this.ticket});
+  const _TicketCard({
+    required this.ticket,
+    required this.eventId,
+  });
 
   final TicketType ticket;
+  final String eventId;
 
   @override
   Widget build(BuildContext context) {
@@ -494,10 +483,23 @@ class _TicketCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed:
-                  isAvailable ? () => _selectTicket(context, ticket) : null,
-              child: Text(isAvailable ? 'Wybierz' : 'Niedostępne'),
+            BlocBuilder<CartCubit, CartState>(
+              builder: (context, cartState) {
+                final isLoading = cartState is CartLoadingState;
+
+                return ElevatedButton(
+                  onPressed: (isAvailable && !isLoading)
+                      ? () => _addToCart(context, ticket)
+                      : null,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(isAvailable ? 'Dodaj do koszyka' : 'Niedostępne'),
+                );
+              },
             ),
           ],
         ),
@@ -505,13 +507,91 @@ class _TicketCard extends StatelessWidget {
     );
   }
 
-  void _selectTicket(BuildContext context, TicketType ticket) {
-    // TODO: Implement ticket selection logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Wybrano bilet: ${ticket.description}'),
-        duration: const Duration(seconds: 2),
-      ),
+  Future<void> _addToCart(BuildContext context, TicketType ticket) async {
+    final success =
+        await context.read<CartCubit>().addTicketToCart(ticket.id, 1);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (success) {
+      context
+          .read<EventDetailsCubit>()
+          .updateTicketAvailabilityLocally(ticket.id, 1);
+      SuccessSnackBar.show(
+          context, 'Dodano bilet do koszyka: ${ticket.description}');
+    } else {
+      ErrorSnackBar.show(context,
+          'Nie udało się dodać biletu do koszyka: ${ticket.description}');
+    }
+  }
+}
+
+class _QuantitySelector extends StatefulWidget {
+  const _QuantitySelector({
+    required this.initialQuantity,
+    required this.maxQuantity,
+    required this.onQuantityChanged,
+  });
+
+  final int initialQuantity;
+  final int maxQuantity;
+  final ValueChanged<int> onQuantityChanged;
+
+  @override
+  State<_QuantitySelector> createState() => _QuantitySelectorState();
+}
+
+class _QuantitySelectorState extends State<_QuantitySelector> {
+  late int _quantity;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantity = widget.initialQuantity;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          onPressed: _quantity > 1 ? _decrementQuantity : null,
+          icon: const Icon(Icons.remove),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          padding: EdgeInsets.zero,
+        ),
+        Container(
+          width: 40,
+          alignment: Alignment.center,
+          child: Text(
+            _quantity.toString(),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        IconButton(
+          onPressed: _quantity < widget.maxQuantity ? _incrementQuantity : null,
+          icon: const Icon(Icons.add),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          padding: EdgeInsets.zero,
+        ),
+      ],
     );
+  }
+
+  void _incrementQuantity() {
+    setState(() {
+      _quantity++;
+    });
+    widget.onQuantityChanged(_quantity);
+  }
+
+  void _decrementQuantity() {
+    setState(() {
+      _quantity--;
+    });
+    widget.onQuantityChanged(_quantity);
   }
 }
