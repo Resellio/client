@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -150,6 +151,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // Form Controllers
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _startDateController = TextEditingController();
@@ -166,6 +168,10 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
   final _categoriesController = TextEditingController();
 
   final _ticketForms = [TicketTypeFormManager()];
+
+  // New state variables for the image
+  Uint8List? _imageBytes;
+  String? _imageName;
 
   final String _displayDateFormat = 'yyyy-MM-dd HH:mm';
 
@@ -229,6 +235,33 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       form_.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        setState(() {
+          _imageBytes = result.files.single.bytes;
+          _imageName = result.files.single.name;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Błąd podczas wybierania obrazu: $e');
+      }
+    }
+  }
+
+  void _clearImage() {
+    setState(() {
+      _imageBytes = null;
+      _imageName = null;
+    });
   }
 
   String? _isoFormat(String? dateString) {
@@ -462,9 +495,12 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         }).toList(),
       );
 
+      // MODIFIED: Pass image bytes and name to the API service
       final response = await widget.apiService.createEvent(
         token: token,
         eventData: eventData.toJson(),
+        imageBytes: _imageBytes,
+        imageName: _imageName,
       );
 
       if (!response.success) {
@@ -479,7 +515,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       if (mounted) {
         _showSuccessSnackBar('Wydarzenie utworzone pomyślnie!');
         Navigator.of(context).pop();
-        // _resetForm();
       }
     } catch (err) {
       if (mounted) {
@@ -623,11 +658,94 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     }
   }
 
+  // --- New Widget for Image Picker ---
+  Widget _buildImagePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Zdjęcie wydarzenia (opcjonalnie)',
+          style: TextStyle(
+            color: Color(0xFF636E72),
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            width: double.infinity,
+            height: 150,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFBFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE9ECEF), width: 1.5),
+            ),
+            child: _imageBytes == null
+                ? const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.cloud_upload_outlined,
+                        color: AppColors.primary,
+                        size: 40,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Wybierz lub upuść zdjęcie',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: Image.memory(
+                          _imageBytes!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(child: Icon(Icons.error)),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            onTap: _clearImage,
+                            borderRadius: BorderRadius.circular(12),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.close,
+                                  color: Colors.white, size: 18),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // MODIFIED: Added the image picker to this step
   Widget _buildBasicInfoStep() {
     return _buildStepContainer(
       title: 'Podstawowe Informacje',
       icon: Icons.event,
       children: [
+        _buildImagePicker(),
+        const SizedBox(height: 16),
         _buildModernTextField(
           _nameController,
           'Nazwa wydarzenia',

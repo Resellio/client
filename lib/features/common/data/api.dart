@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
 import 'package:resellio/features/common/data/api_response.dart';
+import 'dart:typed_data';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   ApiService({
@@ -78,6 +81,68 @@ class ApiService {
       throw ApiException.networkError();
     } catch (err) {
       print('Unknown Error in makeRequest: $err');
+      throw ApiException.unknown(err.toString());
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> makeMultipartRequest({
+    required String endpoint,
+    required String method,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    required Map<String, String> fields,
+    List<http.MultipartFile>? files,
+  }) async {
+    try {
+      final Map<String, String>? stringQueryParameters =
+          queryParameters?.map((key, value) => MapEntry(key, value.toString()));
+
+      final uri = Uri.parse('$_baseUrl/$endpoint')
+          .replace(queryParameters: stringQueryParameters);
+
+      print('Making multipart request to: $uri');
+      print('Method: $method');
+      print('Fields: $fields');
+      if (files != null) print('Files count: ${files.length}');
+
+      final request = http.MultipartRequest(method.toUpperCase(), uri);
+
+      // Add headers (excluding Content-Type as it's set automatically for multipart)
+      if (headers != null) {
+        final filteredHeaders = Map<String, String>.from(headers);
+        filteredHeaders.remove('Content-Type');
+        request.headers.addAll(filteredHeaders);
+      }
+
+      // Add fields
+      request.fields.addAll(fields);
+
+      // Add files
+      if (files != null) {
+        request.files.addAll(files);
+      }
+
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on ApiException {
+      rethrow;
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw ApiException.failedToConnect();
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw ApiException.timeout();
+    } on FormatException catch (e) {
+      print('FormatException: $e');
+      throw ApiException.invalidResponse();
+    } on http.ClientException catch (e) {
+      print('ClientException: $e');
+      throw ApiException.networkError();
+    } catch (err) {
+      print('Unknown Error in makeMultipartRequest: $err');
       throw ApiException.unknown(err.toString());
     }
   }
@@ -260,6 +325,71 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> createEvent({
+    required String token,
+    required Map<String, dynamic> eventData,
+    Uint8List? imageBytes,
+    String? imageName,
+  }) async {
+    // Always use multipart form data
+    final fields = <String, String>{};
+
+    void addFieldsRecursively(Map<String, dynamic> data, String prefix) {
+      data.forEach((key, value) {
+        final fieldKey = prefix.isEmpty ? key : '$prefix.$key';
+
+        if (value is Map<String, dynamic>) {
+          addFieldsRecursively(value, fieldKey);
+        } else if (value is List) {
+          for (int i = 0; i < value.length; i++) {
+            if (value[i] is Map<String, dynamic>) {
+              addFieldsRecursively(
+                  value[i] as Map<String, dynamic>, '$fieldKey[$i]');
+            } else {
+              fields['$fieldKey[$i]'] = value[i].toString();
+            }
+          }
+        } else if (value != null) {
+          fields[fieldKey] = value.toString();
+        }
+      });
+    }
+
+    addFieldsRecursively(eventData, '');
+
+    // Create list of files (empty if no image)
+    final files = <http.MultipartFile>[];
+
+    if (imageBytes != null) {
+      final String? mimeType = lookupMimeType(
+        imageName ?? 'image.png',
+        headerBytes: imageBytes,
+      );
+
+      final contentType =
+          MediaType.parse(mimeType ?? 'application/octet-stream');
+
+      final imageFile = http.MultipartFile.fromBytes(
+        'image', // Field name - adjust according to your API
+        imageBytes,
+        filename: imageName ?? 'event_image.jpg',
+        contentType: contentType,
+      );
+      files.add(imageFile);
+    }
+
+    return makeMultipartRequest(
+      endpoint: ApiEndpoints.events,
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+      fields: fields,
+      files: files.isNotEmpty ? files : null,
+    );
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> getOrganizerEventDetails({
     required String token,
     required String eventId,
@@ -271,21 +401,6 @@ class ApiService {
         ...defaultHeaders,
         'Authorization': 'Bearer $token',
       },
-    );
-  }
-
-  Future<ApiResponse<Map<String, dynamic>>> createEvent({
-    required String token,
-    required Map<String, dynamic> eventData,
-  }) async {
-    return makeRequest(
-      endpoint: ApiEndpoints.events,
-      method: 'POST',
-      headers: {
-        ...defaultHeaders,
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(eventData),
     );
   }
 

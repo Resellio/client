@@ -21,6 +21,7 @@ class Event extends Equatable {
     this.tickets = const [],
     this.revenue = -1.0,
     this.ticketsSold = -1,
+    this.imageUrl,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -62,6 +63,7 @@ class Event extends Equatable {
           [],
       revenue: json['revenue'] as double? ?? -1.0,
       ticketsSold: json['soldTicketsCount'] as int? ?? -1,
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 
@@ -110,6 +112,7 @@ class Event extends Equatable {
   final Address address;
   final double revenue;
   final int ticketsSold;
+  final String? imageUrl;
   // TODO: image url
   // TODO: tickets list
   final List<TicketType> tickets;

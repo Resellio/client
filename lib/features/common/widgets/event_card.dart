@@ -46,12 +46,18 @@ class EventCard extends StatelessWidget {
                         topLeft: Radius.circular(8),
                         topRight: Radius.circular(8),
                       ),
-                      child: CachedNetworkImage(
-                        imageUrl:
-                            'https://picsum.photos/200/300?random=${event.id}',
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
+                      child: event.imageUrl == null
+                          ? CachedNetworkImage(
+                              imageUrl:
+                                  'https://picsum.photos/200/300?random=${event.id}',
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            )
+                          : Image.network(
+                              event.imageUrl!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
                     ),
                   ),
                   if (event.categories.isNotEmpty)
