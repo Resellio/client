@@ -14,10 +14,10 @@ class CustomerShellScreen extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: AppColors.primary,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Główna',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.home),
+          //   label: 'Główna',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Szukaj',
@@ -25,6 +25,10 @@ class CustomerShellScreen extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt),
             label: 'Moje bilety',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Koszyk',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

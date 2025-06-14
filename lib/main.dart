@@ -15,6 +15,7 @@ import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/style/app_theme.dart';
+import 'package:resellio/routes/admin_routes.dart';
 import 'package:resellio/routes/auth_routes.dart' as auth_routes;
 import 'package:resellio/routes/customer_routes.dart';
 import 'package:resellio/routes/organizer_routes.dart';
@@ -30,45 +31,52 @@ void main() async {
         : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
 
-  await initializeDateFormatting('pl_PL').then((_) {
-    runApp(
-      MultiProvider(
-        providers: [
-          Provider(
-            create: (context) => ApiService(
-              baseUrl: ApiEndpoints.baseUrl,
-              client: http.Client(),
-            ),
-          ),
-          BlocProvider<AuthCubit>(
-            create: (context) => AuthCubit(
-              apiService: context.read(),
-              googleSignIn: GoogleSignIn(),
-            ),
-          ),
-        ],
-        child: Builder(
-          builder: (context) => MyApp(authCubit: context.read<AuthCubit>()),
-        ),
-      ),
-    );
-  });
+  await initializeDateFormatting('pl_PL');
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key, required this.authCubit});
-
-  final AuthCubit authCubit;
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
+  late final AuthCubit _authCubit;
+  late final ApiService _apiService;
+
   @override
   void initState() {
     super.initState();
-    _router ??= _createRouter(widget.authCubit);
+
+    _authCubit = AuthCubit(
+      googleSignIn: GoogleSignIn(),
+    );
+
+    _apiService = ApiService(
+      baseUrl: ApiEndpoints.baseUrl,
+      client: http.Client(),
+      tokenProvider: () {
+        try {
+          return _authCubit.isAuthenticated ? _authCubit.token : null;
+        } catch (err) {
+          return null;
+        }
+      },
+    );
+
+    _authCubit.setApiService(_apiService);
+
+    _router ??= _createRouter(_authCubit);
+  }
+
+  @override
+  void dispose() {
+    _authCubit.close();
+    _apiService.client.close();
+    super.dispose();
   }
 
   GoRouter _createRouter(AuthCubit authCubit) {
@@ -79,6 +87,7 @@ class _MyAppState extends State<MyApp> {
         ...auth_routes.$appRoutes,
         $customerShellRouteData,
         $organizerShellRouteData,
+        $adminShellRouteData,
       ],
       redirect: (context, state) {
         debugPrint('[AuthState] ${authCubit.state.runtimeType}');
@@ -116,12 +125,17 @@ class _MyAppState extends State<MyApp> {
               debugPrint(
                 '[Redirect] Logged in Customer on auth page, going to Customer Home',
               );
-              return const CustomerHomeRoute().location;
+              return const CustomerEventsRoute().location;
             } else if (authCubit.isOrganizer) {
               debugPrint(
                 '[Redirect] Logged in Organizer on auth page, going to Organizer Home',
               );
               return const OrganizerHomeRoute().location;
+            } else if (authCubit.isAdmin) {
+              debugPrint(
+                '[Redirect] Logged in Admin on auth page, going to Admin Home',
+              );
+              return const AdminHomeRoute().location;
             }
           }
 
@@ -131,7 +145,7 @@ class _MyAppState extends State<MyApp> {
             debugPrint(
               '[Redirect] Customer trying to access Organizer routes, going to Customer Home',
             );
-            return const CustomerHomeRoute().location;
+            return const CustomerEventsRoute().location;
           }
 
           // If organizer is trying to access customer routes
@@ -141,6 +155,19 @@ class _MyAppState extends State<MyApp> {
               '[Redirect] Organizer trying to access Customer routes, going to Organizer Home',
             );
             return const OrganizerHomeRoute().location;
+          }
+
+          // If non-admin is trying to access admin routes
+          if (state.matchedLocation.startsWith('/admin') &&
+              !authCubit.isAdmin) {
+            debugPrint(
+              '[Redirect] Non-admin trying to access Admin routes, redirecting to appropriate home',
+            );
+            if (authCubit.isCustomer) {
+              return const CustomerEventsRoute().location;
+            } else if (authCubit.isOrganizer) {
+              return const OrganizerHomeRoute().location;
+            }
           }
         }
 
@@ -157,16 +184,26 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      routerConfig: _router,
-      title: 'Bilety na wydarzenia | Resellio',
-      theme: AppTheme.lightTheme,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+    return MultiProvider(
+      providers: [
+        BlocProvider<AuthCubit>.value(
+          value: _authCubit,
+        ),
+        Provider<ApiService>.value(
+          value: _apiService,
+        ),
       ],
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        routerConfig: _router,
+        title: 'Bilety na wydarzenia | Resellio',
+        theme: AppTheme.lightTheme,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
     );
   }
 }

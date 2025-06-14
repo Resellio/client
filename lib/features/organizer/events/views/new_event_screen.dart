@@ -1,12 +1,13 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_state.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
 
 class CreateEventRequest {
   CreateEventRequest({
@@ -165,7 +166,10 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
 
   final _categoriesController = TextEditingController();
 
-  List<TicketTypeFormManager> _ticketForms = [TicketTypeFormManager()];
+  final _ticketForms = [TicketTypeFormManager()];
+
+  Uint8List? _imageBytes;
+  String? _imageName;
 
   final String _displayDateFormat = 'yyyy-MM-dd HH:mm';
 
@@ -229,6 +233,33 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       form_.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        setState(() {
+          _imageBytes = result.files.single.bytes;
+          _imageName = result.files.single.name;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorSnackBar.show(context, 'Błąd podczas wybierania obrazu: $e');
+      }
+    }
+  }
+
+  void _clearImage() {
+    setState(() {
+      _imageBytes = null;
+      _imageName = null;
+    });
   }
 
   String? _isoFormat(String? dateString) {
@@ -402,16 +433,16 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     return null;
   }
 
-  Future<void> _submitForm(String token) async {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
-      _showErrorSnackBar('W formularzu znajdują się błędy');
+      ErrorSnackBar.show(context, 'W formularzu znajdują się błędy');
       return;
     }
 
     final dateOrderError =
         _validateDateOrder(_startDateController.text, _endDateController.text);
     if (dateOrderError != null) {
-      _showErrorSnackBar(dateOrderError);
+      ErrorSnackBar.show(context, dateOrderError);
       return;
     }
 
@@ -421,7 +452,8 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         _startDateController.text,
       );
       if (availableFromError != null) {
-        _showErrorSnackBar(
+        ErrorSnackBar.show(
+          context,
           'Błąd w typie biletu "${ticketForm.descriptionController.text}": $availableFromError',
         );
         return;
@@ -463,79 +495,32 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       );
 
       final response = await widget.apiService.createEvent(
-        token: token,
         eventData: eventData.toJson(),
+        imageBytes: _imageBytes,
+        imageName: _imageName,
       );
-
       if (!response.success) {
         if (mounted) {
-          _showErrorSnackBar(
+          ErrorSnackBar.show(
+            context,
             'Błąd podczas tworzenia wydarzenia: ${response.message ?? 'Nieznany błąd'}',
           );
         }
         return;
       }
-
       if (mounted) {
-        _showSuccessSnackBar('Wydarzenie utworzone pomyślnie!');
-        Navigator.of(context).pop();
-        // _resetForm();
+        SuccessSnackBar.show(context, 'Wydarzenie utworzone pomyślnie!');
+        Navigator.of(context).pop(true);
       }
     } catch (err) {
       if (mounted) {
-        _showErrorSnackBar('Błąd podczas tworzenia wydarzenia: $err');
+        ErrorSnackBar.show(context, 'Błąd podczas tworzenia wydarzenia: $err');
       }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  void _resetForm() {
-    _formKey.currentState?.reset();
-    _categoriesController.clear();
-    setState(() {
-      _currentStep = 0;
-      for (final f in _ticketForms) {
-        f.dispose();
-      }
-      _ticketForms = [TicketTypeFormManager()];
-    });
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF00B894),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFFE17055),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
   }
 
   @override
@@ -635,11 +620,95 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     }
   }
 
+  Widget _buildImagePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Zdjęcie wydarzenia (opcjonalnie)',
+          style: TextStyle(
+            color: Color(0xFF636E72),
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            width: double.infinity,
+            height: 150,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFBFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE9ECEF), width: 1.5),
+            ),
+            child: _imageBytes == null
+                ? const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.cloud_upload_outlined,
+                        color: AppColors.primary,
+                        size: 40,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Wybierz zdjęcie',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: Image.memory(
+                          _imageBytes!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(child: Icon(Icons.error)),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            onTap: _clearImage,
+                            borderRadius: BorderRadius.circular(12),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildBasicInfoStep() {
     return _buildStepContainer(
       title: 'Podstawowe Informacje',
       icon: Icons.event,
       children: [
+        _buildImagePicker(),
+        const SizedBox(height: 16),
         _buildModernTextField(
           _nameController,
           'Nazwa wydarzenia',
@@ -761,34 +830,35 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
               minHeight: 100,
             ),
             child: BlocBuilder<CategoriesCubit, CategoriesState>(
-                builder: (context, state) {
-              if (state is CategoriesLoaded) {
-                final selectedCategories = _categoriesController.text
-                    .split(',')
-                    .map((s) => s.trim())
-                    .where((s) => s.isNotEmpty)
-                    .toSet();
+              builder: (context, state) {
+                if (state is CategoriesLoaded) {
+                  final selectedCategories = _categoriesController.text
+                      .split(',')
+                      .map((s) => s.trim())
+                      .where((s) => s.isNotEmpty)
+                      .toSet();
 
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: state.categories.map((category) {
-                    final isSelected = selectedCategories.contains(category);
-                    return _buildSelectableCategoryChip(category, isSelected);
-                  }).toList(),
-                );
-              } else if (state is CategoriesLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              } else if (state is CategoriesError) {
-                return Text(
-                  'Błąd ładowania kategorii: ${state.message}',
-                  style: const TextStyle(color: Colors.red),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: state.categories.map((category) {
+                      final isSelected = selectedCategories.contains(category);
+                      return _buildSelectableCategoryChip(category, isSelected);
+                    }).toList(),
+                  );
+                } else if (state is CategoriesLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (state is CategoriesError) {
+                  return Text(
+                    'Błąd ładowania kategorii: ${state.message}',
+                    style: const TextStyle(color: Colors.red),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ),
       ],
@@ -986,45 +1056,6 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     );
   }
 
-  Widget _buildCategoryChip(String category) {
-    return OutlinedButton(
-      onPressed: () {
-        final currentText = _categoriesController.text;
-        final categories = currentText.split(',').map((s) => s.trim()).toList();
-
-        if (categories.contains(category)) {
-          categories.remove(category);
-        } else {
-          categories.add(category);
-        }
-
-        _categoriesController.text =
-            categories.where((s) => s.isNotEmpty).join(', ');
-      },
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: AppColors.primary.withAlpha(50)),
-        backgroundColor: AppColors.primary.withAlpha(50),
-        foregroundColor: AppColors.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(
-          category,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildModernTicketForm(int index) {
     final ticketForm = _ticketForms[index];
     return Container(
@@ -1075,7 +1106,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                     size: 20,
                   ),
                   style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFE17055).withOpacity(0.1),
+                    backgroundColor: const Color(0xFFE17055).withAlpha(30),
                     padding: const EdgeInsets.all(6),
                     minimumSize: const Size(32, 32),
                     shape: RoundedRectangleBorder(
@@ -1207,7 +1238,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                           _currentStep++;
                         });
                       } else {
-                        _submitForm(context.read<AuthCubit>().token);
+                        _submitForm();
                       }
                     },
               style: ElevatedButton.styleFrom(

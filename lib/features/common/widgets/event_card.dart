@@ -10,10 +10,16 @@ String getDateString(DateTime dateTime) {
 }
 
 class EventCard extends StatelessWidget {
-  const EventCard({required this.event, required this.onTap, super.key});
+  const EventCard({
+    required this.event,
+    required this.onTap,
+    this.onLongPress,
+    super.key,
+  });
 
   final Event event;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +29,7 @@ class EventCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(8),
         child: Stack(
           children: [
@@ -39,12 +46,18 @@ class EventCard extends StatelessWidget {
                         topLeft: Radius.circular(8),
                         topRight: Radius.circular(8),
                       ),
-                      child: CachedNetworkImage(
-                        imageUrl:
-                            'https://picsum.photos/200/300?random=${event.id}',
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
+                      child: event.imageUrl == null
+                          ? CachedNetworkImage(
+                              imageUrl:
+                                  'https://picsum.photos/200/300?random=${event.id}',
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            )
+                          : Image.network(
+                              event.imageUrl!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
                     ),
                   ),
                   if (event.categories.isNotEmpty)

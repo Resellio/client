@@ -119,6 +119,25 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
             ),
+
+            Positioned(
+              top: 50,
+              right: 32,
+              child: IconButton(
+                onPressed: () => _showLoginBottomSheet(
+                  context,
+                  title: 'Dostęp administratora',
+                  icon: Icons.admin_panel_settings,
+                  onSignInWithGoogle:
+                      context.read<AuthCubit>().adminSignInWithGoogle,
+                ),
+                icon: const Icon(
+                  Icons.admin_panel_settings,
+                  color: Colors.white54,
+                  size: 24,
+                ),
+              ),
+            ),
           ],
         ),
       ),

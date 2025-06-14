@@ -6,6 +6,8 @@ import 'package:resellio/features/auth/bloc/auth_cubit_event.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_endpoints.dart';
+import 'package:resellio/features/common/data/api_exceptions.dart';
+import 'package:resellio/features/common/model/Users/admin.dart';
 import 'package:resellio/features/common/model/Users/customer.dart';
 import 'package:resellio/features/common/model/Users/organizer.dart';
 import 'package:resellio/features/common/model/Users/organizer_registration_needed.dart';
@@ -13,12 +15,39 @@ import 'package:resellio/features/common/model/Users/organizer_registration_need
 class AuthCubit extends HydratedCubit<AuthState>
     with BlocPresentationMixin<AuthState, AuthCubitEvent> {
   AuthCubit({
-    required this.apiService,
+    ApiService? apiService,
     required this.googleSignIn,
-  }) : super(const Unauthorized());
+  })  : _apiService = apiService,
+        super(const Unauthorized());
 
-  final ApiService apiService;
+  ApiService? _apiService;
   final GoogleSignIn googleSignIn;
+
+  ApiService get apiService {
+    if (_apiService == null) {
+      throw Exception('ApiService not initialized');
+    }
+    return _apiService!;
+  }
+
+  void setApiService(ApiService apiService) {
+    _apiService = apiService;
+
+    if (isAuthenticated && _apiService != null) {
+      _verifyCurrentUser();
+    }
+  }
+
+  Future<void> _verifyCurrentUser() async {
+    try {
+      if (isOrganizer || isUnverifiedOrganizer) {
+        await apiService.organizerAboutMe(token);
+      }
+    } catch (err) {
+      debugPrint('Failed to verify user state: $err');
+      await logout();
+    }
+  }
 
   bool get isAuthenticated => state is! Unauthorized;
   bool get isCustomer => state is AuthorizedCustomer;
@@ -26,6 +55,7 @@ class AuthCubit extends HydratedCubit<AuthState>
   bool get isOrganizerRegistrationNeeded =>
       state is AuthorizedOrganizerRegistrationNeeded;
   bool get isUnverifiedOrganizer => state is AuthorizedUnverifiedOrganizer;
+  bool get isAdmin => state is AuthorizedAdmin;
 
   String get token {
     if (state is AuthorizedCustomer) {
@@ -36,6 +66,8 @@ class AuthCubit extends HydratedCubit<AuthState>
       return (state as AuthorizedUnverifiedOrganizer).user.token;
     } else if (state is AuthorizedOrganizerRegistrationNeeded) {
       return (state as AuthorizedOrganizerRegistrationNeeded).user.token;
+    } else if (state is AuthorizedAdmin) {
+      return (state as AuthorizedAdmin).user.token;
     } else {
       throw Exception('No token available for the current state');
     }
@@ -98,9 +130,7 @@ class AuthCubit extends HydratedCubit<AuthState>
         emitPresentation(AuthenticatedEvent(user));
         emit(AuthorizedOrganizerRegistrationNeeded(user));
       } else {
-        final aboutMeResponse = await apiService.organizerAboutMe(
-          token: token,
-        );
+        final aboutMeResponse = await apiService.organizerAboutMe(token);
 
         final user = Organizer(
           email: googleUser.email,
@@ -123,6 +153,36 @@ class AuthCubit extends HydratedCubit<AuthState>
     }
   }
 
+  Future<void> adminSignInWithGoogle() async {
+    try {
+      final googleUser = await _signInWithGoogle();
+      final googleAuth = await googleUser.authentication;
+
+      final response = await apiService.googleLogin(
+        accessToken: googleAuth.accessToken!,
+        endpoint: ApiEndpoints.adminGoogleLogin,
+      );
+
+      final user = Admin(
+        email: googleUser.email,
+        token: response.data?['token'] as String,
+      );
+
+      emitPresentation(AuthenticatedEvent(user));
+      emit(AuthorizedAdmin(user));
+    } on ApiException catch (err) {
+      if (err.toString().contains('404')) {
+        emitPresentation(
+          const AuthErrorEvent('Błąd: Nie jesteś administratorem'),
+        );
+      } else {
+        emitPresentation(AuthErrorEvent(err.toString()));
+      }
+    } catch (err) {
+      emitPresentation(AuthErrorEvent(err.toString()));
+    }
+  }
+
   Future<void> completeOrganizerRegistration({
     required String firstName,
     required String lastName,
@@ -135,7 +195,6 @@ class AuthCubit extends HydratedCubit<AuthState>
 
       final currentState = state as AuthorizedOrganizerRegistrationNeeded;
       final response = await apiService.createOrganizer(
-        token: currentState.user.token,
         firstName: firstName,
         lastName: lastName,
         displayName: displayName,

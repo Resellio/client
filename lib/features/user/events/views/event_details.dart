@@ -1,313 +1,597 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:resellio/features/common/model/address.dart';
 import 'package:resellio/features/common/model/event.dart';
-import 'package:resellio/features/user/events/bloc/events_cubit.dart';
-import 'package:resellio/features/user/events/bloc/events_state.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
+import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
+import 'package:resellio/features/user/cart/bloc/cart_state.dart';
+import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
+import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 
-class TicketOption extends StatelessWidget {
-  const TicketOption({
+class CustomerEventDetailsScreen extends StatefulWidget {
+  const CustomerEventDetailsScreen({
     super.key,
-    required this.title,
-    required this.price,
-    this.status,
-    this.buttonText,
+    required this.eventId,
   });
-  final String title;
-  final String price;
-  final String? status;
-  final String? buttonText;
+
+  final String eventId;
+
+  @override
+  State<CustomerEventDetailsScreen> createState() => _EventDetailsScreenState();
+}
+
+class _EventDetailsScreenState extends State<CustomerEventDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<EventDetailsCubit>().loadEventDetails(widget.eventId);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFEAEAFE),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: ListTile(
-          title: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+    return BlocBuilder<EventDetailsCubit, EventDetailsState>(
+      builder: (context, state) {
+        return switch (state.status) {
+          EventDetailsStatus.initial ||
+          EventDetailsStatus.loading =>
+            const _LoadingView(),
+          EventDetailsStatus.failure => Scaffold(
+              body: CommonErrorWidget(
+                message: state.errorMessage ?? 'Wystąpił błąd',
+                onRetry: () => context
+                    .read<EventDetailsCubit>()
+                    .loadEventDetails(widget.eventId),
+                onBack: () => Navigator.of(context).pop(),
+              ),
+            ),
+          EventDetailsStatus.success => _EventDetailsView(
+              event: state.event!,
+              eventId: widget.eventId,
+            ),
+        };
+      },
+    );
+  }
+}
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+
+class _EventDetailsView extends StatelessWidget {
+  const _EventDetailsView({
+    required this.event,
+    required this.eventId,
+  });
+
+  final Event event;
+  final String eventId;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        _SliverEventAppBar(event: event),
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _EventHeader(event: event),
+              _EventInfo(event: event),
+              _EventDescription(event: event),
+              _TicketSection(event: event, eventId: eventId),
+              const SizedBox(height: 32),
+            ],
           ),
-          subtitle: Text(price),
-          trailing: status != null
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.block, color: Colors.red, size: 18),
-                    const SizedBox(width: 4),
-                    Text(
-                      status!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SliverEventAppBar extends StatelessWidget {
+  const _SliverEventAppBar({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 300,
+      pinned: true,
+      iconTheme: IconThemeData(
+        color: Colors.white,
+        shadows: [
+          Shadow(
+            color: Colors.black.withOpacity(0.8),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (event.imageUrl == null)
+              CachedNetworkImage(
+                imageUrl: 'https://picsum.photos/800/400?random=${event.id}',
+                fit: BoxFit.cover,
+                width: double.infinity,
+              )
+            else
+              Image.network(
+                event.imageUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withAlpha(150),
                   ],
-                )
-              : ElevatedButton(
-                  onPressed: () {
-                    // TODO: Dodać logikę wyboru biletu
-                  },
-                  child: Text(buttonText ?? 'Wybierz'),
                 ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class EventDetails extends StatelessWidget {
-  const EventDetails({super.key, required this.event});
+class _EventHeader extends StatelessWidget {
+  const _EventHeader({required this.event});
 
   final Event event;
 
   @override
   Widget build(BuildContext context) {
-    final priceFormatter =
-        NumberFormat.currency(locale: 'pl_PL', symbol: 'zł', decimalDigits: 2);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 20),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  event.address.city,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.access_time, size: 20),
-              const SizedBox(width: 6),
-              Text(
-                event.startDate != null
-                    ? DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl_PL')
-                        .format(event.startDate!)
-                    : 'Brak informacji o dacie',
-                style: const TextStyle(fontSize: 14),
-              ),
-            ],
-          ),
-          if (event.endDate != null) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.access_time, size: 20),
-                const SizedBox(width: 6),
-                Text(
-                  'Koniec: ${DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl_PL').format(event.endDate!)}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
+          if (event.categories.isNotEmpty == true) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: event.categories
+                  .map(
+                    (category) => Chip(
+                      label: Text(category),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer
+                          .withAlpha(150),
+                    ),
+                  )
+                  .toList(),
             ),
+            const SizedBox(height: 16),
           ],
-          const SizedBox(height: 8),
-          if (event.minimumPrice > 0 || event.maximumPrice > 0)
-            Row(
-              children: [
-                const Icon(Icons.attach_money, size: 20),
-                const SizedBox(width: 6),
-                Text(
-                  event.minimumPrice == event.maximumPrice
-                      ? 'Cena: ${priceFormatter.format(event.minimumPrice)}'
-                      : 'Cena: od ${priceFormatter.format(event.minimumPrice)} do ${priceFormatter.format(event.maximumPrice)}',
-                  style: const TextStyle(fontSize: 14),
+          Text(
+            event.name,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
-          const SizedBox(height: 8),
-          if (event.minimumAge > 0)
-            Row(
-              children: [
-                const Icon(Icons.person, size: 20),
-                const SizedBox(width: 6),
-                Text(
-                  'Minimalny wiek: ${event.minimumAge} lat',
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class CustomerEventDetailsScreen extends StatelessWidget {
-  const CustomerEventDetailsScreen({super.key, required this.eventId});
+class _EventInfo extends StatelessWidget {
+  const _EventInfo({required this.event});
 
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          _InfoRow(
+            icon: Icons.location_on,
+            title: 'Lokalizacja',
+            content: _formatAddress(event.address),
+          ),
+          const SizedBox(height: 16),
+          _InfoRow(
+            icon: Icons.calendar_today,
+            title: 'Data rozpoczęcia',
+            content: _formatDate(event.startDate),
+          ),
+          if (event.endDate != null) ...[
+            const SizedBox(height: 16),
+            _InfoRow(
+              icon: Icons.calendar_today_outlined,
+              title: 'Data zakończenia',
+              content: _formatDate(event.endDate),
+            ),
+          ],
+          if (event.minimumAge > 0) ...[
+            const SizedBox(height: 16),
+            _InfoRow(
+              icon: Icons.person,
+              title: 'Ograniczenie wiekowe',
+              content: 'Min. ${event.minimumAge} lat',
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatAddress(Address address) {
+    final parts = <String>[];
+    if (address.street.isNotEmpty) {
+      parts.add(address.street);
+    }
+    if (address.houseNumber > 0) {
+      parts.add(address.houseNumber.toString());
+    }
+    if (address.city.isNotEmpty) {
+      parts.add(address.city);
+    }
+    return parts.join(', ');
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) {
+      return 'Brak informacji';
+    }
+    return DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl_PL').format(date);
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.title,
+    required this.content,
+  });
+
+  final IconData icon;
+  final String title;
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                content,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EventDescription extends StatelessWidget {
+  const _EventDescription({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    if (event.description.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Opis wydarzenia',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            event.description,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TicketSection extends StatelessWidget {
+  const _TicketSection({
+    required this.event,
+    required this.eventId,
+  });
+
+  final Event event;
   final String eventId;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Szczegóły wydarzenia (WIP)'),
-        centerTitle: true,
-      ),
-      body: BlocBuilder<EventsCubit, EventsState>(
-        builder: (context, state) {
-          if (state.status == EventsStatus.initial ||
-              (state.status == EventsStatus.loading && state.events.isEmpty)) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state.status == EventsStatus.failure &&
-              state.events.isEmpty) {
-            return Center(
-              child:
-                  Text(state.errorMessage ?? 'Wystąpił błąd ładowania danych.'),
-            );
-          } else {
-            final event = state.events.firstWhere(
-              (e) => e.id == eventId,
-            );
-
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Card(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 4,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Zdjęcie
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxHeight: 200,
-                          minHeight: 200,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            topRight: Radius.circular(8),
-                          ),
-                          child: Image.network(
-                            'https://picsum.photos/200/300?random=${event.id}',
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Center(
-                                    child: Icon(Icons.broken_image, size: 50)),
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) {
-                                return child;
-                              }
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      // Tagi/Chipsy
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              if (event.address.city != null &&
-                                  event.address.city!.isNotEmpty) ...[
-                                Chip(label: Text(event.address.city!)),
-                                const SizedBox(width: 4),
-                              ],
-                              if (event.categories != null)
-                                ...event.categories!
-                                    .map((category) => Padding(
-                                          padding:
-                                              const EdgeInsets.only(right: 4.0),
-                                          child: Chip(label: Text(category)),
-                                        ))
-                                    .toList(),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Nazwa wydarzenia
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          event.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 32,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Szczegóły wydarzenia
-                      EventDetails(event: event),
-                      const SizedBox(height: 16),
-                      // Opis
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(
-                          event.description,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Bilety
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'Bilety od organizatora',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                      const TicketOption(
-                        title: 'Normalny',
-                        price: '39,99 zł',
-                        status: 'wyprzedane',
-                      ),
-                      const TicketOption(
-                        title: 'Ulgowy',
-                        price: '19,99 zł',
-                      ),
-                      const TicketOption(
-                        title: 'VIP',
-                        price: '129,99 zł',
-                        buttonText: 'Wybierz na schemacie',
-                      ),
-                      const Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Text(
-                          'Bilety od społeczności',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                      const TicketOption(
-                        title: 'Normalny',
-                        price: 'od 54,99 zł',
-                        buttonText: 'Wybierz',
-                      ),
-                    ],
-                  ),
-                ),
+    debugPrint(event.tickets.toString());
+    if (event.tickets.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: Text(
+          'Brak dostępnych biletów',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            );
-          }
-        },
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dostępne bilety',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          ...event.tickets.map(
+            (ticket) => _TicketCard(
+              ticket: ticket,
+              eventId: eventId,
+            ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+class TicketType {
+  const TicketType({
+    required this.id,
+    required this.description,
+    required this.price,
+    required this.currency,
+    required this.amountAvailable,
+  });
+
+  factory TicketType.fromJson(Map<String, dynamic> json) {
+    return TicketType(
+      id: json['id'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      currency: json['currency'] as String? ?? 'PLN',
+      amountAvailable: json['amountAvailable'] as int? ?? 0,
+    );
+  }
+
+  final String id;
+  final String description;
+  final double price;
+  final String currency;
+  final int amountAvailable;
+}
+
+class _TicketCard extends StatelessWidget {
+  const _TicketCard({
+    required this.ticket,
+    required this.eventId,
+  });
+
+  final TicketType ticket;
+  final String eventId;
+
+  @override
+  Widget build(BuildContext context) {
+    final isAvailable = ticket.amountAvailable > 0;
+    final priceFormatter = NumberFormat.currency(
+      locale: 'pl_PL',
+      symbol: ticket.currency,
+      decimalDigits: 2,
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withAlpha(150),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ticket.description,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    priceFormatter.format(ticket.price),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  if (!isAvailable) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Wyprzedane',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Dostępne: ${ticket.amountAvailable}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            BlocBuilder<CartCubit, CartState>(
+              builder: (context, cartState) {
+                final isLoading = cartState is CartLoadingState;
+
+                return ElevatedButton(
+                  onPressed: (isAvailable && !isLoading)
+                      ? () => _addToCart(context, ticket)
+                      : null,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(isAvailable ? 'Dodaj do koszyka' : 'Niedostępne'),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addToCart(BuildContext context, TicketType ticket) async {
+    final success =
+        await context.read<CartCubit>().addTicketToCart(ticket.id, 1);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (success) {
+      context
+          .read<EventDetailsCubit>()
+          .updateTicketAvailabilityLocally(ticket.id, 1);
+      SuccessSnackBar.show(
+          context, 'Dodano bilet do koszyka: ${ticket.description}');
+    } else {
+      ErrorSnackBar.show(context,
+          'Nie udało się dodać biletu do koszyka: ${ticket.description}');
+    }
+  }
+}
+
+class _QuantitySelector extends StatefulWidget {
+  const _QuantitySelector({
+    required this.initialQuantity,
+    required this.maxQuantity,
+    required this.onQuantityChanged,
+  });
+
+  final int initialQuantity;
+  final int maxQuantity;
+  final ValueChanged<int> onQuantityChanged;
+
+  @override
+  State<_QuantitySelector> createState() => _QuantitySelectorState();
+}
+
+class _QuantitySelectorState extends State<_QuantitySelector> {
+  late int _quantity;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantity = widget.initialQuantity;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          onPressed: _quantity > 1 ? _decrementQuantity : null,
+          icon: const Icon(Icons.remove),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          padding: EdgeInsets.zero,
+        ),
+        Container(
+          width: 40,
+          alignment: Alignment.center,
+          child: Text(
+            _quantity.toString(),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        IconButton(
+          onPressed: _quantity < widget.maxQuantity ? _incrementQuantity : null,
+          icon: const Icon(Icons.add),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          padding: EdgeInsets.zero,
+        ),
+      ],
+    );
+  }
+
+  void _incrementQuantity() {
+    setState(() {
+      _quantity++;
+    });
+    widget.onQuantityChanged(_quantity);
+  }
+
+  void _decrementQuantity() {
+    setState(() {
+      _quantity--;
+    });
+    widget.onQuantityChanged(_quantity);
   }
 }

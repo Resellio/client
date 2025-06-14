@@ -11,7 +11,9 @@ class PaginatedData<T> extends Equatable {
   });
 
   factory PaginatedData.fromJson(
-      Map<String, dynamic> json, T Function(dynamic json) fromJsonT) {
+    Map<String, dynamic> json,
+    T Function(dynamic json) fromJsonT,
+  ) {
     return PaginatedData<T>(
       data: (json['data'] as List<dynamic>?)
               ?.map((item) => fromJsonT(item))
