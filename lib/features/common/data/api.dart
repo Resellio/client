@@ -56,7 +56,6 @@ class ApiService {
       if (body != null) {
         debugPrint('Body: $body');
       }
-
       switch (method.toUpperCase()) {
         case 'GET':
           final response = await client
@@ -66,6 +65,11 @@ class ApiService {
         case 'POST':
           final response = await client
               .post(uri, headers: requestHeaders, body: body)
+              .timeout(const Duration(seconds: 10));
+          return _handleResponse(response);
+        case 'PATCH':
+          final response = await client
+              .patch(uri, headers: requestHeaders, body: body)
               .timeout(const Duration(seconds: 10));
           return _handleResponse(response);
         case 'DELETE':
@@ -384,6 +388,17 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> updateEvent({
+    required String eventId,
+    required Map<String, dynamic> eventData,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.updateEvent(eventId),
+      method: 'PATCH',
+      body: jsonEncode(eventData),
+    );
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> getCart() async {
     return makeRequest(
       endpoint: ApiEndpoints.shoppingCarts,
@@ -563,6 +578,30 @@ class ApiService {
     }
 
     throw ApiException.http(response.statusCode, response.body);
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getUnverifiedOrganizers({
+    int page = 0,
+    int pageSize = 10,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.organizersUnverified,
+      method: 'GET',
+      queryParameters: {
+        'page': page,
+        'pageSize': pageSize,
+      },
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> verifyOrganizer({
+    required String email,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.organizerVerify,
+      method: 'POST',
+      body: jsonEncode({'email': email}),
+    );
   }
 
   void dispose() {

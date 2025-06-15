@@ -1,11 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
-import 'package:resellio/features/common/data/api_endpoints.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/app_logo.dart';
 import 'package:resellio/features/organizer/verification/views/widgets.dart';
@@ -147,39 +143,6 @@ class _OrganizerUnverifiedScreenState extends State<OrganizerUnverifiedScreen> {
                           foregroundColor: AppColors.primaryDark,
                         ),
                         child: const Text('Wyloguj się'),
-                      ),
-                      ElevatedButton(
-                        // FIXME: temporary button to verify organizer
-                        onPressed: () async {
-                          print((context.read<AuthCubit>().state
-                                  as AuthorizedUnverifiedOrganizer)
-                              .user);
-                          final email = (context.read<AuthCubit>().state
-                                  as AuthorizedUnverifiedOrganizer)
-                              .user
-                              .email;
-                          final response = await http.post(
-                            Uri.parse(
-                              ApiEndpoints.fullUrl(
-                                  ApiEndpoints.organizerVerify),
-                            ),
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: jsonEncode({
-                              'email': email,
-                            }),
-                          );
-
-                          if (response.statusCode != 200) {
-                            debugPrint(
-                              'Failed to verify organizer (${response.body})',
-                            );
-                          }
-
-                          debugPrint(response.body);
-                        },
-                        child: const Text('Verify organizer'),
                       ),
                     ],
                   ),

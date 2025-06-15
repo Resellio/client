@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
-import 'package:resellio/features/common/model/event.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/common/widgets/event_card.dart';
@@ -203,35 +202,6 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
     }
   }
 
-  void _deleteEvent(Event event) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Usuń wydarzenie'),
-        content: Text('Czy na pewno chcesz usunąć wydarzenie "${event.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Anuluj'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _performDeleteEvent(event);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Usuń'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _performDeleteEvent(Event event) {
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthorizedOrganizer) {}
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -418,46 +388,9 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
             event: event,
             onTap: () =>
                 OrganizerEventDetailRoute(eventId: event.id).go(context),
-            onLongPress: () => _showEventActions(event),
           );
         },
         separatorBuilder: (context, index) => const SizedBox(height: 12),
-      ),
-    );
-  }
-
-  void _showEventActions(Event event) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.visibility),
-            title: const Text('Zobacz szczegóły'),
-            onTap: () {
-              Navigator.pop(context);
-              OrganizerEventDetailRoute(eventId: event.id).go(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Edytuj'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Navigate to edit screen
-              ErrorSnackBar.show(context, 'Edycja - do implementacji');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Usuń', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _deleteEvent(event);
-            },
-          ),
-        ],
       ),
     );
   }
