@@ -21,7 +21,8 @@ class CartCubit extends Cubit<CartState> {
       final newTickets = (cartData?['newTickets'] as List<dynamic>? ?? [])
           .map(
             (item) => NewCartItem(
-                NewCartTicket.fromJson(item as Map<String, dynamic>)),
+              NewCartTicket.fromJson(item as Map<String, dynamic>),
+            ),
           )
           .toList();
       final resellTickets = (cartData?['resellTickets'] as List<dynamic>? ?? [])

@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:resellio/features/common/data/api.dart';
@@ -64,19 +63,14 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
           'Odsprzedaj bilet',
           style: TextStyle(fontSize: 20),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _resellPriceController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Cena odsprzedaży',
-                border: OutlineInputBorder(),
-                suffixText: 'PLN',
-              ),
-            ),
-          ],
+        content: TextField(
+          controller: _resellPriceController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Cena odsprzedaży',
+            border: OutlineInputBorder(),
+            suffixText: 'PLN',
+          ),
         ),
         actions: [
           TextButton(
@@ -107,7 +101,9 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
                     await ticketsCubit.refreshTickets();
                   } else {
                     ErrorSnackBar.show(
-                        context, response.message ?? 'Wystąpił błąd');
+                      context,
+                      response.message ?? 'Wystąpił błąd',
+                    );
                   }
                 }
               } catch (err) {
@@ -524,7 +520,6 @@ class _CustomerTicketScreenState extends State<CustomerTicketScreen> {
                               context.read<TicketsCubit>(),
                               context.read<TicketDetailsCubit>(),
                             ),
-                            icon: const Icon(Icons.sell),
                             label: const Text(
                               'Odsprzedaj bilet',
                               style: TextStyle(

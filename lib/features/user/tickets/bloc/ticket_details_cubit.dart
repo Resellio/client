@@ -30,10 +30,10 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
       }
     } on ApiException catch (e) {
       emit(TicketDetailsErrorState(message: e.message));
-    } catch (e) {
+    } catch (err) {
       emit(
         TicketDetailsErrorState(
-          message: 'Wystąpił nieoczekiwany błąd: $e',
+          message: 'Wystąpił nieoczekiwany błąd: $err',
         ),
       );
     }

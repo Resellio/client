@@ -26,15 +26,20 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
       ),
       body: BlocBuilder<CartCubit, CartState>(
         builder: (context, state) {
-          return switch (state) {
-            CartInitialState() =>
-              const Center(child: CircularProgressIndicator()),
-            CartLoadingState() =>
-              const Center(child: CircularProgressIndicator()),
-            CartLoadedState() when state.items.isEmpty => _buildEmptyCart(),
-            CartLoadedState() => _buildCartWithItems(context, state),
-            CartErrorState() => _buildCartError(context, state),
-          };
+          return RefreshIndicator(
+            onRefresh: () async {
+              await context.read<CartCubit>().fetchCart();
+            },
+            child: switch (state) {
+              CartInitialState() =>
+                _buildScrollableContent(const Center(child: CircularProgressIndicator())),
+              CartLoadingState() =>
+                _buildScrollableContent(const Center(child: CircularProgressIndicator())),
+              CartLoadedState() when state.items.isEmpty => _buildScrollableContent(_buildEmptyCart()),
+              CartLoadedState() => _buildCartWithItems(context, state),
+              CartErrorState() => _buildScrollableContent(_buildCartError(context, state)),
+            },
+          );
         },
       ),
       bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
@@ -311,6 +316,18 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
     context.read<CartCubit>().removeItem(index);
 
     SuccessSnackBar.show(context, 'Usunięto bilet z koszyka');
+  }
+
+  Widget _buildScrollableContent(Widget child) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height - 
+               AppBar().preferredSize.height - 
+               MediaQuery.of(context).padding.top,
+        child: child,
+      ),
+    );
   }
 }
 

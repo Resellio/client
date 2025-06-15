@@ -28,7 +28,8 @@ class TicketsCubit extends Cubit<TicketsState> {
       final currentState = state;
       final page = refresh || currentState is! TicketsLoadedState
           ? 0
-          : currentState.pageNumber + 1;      int? usage;
+          : currentState.pageNumber + 1;
+      int? usage;
       if (used != null) {
         usage = used ? 0 : 1; // 0 = used, 1 = not used
       }

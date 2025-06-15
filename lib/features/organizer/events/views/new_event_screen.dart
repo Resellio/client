@@ -248,9 +248,9 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
           _imageName = result.files.single.name;
         });
       }
-    } catch (e) {
+    } catch (err) {
       if (mounted) {
-        ErrorSnackBar.show(context, 'Błąd podczas wybierania obrazu: $e');
+        ErrorSnackBar.show(context, 'Błąd podczas wybierania obrazu: $err');
       }
     }
   }
@@ -444,7 +444,9 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                 null &&
             _validateNumber(_minAgeController.text, 'Minimalny wiek') == null &&
             _validateDateOrder(
-                    _startDateController.text, _endDateController.text) ==
+                  _startDateController.text,
+                  _endDateController.text,
+                ) ==
                 null;
       case 1:
         return _validateNotEmpty(_streetController.text, 'Ulica') == null &&
@@ -459,22 +461,30 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         return true;
       case 3:
         for (final ticketForm in _ticketForms) {
-          if (_validateNotEmpty(ticketForm.descriptionController.text,
-                      'Nazwa typu biletu') !=
+          if (_validateNotEmpty(
+                    ticketForm.descriptionController.text,
+                    'Nazwa typu biletu',
+                  ) !=
                   null ||
               _validateNumber(ticketForm.maxCountController.text, 'Ilość') !=
                   null ||
-              _validateNumber(ticketForm.priceController.text, 'Cena',
-                      allowDecimal: true) !=
+              _validateNumber(
+                    ticketForm.priceController.text,
+                    'Cena',
+                    allowDecimal: true,
+                  ) !=
                   null ||
               ticketForm.currencyController.text.isEmpty ||
               ticketForm.currencyController.text.toUpperCase() != 'PLN' ||
               _validateDate(
-                      ticketForm.availableFromController.text, 'Dostępne od') !=
+                    ticketForm.availableFromController.text,
+                    'Dostępne od',
+                  ) !=
                   null ||
               _validateTicketAvailableFrom(
-                      ticketForm.availableFromController.text,
-                      _startDateController.text) !=
+                    ticketForm.availableFromController.text,
+                    _startDateController.text,
+                  ) !=
                   null) {
             return false;
           }

@@ -79,19 +79,19 @@ class ApiService {
     } on ApiException {
       rethrow;
     } on SocketException catch (e) {
-      print('SocketException: $e');
+      debugPrint('SocketException: $e');
       throw ApiException.failedToConnect();
     } on TimeoutException catch (e) {
-      print('TimeoutException: $e');
+      debugPrint('TimeoutException: $e');
       throw ApiException.timeout();
     } on FormatException catch (e) {
-      print('FormatException: $e');
+      debugPrint('FormatException: $e');
       throw ApiException.invalidResponse();
     } on http.ClientException catch (e) {
-      print('ClientException: $e');
+      debugPrint('ClientException: $e');
       throw ApiException.networkError();
     } catch (err) {
-      print('Unknown Error in makeRequest: $err');
+      debugPrint('Unknown Error in makeRequest: $err');
       throw ApiException.unknown(err.toString());
     }
   }
@@ -112,10 +112,12 @@ class ApiService {
       final uri = Uri.parse('$_baseUrl/$endpoint')
           .replace(queryParameters: stringQueryParameters);
 
-      print('Making multipart request to: $uri');
-      print('Method: $method');
-      print('Fields: $fields');
-      if (files != null) print('Files count: ${files.length}');
+      debugPrint('Making multipart request to: $uri');
+      debugPrint('Method: $method');
+      debugPrint('Fields: $fields');
+      if (files != null) {
+        debugPrint('Files count: ${files.length}');
+      }
 
       final request = http.MultipartRequest(method.toUpperCase(), uri);
 
@@ -132,7 +134,7 @@ class ApiService {
         request.headers.addAll(filteredHeaders);
       }
 
-      print('Multipart Headers: ${request.headers}');
+      debugPrint('Multipart Headers: ${request.headers}');
 
       request.fields.addAll(fields);
 
@@ -148,19 +150,19 @@ class ApiService {
     } on ApiException {
       rethrow;
     } on SocketException catch (e) {
-      print('SocketException: $e');
+      debugPrint('SocketException: $e');
       throw ApiException.failedToConnect();
     } on TimeoutException catch (e) {
-      print('TimeoutException: $e');
+      debugPrint('TimeoutException: $e');
       throw ApiException.timeout();
     } on FormatException catch (e) {
-      print('FormatException: $e');
+      debugPrint('FormatException: $e');
       throw ApiException.invalidResponse();
     } on http.ClientException catch (e) {
-      print('ClientException: $e');
+      debugPrint('ClientException: $e');
       throw ApiException.networkError();
     } catch (err) {
-      print('Unknown Error in makeMultipartRequest: $err');
+      debugPrint('Unknown Error in makeMultipartRequest: $err');
       throw ApiException.unknown(err.toString());
     }
   }
@@ -342,10 +344,12 @@ class ApiService {
         if (value is Map<String, dynamic>) {
           addFieldsRecursively(value, fieldKey);
         } else if (value is List) {
-          for (int i = 0; i < value.length; i++) {
+          for (var i = 0; i < value.length; i++) {
             if (value[i] is Map<String, dynamic>) {
               addFieldsRecursively(
-                  value[i] as Map<String, dynamic>, '$fieldKey[$i]');
+                value[i] as Map<String, dynamic>,
+                '$fieldKey[$i]',
+              );
             } else {
               fields['$fieldKey[$i]'] = value[i].toString();
             }
@@ -532,8 +536,8 @@ class ApiService {
   }
 
   ApiResponse<Map<String, dynamic>> _handleResponse(http.Response response) {
-    print('Response Status: ${response.statusCode}');
-    print('Response Body: ${response.body}');
+    debugPrint('Response Status: ${response.statusCode}');
+    debugPrint('Response Body: ${response.body}');
 
     final contentType = response.headers['content-type'];
 
