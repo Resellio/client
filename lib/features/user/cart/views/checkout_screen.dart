@@ -7,6 +7,7 @@ import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/cart/model/cart_item.dart';
+import 'package:resellio/features/user/tickets/bloc/tickets_cubit.dart';
 import 'package:resellio/routes/customer_routes.dart';
 
 class CardNumberFormatter extends TextInputFormatter {
@@ -278,26 +279,13 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     const serviceFee = 0;
     final total = subtotal + serviceFee;
 
-    return Column(
-      children: [
-        // _buildTotalRow('Suma częściowa', '${subtotal.toStringAsFixed(2)} PLN'),
-        // const SizedBox(height: 8),        _buildTotalRow(
-        //     'Opłata serwisowa', '${serviceFee.toStringAsFixed(2)} PLN',),
-        // const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          // decoration: const BoxDecoration(
-          //   border: Border(
-          //     top: BorderSide(color: Color(0xFFE9ECEF)),
-          //   ),
-          // ),
-          child: _buildTotalRow(
-            'Suma całkowita',
-            '${total.toStringAsFixed(2)} PLN',
-            isTotal: true,
-          ),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: _buildTotalRow(
+        'Suma całkowita',
+        '${total.toStringAsFixed(2)} PLN',
+        isTotal: true,
+      ),
     );
   }
 
@@ -325,6 +313,8 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     );
   }
 
+  // for future use, if needed
+  // ignore: unused_element
   Widget _buildPersonalInformation() {
     return _buildSection(
       title: 'Dane osobowe',
@@ -416,6 +406,8 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     );
   }
 
+  // for future use, if needed
+  // ignore: unused_element
   Widget _buildBillingAddress() {
     return _buildSection(
       title: 'Adres rozliczeniowy',
@@ -713,20 +705,16 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
     return _buildSection(
       title: 'Warunki i zgody',
       icon: Icons.gavel,
-      child: Column(
-        children: [
-          _buildCheckboxTile(
-            value: _agreeToTerms,
-            title: 'Akceptuję regulamin serwisu',
-            subtitle: 'Zapoznałem się z warunkami korzystania z platformy',
-            onChanged: (value) {
-              setState(() {
-                _agreeToTerms = value ?? false;
-              });
-            },
-            required: true,
-          ),
-        ],
+      child: _buildCheckboxTile(
+        value: _agreeToTerms,
+        title: 'Akceptuję regulamin serwisu',
+        subtitle: 'Zapoznałem się z warunkami korzystania z platformy',
+        onChanged: (value) {
+          setState(() {
+            _agreeToTerms = value ?? false;
+          });
+        },
+        required: true,
       ),
     );
   }
@@ -1053,6 +1041,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                   onPressed: () {
                     Navigator.of(context).pop();
                     const CustomerTicketsRoute().go(context);
+                    context.read<TicketsCubit>().refreshTickets();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,

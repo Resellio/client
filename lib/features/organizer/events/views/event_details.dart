@@ -167,7 +167,9 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
               onPressed: () {
                 // TODO: Implement edit functionality
                 ErrorSnackBar.show(
-                    context, 'Funkcja edycji będzie wkrótce dostępna');
+                  context,
+                  'Funkcja edycji będzie wkrótce dostępna',
+                );
               },
               icon: const Icon(Icons.edit_outlined, color: Color(0xFF3B82F6)),
               iconSize: 20,

@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
@@ -103,13 +101,15 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
   void _onSearchChanged(String query) {
     _debouncer.run(() {
-      print('Debounced Search query: $query');
+      debugPrint('Debounced Search query: $query');
       _triggerSearch();
     });
   }
 
   void _onScroll() {
-    if (!_scrollController.hasClients) return;
+    if (!_scrollController.hasClients) {
+      return;
+    }
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.offset;
     final state = context.read<EventsCubit>().state;
@@ -117,164 +117,11 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     if (currentScroll >= (maxScroll * 0.9) &&
         state.status != EventsStatus.loading &&
         !state.hasReachedMax) {
-      print("Reached bottom, loading more events...");
+      debugPrint('Reached bottom, loading more events...');
       final authState = context.read<AuthCubit>().state;
       if (authState is AuthorizedCustomer) {
         context.read<EventsCubit>().fetchNextPage();
       }
-    }
-  }
-
-  Future<void> _selectDateRange(BuildContext context) async {
-    final now = DateTime.now();
-    final firstDate = DateTime(now.year - 1, now.month, now.day);
-    final lastDate = DateTime(now.year + 2, now.month, now.day);
-
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      locale: const Locale('pl', 'PL'),
-      firstDate: firstDate,
-      lastDate: lastDate,
-      initialDateRange: _selectedDateRange ??
-          DateTimeRange(start: now, end: now.add(const Duration(days: 7))),
-    );
-
-    if (picked != null && picked != _selectedDateRange) {
-      setState(() {
-        _selectedDateRange = DateTimeRange(
-          start: DateTime(
-              picked.start.year, picked.start.month, picked.start.day, 0, 0),
-          end: DateTime(
-              picked.end.year, picked.end.month, picked.end.day, 23, 59),
-        );
-      });
-      print(
-          'Selected date range: ${DateFormat('yyyy-MM-dd HH:mm').format(_selectedDateRange!.start)} - ${DateFormat('yyyy-MM-dd HH:mm').format(_selectedDateRange!.end)}');
-      _triggerSearch();
-    }
-  }
-
-  Future<void> _showPriceFilterDialog(BuildContext context) async {
-    final currentRange = _selectedPriceRange ?? const RangeValues(0, 1000);
-
-    final RangeValues? result = await showDialog<RangeValues>(
-      context: context,
-      builder: (context) {
-        var dialogRange = currentRange;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Wybierz zakres cen (zł)'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RangeSlider(
-                    values: dialogRange,
-                    max: 1000,
-                    divisions: 20,
-                    labels: RangeLabels(
-                      dialogRange.start.round().toString(),
-                      dialogRange.end.round() == 1000
-                          ? '1000+'
-                          : dialogRange.end.round().toString(),
-                    ),
-                    activeColor: AppColors.primary,
-                    inactiveColor: AppColors.primaryLight,
-                    onChanged: (values) {
-                      setDialogState(() {
-                        dialogRange = values;
-                      });
-                    },
-                  ),
-                  Text(
-                    'Zakres: ${dialogRange.start.round()} zł - ${dialogRange.end.round() == 1000 ? '1000+ zł' : '${dialogRange.end.round()} zł'}',
-                  ),
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                    child: const Text('Anuluj'),
-                    onPressed: () => Navigator.of(context).pop()),
-                if (_selectedPriceRange != null)
-                  TextButton(
-                    child: const Text('Wyczyść cenę'),
-                    onPressed: () {
-                      Navigator.of(context).pop(const RangeValues(-1, -1));
-                    },
-                  ),
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.of(context).pop(dialogRange),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result != null) {
-      if (result.start == -1 && result.end == -1) {
-        if (_selectedPriceRange != null) {
-          setState(() {
-            _selectedPriceRange = null;
-          });
-          print('Price filter cleared');
-          _triggerSearch();
-        }
-      } else if (result != _selectedPriceRange) {
-        setState(() {
-          if (result.start == 0 && result.end == 1000) {
-            _selectedPriceRange = null;
-          } else {
-            _selectedPriceRange = result;
-          }
-        });
-        print(
-            'Selected price range: ${result.start.round()} - ${result.end.round()}');
-        _triggerSearch();
-      }
-    }
-  }
-
-  Future<void> _showCityFilterDialog(BuildContext context) async {
-    final String? result = await showDialog<String>(
-        context: context,
-        builder: (BuildContext context) {
-          return SimpleDialog(
-            title: const Text('Wybierz miasto'),
-            children: <Widget>[
-              SimpleDialogOption(
-                onPressed: () {
-                  Navigator.pop(context, null);
-                },
-                child: const Text('Wszystkie miasta',
-                    style: TextStyle(color: AppColors.primary)),
-              ),
-              ..._cities.map(
-                (city) => SimpleDialogOption(
-                  onPressed: () {
-                    Navigator.pop(context, city);
-                  },
-                  child: Text(
-                    city,
-                    style: TextStyle(
-                        fontWeight: _selectedCity == city
-                            ? FontWeight.bold
-                            : FontWeight.normal),
-                  ),
-                ),
-              ),
-            ],
-          );
-        });
-
-    if (result != _selectedCity) {
-      setState(() {
-        _selectedCity = result;
-      });
-      print('Selected city: $_selectedCity');
-      _triggerSearch();
     }
   }
 
@@ -286,7 +133,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         _selectedCategories.add(category);
       }
     });
-    print('Selected category: $_selectedCategories');
+    debugPrint('Selected category: $_selectedCategories');
     _triggerSearch();
   }
 
@@ -305,7 +152,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       _searchController.clear();
     });
 
-    print('All filters cleared');
+    debugPrint('All filters cleared');
 
     if (filtersWereActive) {
       _triggerSearch();
@@ -322,15 +169,13 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context, isAnyFilterActive),
-            Expanded(
-              child: _buildResultsContent(context),
-            ),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildHeader(context, isAnyFilterActive),
+          Expanded(
+            child: _buildResultsContent(context),
+          ),
+        ],
       ),
     );
   }
@@ -344,17 +189,17 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SearchBarWidget(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              onClear: () {
-                setState(() {
-                  _searchController.clear();
-                  _triggerSearch();
-                });
-              }),
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+            onClear: () {
+              setState(() {
+                _searchController.clear();
+                _triggerSearch();
+              });
+            },
+          ),
           const SizedBox(height: 8),
           _buildFilterBar(context),
-          // const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -369,18 +214,6 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
   }
 
   Widget _buildFilterBar(BuildContext context) {
-    if (_selectedDateRange != null) {
-      final formatter = DateFormat('d MMM', 'pl_PL');
-      final startFormatted = formatter.format(_selectedDateRange!.start);
-      final endFormatted = formatter.format(_selectedDateRange!.end);
-      bool isSameDay = _selectedDateRange!.start.year ==
-              _selectedDateRange!.end.year &&
-          _selectedDateRange!.start.month == _selectedDateRange!.end.month &&
-          _selectedDateRange!.start.day == _selectedDateRange!.end.day;
-    }
-
-    final cityLabel = _selectedCity ?? 'Miasto';
-
     return SizedBox(
       height: 40,
       child: ScrollConfiguration(
@@ -410,8 +243,9 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                 setState(() {
                   _selectedPriceRange = range;
                 });
-                print(
-                    'Selected price range: ${range?.start.round()} - ${range?.end.round()}');
+                debugPrint(
+                  'Selected price range: ${range?.start.round()} - ${range?.end.round()}',
+                );
                 _triggerSearch();
               },
             ),
@@ -422,7 +256,7 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                 setState(() {
                   _selectedCity = city;
                 });
-                print('Selected city: $_selectedCity');
+                debugPrint('Selected city: $_selectedCity');
                 _triggerSearch();
               },
               cities: _cities,
@@ -500,46 +334,63 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
     );
   }
 
+  Widget _buildScrollableContent(Widget child) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height -
+            MediaQuery.of(context).padding.top -
+            200, // Approximate header height
+        child: child,
+      ),
+    );
+  }
+
   Widget _buildResultsContent(BuildContext context) {
     return BlocBuilder<EventsCubit, EventsState>(
       builder: (context, state) {
-        switch (state.status) {
-          case EventsStatus.initial:
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(40),
-                child: CircularProgressIndicator(),
+        return RefreshIndicator(
+          onRefresh: () async {
+            _triggerSearch();
+          },
+          child: switch (state.status) {
+            EventsStatus.initial => _buildScrollableContent(
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
               ),
-            );
-          case EventsStatus.failure:
-            return CommonErrorWidget(
-              message: state.errorMessage ??
-                  'Wystąpił błąd podczas ładowania wydarzeń',
-              onRetry: _triggerSearch,
-              showBackButton: false,
-              retryText: 'Odśwież',
-            );
-
-          case EventsStatus.loading:
-          case EventsStatus.success:
-            if (state.events.isEmpty && state.status == EventsStatus.loading) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(),
+            EventsStatus.failure => _buildScrollableContent(
+                CommonErrorWidget(
+                  message: state.errorMessage ??
+                      'Wystąpił błąd podczas ładowania wydarzeń',
+                  onRetry: _triggerSearch,
+                  showBackButton: false,
+                  retryText: 'Odśwież',
                 ),
-              );
-            } else if (state.events.isEmpty &&
-                state.status == EventsStatus.success) {
-              return Center(
-                child: _buildPlaceholder(
-                  icon: Icons.sentiment_dissatisfied_outlined,
-                  message:
-                      'Nie znaleziono wydarzeń pasujących\ndo wybranych kryteriów.',
+              ),
+            EventsStatus.loading when state.events.isEmpty =>
+              _buildScrollableContent(
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
-              );
-            } else {
-              return ListView.separated(
+              ),
+            EventsStatus.success when state.events.isEmpty =>
+              _buildScrollableContent(
+                Center(
+                  child: _buildPlaceholder(
+                    icon: Icons.sentiment_dissatisfied_outlined,
+                    message:
+                        'Nie znaleziono wydarzeń pasujących\ndo wybranych kryteriów.',
+                  ),
+                ),
+              ),
+            EventsStatus.loading || EventsStatus.success => ListView.separated(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: state.events.length +
@@ -561,15 +412,18 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
                 separatorBuilder: (context, index) {
                   return const SizedBox(height: 12);
                 },
-              );
-            }
-        }
+              ),
+          },
+        );
       },
     );
   }
 
-  Widget _buildPlaceholder(
-      {required IconData icon, required String message, Color? iconColor}) {
+  Widget _buildPlaceholder({
+    required IconData icon,
+    required String message,
+    Color? iconColor,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),

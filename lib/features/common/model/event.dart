@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:resellio/features/common/model/address.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
-import 'package:flutter/material.dart';
 
 class Event extends Equatable {
   const Event({
@@ -32,7 +32,7 @@ class Event extends Equatable {
       try {
         return DateTime.parse(dateString);
       } catch (err) {
-        print("Error parsing date: $dateString, Error: $err");
+        debugPrint('Error parsing date: $dateString, Error: $err');
         return null;
       }
     }
@@ -44,15 +44,25 @@ class Event extends Equatable {
       startDate: tryParseDate(json['startDate'] as String?),
       endDate: tryParseDate(json['endDate'] as String?),
       minimumAge: json['minimumAge'] as int? ?? 0,
-      minimumPrice: (json['minimumPrice']?['price'] as num?)?.toDouble() ?? 0.0,
-      minimumPriceCurrency:
-          (json['minimumPrice']?['currency'] as String?) ?? '',
-      maximumPrice: (json['maximumPrice']?['price'] as num?)?.toDouble() ?? 0.0,
-      maximumPriceCurrency:
-          (json['maximumPrice']?['currency'] as String?) ?? '',
+      minimumPrice:
+          ((json['minimumPrice'] as Map<String, dynamic>?)?['price'] as num?)
+                  ?.toDouble() ??
+              0.0,
+      minimumPriceCurrency: ((json['minimumPrice']
+              as Map<String, dynamic>?)?['currency'] as String?) ??
+          '',
+      maximumPrice:
+          ((json['maximumPrice'] as Map<String, dynamic>?)?['price'] as num?)
+                  ?.toDouble() ??
+              0.0,
+      maximumPriceCurrency: ((json['maximumPrice']
+              as Map<String, dynamic>?)?['currency'] as String?) ??
+          '',
       categories: (json['categories'] as List<dynamic>?)
-              ?.map((item) =>
-                  (item as Map<String, dynamic>?)?['name'] as String? ?? '')
+              ?.map(
+                (item) =>
+                    (item as Map<String, dynamic>?)?['name'] as String? ?? '',
+              )
               .toList() ??
           [],
       status: json['status'] as int? ?? 0,

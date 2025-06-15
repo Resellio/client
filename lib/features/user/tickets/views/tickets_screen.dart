@@ -19,9 +19,9 @@ class CustomerTicketsScreen extends StatefulWidget {
 class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
   String _searchQuery = '';
   bool? _usedFilter;
+  bool? _resellFilter;
 
   @override
   void initState() {
@@ -45,6 +45,7 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
       context.read<TicketsCubit>().loadMoreTickets(
             eventName: _searchQuery.isNotEmpty ? _searchQuery : null,
             used: _usedFilter,
+            resell: _resellFilter,
           );
     }
   }
@@ -63,10 +64,18 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
     _performSearch();
   }
 
+  void _onResellFilterChanged(bool? resell) {
+    setState(() {
+      _resellFilter = resell;
+    });
+    _performSearch();
+  }
+
   void _performSearch() {
     context.read<TicketsCubit>().refreshTickets(
           eventName: _searchQuery.isNotEmpty ? _searchQuery : null,
           used: _usedFilter,
+          resell: _resellFilter,
         );
   }
 
@@ -79,10 +88,6 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Moje bilety'),
-        foregroundColor: Colors.white,
-      ),
       body: Column(
         children: [
           _buildSearchAndFilter(),
@@ -110,7 +115,7 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
 
   Widget _buildSearchAndFilter() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -123,6 +128,7 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
             controller: _searchController,
@@ -142,38 +148,60 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                const Text(
-                  'Filtruj bilety:',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(width: 16),
-                FilterChip(
-                  label: const Text('Wszystkie'),
-                  selected: _usedFilter == null,
-                  onSelected: (_) => _onFilterChanged(null),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Użyte'),
-                  selected: (_usedFilter ?? false) == true,
-                  onSelected: (_) => _onFilterChanged(true),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Nieużyte'),
-                  selected: _usedFilter == false,
-                  onSelected: (_) => _onFilterChanged(false),
-                ),
-                const SizedBox(width: 16), // Extra padding at end for mobile
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _buildCompactFilterChip(
+                    'Wszystkie',
+                    _usedFilter == null,
+                    () => _onFilterChanged(null),
+                  ),
+                  _buildCompactFilterChip(
+                    'Użyte',
+                    (_usedFilter ?? false) == true,
+                    () => _onFilterChanged(true),
+                  ),
+                  _buildCompactFilterChip(
+                    'Nieużyte',
+                    _usedFilter == false,
+                    () => _onFilterChanged(false),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _buildCompactFilterChip(
+                    'Wszystkie',
+                    _resellFilter == null,
+                    () => _onResellFilterChanged(null),
+                  ),
+                  _buildCompactFilterChip(
+                    'Na sprzedaż',
+                    (_resellFilter ?? false) == true,
+                    () => _onResellFilterChanged(true),
+                  ),
+                  _buildCompactFilterChip(
+                    'Nie na sprzedaż',
+                    _resellFilter == false,
+                    () => _onResellFilterChanged(false),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -185,6 +213,7 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
       onRefresh: () => context.read<TicketsCubit>().refreshTickets(
             eventName: _searchQuery.isNotEmpty ? _searchQuery : null,
             used: _usedFilter,
+            resell: _resellFilter,
           ),
       child: ListView.builder(
         controller: _scrollController,
@@ -242,14 +271,23 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
                     decoration: BoxDecoration(
                       color: ticket.used
                           ? Colors.grey.withOpacity(0.2)
-                          : AppColors.primary.withOpacity(0.2),
+                          : ticket.forResell
+                              ? Colors.orange.withOpacity(0.2)
+                              : AppColors.primary.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      ticket.used ? 'Użyty' : 'Aktywny',
+                      ticket.used
+                          ? 'Użyty'
+                          : ticket.forResell
+                              ? 'Na sprzedaż'
+                              : 'Aktywny',
                       style: TextStyle(
-                        color:
-                            ticket.used ? Colors.grey[700] : AppColors.primary,
+                        color: ticket.used
+                            ? Colors.grey[700]
+                            : ticket.forResell
+                                ? Colors.orange[700]
+                                : AppColors.primary,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -293,6 +331,29 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
                   ),
                 ],
               ),
+              if (ticket.forResell &&
+                  ticket.resellPrice != null &&
+                  !ticket.used) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.attach_money,
+                      size: 16,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Cena odsprzedaży: ${ticket.resellPrice?.toStringAsFixed(2)} ${ticket.resellCurrency ?? 'PLN'}',
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -339,7 +400,9 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _searchQuery.isNotEmpty || _usedFilter != null
+            _searchQuery.isNotEmpty ||
+                    _usedFilter != null ||
+                    _resellFilter != null
                 ? 'Nie znaleziono biletów spełniających kryteria'
                 : 'Nie masz jeszcze żadnych biletów',
             style: TextStyle(
@@ -359,8 +422,37 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
       onRetry: () => context.read<TicketsCubit>().refreshTickets(
             eventName: _searchQuery.isNotEmpty ? _searchQuery : null,
             used: _usedFilter,
+            resell: _resellFilter,
           ),
       showBackButton: false,
+    );
+  }
+
+  Widget _buildCompactFilterChip(
+    String label,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.grey[200],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey[300]!,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[700],
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 }

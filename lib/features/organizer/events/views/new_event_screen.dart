@@ -113,7 +113,7 @@ class TicketTypeFormManager {
     descriptionController.text = description ?? '';
     maxCountController.text = maxCount ?? '';
     priceController.text = price ?? '';
-    currencyController.text = currency ?? '';
+    currencyController.text = currency ?? 'PLN';
     availableFromController.text = availableFrom ?? '';
   }
 
@@ -248,9 +248,9 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
           _imageName = result.files.single.name;
         });
       }
-    } catch (e) {
+    } catch (err) {
       if (mounted) {
-        ErrorSnackBar.show(context, 'Błąd podczas wybierania obrazu: $e');
+        ErrorSnackBar.show(context, 'Błąd podczas wybierania obrazu: $err');
       }
     }
   }
@@ -433,6 +433,69 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     return null;
   }
 
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0:
+        return _validateNotEmpty(_nameController.text, 'Nazwa') == null &&
+            _validateNotEmpty(_descriptionController.text, 'Opis') == null &&
+            _validateDate(_startDateController.text, 'Data rozpoczęcia') ==
+                null &&
+            _validateDate(_endDateController.text, 'Data zakończenia') ==
+                null &&
+            _validateNumber(_minAgeController.text, 'Minimalny wiek') == null &&
+            _validateDateOrder(
+                  _startDateController.text,
+                  _endDateController.text,
+                ) ==
+                null;
+      case 1:
+        return _validateNotEmpty(_streetController.text, 'Ulica') == null &&
+            _validateNumber(_houseNumberController.text, 'Numer domu') ==
+                null &&
+            _validateNotEmpty(_cityController.text, 'Miasto') == null &&
+            _validateNotEmpty(_postalCodeController.text, 'Kod pocztowy') ==
+                null &&
+            _validateNotEmpty(_countryController.text, 'Kraj') == null;
+
+      case 2:
+        return true;
+      case 3:
+        for (final ticketForm in _ticketForms) {
+          if (_validateNotEmpty(
+                    ticketForm.descriptionController.text,
+                    'Nazwa typu biletu',
+                  ) !=
+                  null ||
+              _validateNumber(ticketForm.maxCountController.text, 'Ilość') !=
+                  null ||
+              _validateNumber(
+                    ticketForm.priceController.text,
+                    'Cena',
+                    allowDecimal: true,
+                  ) !=
+                  null ||
+              ticketForm.currencyController.text.isEmpty ||
+              ticketForm.currencyController.text.toUpperCase() != 'PLN' ||
+              _validateDate(
+                    ticketForm.availableFromController.text,
+                    'Dostępne od',
+                  ) !=
+                  null ||
+              _validateTicketAvailableFrom(
+                    ticketForm.availableFromController.text,
+                    _startDateController.text,
+                  ) !=
+                  null) {
+            return false;
+          }
+        }
+        return true;
+
+      default:
+        return true;
+    }
+  }
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       ErrorSnackBar.show(context, 'W formularzu znajdują się błędy');
@@ -468,7 +531,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         description: _descriptionController.text,
         startDate: _isoFormat(_startDateController.text)!,
         endDate: _isoFormat(_endDateController.text)!,
-        minimumAge: int.parse(_minAgeController.text),
+        minimumAge: int.tryParse(_minAgeController.text) ?? 0,
         categories: _categoriesController.text
             .split(',')
             .map((s) => s.trim())
@@ -479,15 +542,15 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
           country: _countryController.text,
           city: _cityController.text,
           street: _streetController.text,
-          houseNumber: int.parse(_houseNumberController.text),
+          houseNumber: int.tryParse(_houseNumberController.text) ?? 0,
           flatNumber: int.tryParse(_flatNumberController.text) ?? 0,
           postalCode: _postalCodeController.text,
         ),
         ticketTypes: _ticketForms.map((form) {
           return TicketTypeRequest(
             description: form.descriptionController.text,
-            maxCount: int.parse(form.maxCountController.text),
-            price: double.parse(form.priceController.text),
+            maxCount: int.tryParse(form.maxCountController.text) ?? 0,
+            price: double.tryParse(form.priceController.text) ?? 0.0,
             currency: form.currencyController.text,
             availableFrom: _isoFormat(form.availableFromController.text)!,
           );
@@ -511,6 +574,10 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       if (mounted) {
         SuccessSnackBar.show(context, 'Wydarzenie utworzone pomyślnie!');
         Navigator.of(context).pop(true);
+        // TODO: Navigate to the event detail screen
+        // const OrganizerEventDetailRoute(
+        //         eventId: '7d7cc20f-e48f-4b68-cee3-08ddabf54e26')
+        //     .go(context);
       }
     } catch (err) {
       if (mounted) {
@@ -539,7 +606,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                   padding: const EdgeInsets.all(20),
                   child: Form(
                     key: _formKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    autovalidateMode: AutovalidateMode.disabled,
                     child: _buildCurrentStep(),
                   ),
                 ),
@@ -625,7 +692,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Zdjęcie wydarzenia (opcjonalnie)',
+          'Zdjęcie promocyjne',
           style: TextStyle(
             color: Color(0xFF636E72),
             fontWeight: FontWeight.w500,
@@ -764,7 +831,8 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
               child: _buildModernTextField(
                 _houseNumberController,
                 'Numer domu',
-                validator: (v) => _validateNotEmpty(v, 'Numer domu'),
+                keyboardType: TextInputType.number,
+                validator: (v) => _validateNumber(v, 'Numer domu'),
               ),
             ),
             const SizedBox(width: 16),
@@ -772,6 +840,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
               child: _buildModernTextField(
                 _flatNumberController,
                 'Nr mieszkania',
+                keyboardType: TextInputType.number,
               ),
             ),
           ],
@@ -987,6 +1056,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
     int? maxLines = 1,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    String? suffixText,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -995,8 +1065,10 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         maxLines: maxLines,
         keyboardType: keyboardType,
         validator: validator,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
+          suffixText: suffixText,
           labelText: label,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -1030,6 +1102,7 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
         readOnly: true,
         onTap: () => _selectDateTime(context, controller),
         validator: (v) => _validateDate(v, label),
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
@@ -1141,14 +1214,10 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                       const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) =>
                       _validateNumber(v, 'Cena', allowDecimal: true),
+                  suffixText: 'PLN',
                 ),
               ),
             ],
-          ),
-          _buildModernTextField(
-            ticketForm.currencyController,
-            'Waluta (np. PLN, USD)',
-            validator: (v) => _validateNotEmpty(v, 'Waluta'),
           ),
           _buildDateTimeField(
             ticketForm.availableFromController,
@@ -1234,9 +1303,17 @@ class _OrganizerNewEventScreenState extends State<OrganizerNewEventScreen>
                   ? null
                   : () {
                       if (_currentStep < 3) {
-                        setState(() {
-                          _currentStep++;
-                        });
+                        _formKey.currentState?.validate();
+                        if (_validateCurrentStep()) {
+                          setState(() {
+                            _currentStep++;
+                          });
+                        } else {
+                          ErrorSnackBar.show(
+                            context,
+                            'Proszę poprawić błędy w formularzu',
+                          );
+                        }
                       } else {
                         _submitForm();
                       }

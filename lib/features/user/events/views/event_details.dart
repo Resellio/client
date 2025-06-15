@@ -9,6 +9,7 @@ import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
+import 'package:resellio/features/user/events/model/resell_ticket.dart';
 
 class CustomerEventDetailsScreen extends StatefulWidget {
   const CustomerEventDetailsScreen({
@@ -91,6 +92,7 @@ class _EventDetailsView extends StatelessWidget {
               _EventInfo(event: event),
               _EventDescription(event: event),
               _TicketSection(event: event, eventId: eventId),
+              _ResellTicketsSection(eventId: eventId),
               const SizedBox(height: 32),
             ],
           ),
@@ -520,10 +522,14 @@ class _TicketCard extends StatelessWidget {
           .read<EventDetailsCubit>()
           .updateTicketAvailabilityLocally(ticket.id, 1);
       SuccessSnackBar.show(
-          context, 'Dodano bilet do koszyka: ${ticket.description}');
+        context,
+        'Dodano bilet do koszyka: ${ticket.description}',
+      );
     } else {
-      ErrorSnackBar.show(context,
-          'Nie udało się dodać biletu do koszyka: ${ticket.description}');
+      ErrorSnackBar.show(
+        context,
+        'Nie udało się dodać biletu do koszyka: ${ticket.description}',
+      );
     }
   }
 }
@@ -593,5 +599,226 @@ class _QuantitySelectorState extends State<_QuantitySelector> {
       _quantity--;
     });
     widget.onQuantityChanged(_quantity);
+  }
+}
+
+class _ResellTicketsSection extends StatelessWidget {
+  const _ResellTicketsSection({required this.eventId});
+
+  final String eventId;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<EventDetailsCubit, EventDetailsState>(
+      builder: (context, state) {
+        if (state.isLoadingResellTickets) {
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bilety od innych użytkowników',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Center(child: CircularProgressIndicator()),
+              ],
+            ),
+          );
+        }
+
+        if (state.resellTicketsError != null) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bilety od innych użytkowników',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Nie udało się załadować biletów od innych użytkowników',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state.resellTickets.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bilety od innych użytkowników',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              ...state.resellTickets.map(
+                (ticket) => _ResellTicketCard(ticket: ticket),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ResellTicketCard extends StatelessWidget {
+  const _ResellTicketCard({required this.ticket});
+
+  final ResellTicket ticket;
+
+  @override
+  Widget build(BuildContext context) {
+    final priceFormatter = NumberFormat.currency(
+      locale: 'pl_PL',
+      symbol: ticket.currency,
+      decimalDigits: 2,
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withAlpha(150),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.person_outline,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Od użytkownika',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    ticket.description,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    priceFormatter.format(ticket.price),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  if (ticket.seats.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Miejsca: ${ticket.seats}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            BlocBuilder<CartCubit, CartState>(
+              builder: (context, cartState) {
+                final isLoading = cartState is CartLoadingState;
+
+                return ElevatedButton(
+                  onPressed:
+                      !isLoading ? () => _addToCart(context, ticket) : null,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Dodaj do koszyka'),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addToCart(BuildContext context, ResellTicket ticket) async {
+    final result =
+        await context.read<CartCubit>().addResellTicketToCart(ticket.id);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (result.success) {
+      SuccessSnackBar.show(
+        context,
+        'Dodano bilet do koszyka: ${ticket.description}',
+      );
+    } else {
+      final errorMessage = result.errorMessage ??
+          'Nie udało się dodać biletu do koszyka: ${ticket.description}';
+      ErrorSnackBar.show(
+        context,
+        errorMessage,
+      );
+    }
   }
 }

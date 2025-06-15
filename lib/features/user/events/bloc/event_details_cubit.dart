@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/model/event.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
+import 'package:resellio/features/user/events/model/resell_tickets_response.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
 
 class EventDetailsCubit extends Cubit<EventDetailsState> {
@@ -21,6 +22,7 @@ class EventDetailsCubit extends Cubit<EventDetailsState> {
       final event = await _apiService.getEventDetails(
         eventId: eventId,
       );
+      debugPrint(event.data.toString());
       final ev = Event.fromJson(event.data!);
       emit(
         state.copyWith(
@@ -29,11 +31,51 @@ class EventDetailsCubit extends Cubit<EventDetailsState> {
         ),
       );
       debugPrint(ev.toString());
+
+      await loadResellTickets(eventId);
     } catch (err) {
       emit(
         state.copyWith(
           status: EventDetailsStatus.failure,
           errorMessage: err.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> loadResellTickets(String eventId) async {
+    emit(state.copyWith(isLoadingResellTickets: true));
+
+    try {
+      final response = await _apiService.getTicketsForResell(
+        eventId: eventId,
+        page: 0,
+        pageSize: 50,
+      );
+
+      if (response.success && response.data != null) {
+        final resellTicketsResponse =
+            ResellTicketsResponse.fromJson(response.data!);
+        emit(
+          state.copyWith(
+            resellTickets: resellTicketsResponse.data,
+            isLoadingResellTickets: false,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            isLoadingResellTickets: false,
+            resellTicketsError:
+                response.message ?? 'Failed to load resell tickets',
+          ),
+        );
+      }
+    } catch (err) {
+      emit(
+        state.copyWith(
+          isLoadingResellTickets: false,
+          resellTicketsError: err.toString(),
         ),
       );
     }
