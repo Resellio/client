@@ -13,8 +13,7 @@ class EventsCubit extends Cubit<EventsState> {
 
   final ApiService _apiService;
   final int _pageSize = 3;
-
-  Future<void> fetchNextPage(String token) async {
+  Future<void> fetchNextPage() async {
     if (state.status == EventsStatus.loading || state.hasReachedMax) {
       debugPrint(
         'Fetch skipped: Status=${state.status}, hasReachedMax=${state.hasReachedMax}',
@@ -29,11 +28,10 @@ class EventsCubit extends Cubit<EventsState> {
       final pageToFetch = state.currentPage + 1;
 
       debugPrint(
-        'Fetching events - Page: $pageToFetch, Query: "${state.searchQuery}", StartDate: ${state.startDateFilter}, EndDate: ${state.endDateFilter}, MinPrice: ${state.minPriceFilter}, MaxPrice: ${state.maxPriceFilter}, City: "${state.cityFilter}", Category: "${state.categoryFilter}"',
+        'Fetching events - Page: $pageToFetch, Current: ${state.currentPage}, Query: "${state.searchQuery}", StartDate: ${state.startDateFilter}, EndDate: ${state.endDateFilter}, MinPrice: ${state.minPriceFilter}, MaxPrice: ${state.maxPriceFilter}, City: "${state.cityFilter}", Category: "${state.categoryFilter}"',
       );
 
       final response = await _apiService.getEvents(
-        token: token,
         page: pageToFetch,
         pageSize: _pageSize,
         query: state.searchQuery,
@@ -51,9 +49,15 @@ class EventsCubit extends Cubit<EventsState> {
       );
 
       final newEvents = paginatedData.data;
-      final bool hasReachedMax = !paginatedData.hasNextPage;
+      final bool hasReachedMax = !paginatedData.hasNextPage ||
+          paginatedData.pageNumber >=
+              paginatedData.paginationDetails.maxPageNumber;
       final int totalResults = state.totalResults ??
           paginatedData.paginationDetails.allElementsCount;
+
+      debugPrint(
+        'Page response - pageNumber: ${paginatedData.pageNumber}, maxPageNumber: ${paginatedData.paginationDetails.maxPageNumber}, hasNextPage: ${paginatedData.hasNextPage}, hasReachedMax: $hasReachedMax',
+      );
 
       emit(
         state.copyWith(
@@ -88,7 +92,6 @@ class EventsCubit extends Cubit<EventsState> {
   }
 
   Future<void> applyFiltersAndFetch({
-    required String token,
     String? searchQuery,
     DateTime? startDate,
     DateTime? endDate,
@@ -120,7 +123,6 @@ class EventsCubit extends Cubit<EventsState> {
       );
 
       final response = await _apiService.getEvents(
-        token: token,
         page: firstPage,
         pageSize: _pageSize,
         query: searchQuery,
@@ -136,10 +138,15 @@ class EventsCubit extends Cubit<EventsState> {
         response.data ?? {},
         (json) => Event.fromJson(json as Map<String, dynamic>),
       );
-
       final newEvents = paginatedData.data;
-      final bool hasReachedMax = !paginatedData.hasNextPage;
+      final bool hasReachedMax = !paginatedData.hasNextPage ||
+          paginatedData.pageNumber >=
+              paginatedData.paginationDetails.maxPageNumber;
       final int totalResults = paginatedData.paginationDetails.allElementsCount;
+
+      debugPrint(
+        'Filter page response - pageNumber: ${paginatedData.pageNumber}, maxPageNumber: ${paginatedData.paginationDetails.maxPageNumber}, hasNextPage: ${paginatedData.hasNextPage}, hasReachedMax: $hasReachedMax',
+      );
 
       emit(
         state.copyWith(
@@ -177,5 +184,19 @@ class EventsCubit extends Cubit<EventsState> {
         ),
       );
     }
+  }
+
+  Future<void> refreshEvents() async {
+    debugPrint('Refreshing events...');
+
+    await applyFiltersAndFetch(
+      searchQuery: state.searchQuery,
+      startDate: state.startDateFilter,
+      endDate: state.endDateFilter,
+      minPrice: state.minPriceFilter,
+      maxPrice: state.maxPriceFilter,
+      city: state.cityFilter,
+      categories: state.categoryFilter,
+    );
   }
 }

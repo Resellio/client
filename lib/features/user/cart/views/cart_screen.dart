@@ -1,43 +1,96 @@
 // shopping_cart_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:resellio/features/common/model/Cart/cart_item.dart';
-import 'package:resellio/features/common/model/Cart/new_cart_ticket.dart';
-import 'package:resellio/features/common/model/Cart/resell_cart_ticket.dart';
+import 'package:resellio/features/common/style/app_colors.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
+
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
+import 'package:resellio/features/user/cart/model/cart_item.dart';
+import 'package:resellio/routes/customer_routes.dart';
 
-class CustomerShoppingCartScreen extends StatefulWidget {
-  const CustomerShoppingCartScreen({super.key});
+class CustomerCartScreen extends StatefulWidget {
+  const CustomerCartScreen({super.key});
 
   @override
-  State<CustomerShoppingCartScreen> createState() =>
-      _CustomerShoppingCartScreenState();
+  State<CustomerCartScreen> createState() => _CustomerCartScreenState();
 }
 
-class _CustomerShoppingCartScreenState
-    extends State<CustomerShoppingCartScreen> {
+class _CustomerCartScreenState extends State<CustomerCartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Koszyk'),
-        backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: BlocBuilder<CartCubit, CartState>(
-        builder: (context, state) {
-          if (state is CartLoadingState) {
-            return const Center(child: CircularProgressIndicator());
+      body: BlocListener<CartCubit, CartState>(
+        listener: (context, state) {
+          if (state is CartErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
+                backgroundColor: Colors.red[600],
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 3),
+              ),
+            );
           } else if (state is CartLoadedState) {
-            return state.items.isEmpty
-                ? _buildEmptyCart()
-                : _buildCartWithItems(context, state);
-          } else if (state is CartErrorState) {
-            return const Text('Error');
+            if (state.errorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.error, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(state.errorMessage!)),
+                    ],
+                  ),
+                  backgroundColor: Colors.red[600],
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            } else if (state.successMessage != null) {
+              SuccessSnackBar.show(context, state.successMessage!);
+            }
           }
-          return const Text('unknown');
         },
+        child: BlocBuilder<CartCubit, CartState>(
+          builder: (context, state) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                await context.read<CartCubit>().fetchCart();
+              },
+              child: switch (state) {
+                CartInitialState() => _buildScrollableContent(
+                    const Center(child: CircularProgressIndicator()),
+                  ),
+                CartLoadingState() => _buildScrollableContent(
+                    const Center(child: CircularProgressIndicator()),
+                  ),
+                CartLoadedState() when state.items.isEmpty =>
+                  _buildScrollableContent(_buildEmptyCart()),
+                CartLoadedState() => _buildCartWithItems(context, state),
+                CartSuccessState() => _buildCartWithItems(
+                    context,
+                    CartLoadedState(
+                      items: state.items,
+                      totalPrice: state.totalPrice,
+                    ),
+                  ),
+                CartErrorState() =>
+                  _buildScrollableContent(_buildCartError(context, state)),
+              },
+            );
+          },
+        ),
       ),
       bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
         builder: (context, state) {
@@ -50,52 +103,74 @@ class _CustomerShoppingCartScreenState
     );
   }
 
+  Widget _buildCartError(BuildContext context, CartErrorState state) {
+    return CommonErrorWidget(
+      message: state.message,
+      onRetry: () => context.read<CartCubit>().fetchCart(),
+      showBackButton: false,
+    );
+  }
+
   Widget _buildEmptyCart() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 80,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Twój koszyk jest pusty',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.shopping_cart_outlined,
+              size: 64,
+              color: Colors.grey[400],
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Dodaj bilety do koszyka, aby kontynuować',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
+            const SizedBox(height: 16),
+            Text(
+              'Koszyk jest pusty',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Dodaj jakieś bilety do koszyka',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => const CustomerEventsRoute().go(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Szukaj wydarzeń'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCartWithItems(BuildContext context, CartLoadedState state) {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: state.items.length,
-            itemBuilder: (context, index) {
-              final item = state.items[index];
-              return _buildCartItemCard(context, item, index);
-            },
-          ),
-        ),
-      ],
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: state.items.length,
+      itemBuilder: (context, index) {
+        final item = state.items[index];
+        return _buildCartItemCard(context, item, index);
+      },
     );
   }
 
@@ -166,7 +241,6 @@ class _CustomerShoppingCartScreenState
               QuantityControlsWidget(
                 index: index,
                 initialQuantity: (item as NewCartItem).ticket.quantity,
-                maxQuantity: item.ticket.quantity,
                 onQuantityUpdate: (newQuantity) =>
                     _updateQuantity(context, index, newQuantity),
                 onRemoveItem: () => _removeItem(context, index),
@@ -205,18 +279,19 @@ class _CustomerShoppingCartScreenState
   }
 
   Widget _buildCheckoutBar(BuildContext context, CartLoadedState state) {
-    // Calculate total with current quantities from the cart state
-    double calculatedTotal = 0.0;
-    for (int i = 0; i < state.items.length; i++) {
+    var calculatedTotal = 0.0;
+    for (var i = 0; i < state.items.length; i++) {
       final item = state.items[i];
       if (item.isResell) {
         calculatedTotal += item.totalPrice;
       } else {
         final newItem = item as NewCartItem;
         final quantity = newItem.ticket.quantity;
-        calculatedTotal += newItem.ticket.unitPrice * quantity;
+        final itemTotal = newItem.ticket.unitPrice * quantity;
+        calculatedTotal += double.parse(itemTotal.toStringAsFixed(2));
       }
     }
+    calculatedTotal = double.parse(calculatedTotal.toStringAsFixed(2));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -230,96 +305,91 @@ class _CustomerShoppingCartScreenState
           ),
         ],
       ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Łącznie:',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Łącznie:',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                Text(
-                  '${calculatedTotal.toStringAsFixed(2)} PLN',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
+              ),
+              Text(
+                '${calculatedTotal.toStringAsFixed(2)} PLN',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _checkout(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => const CustomerCheckoutRoute().go(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Przejdź do płatności',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+              ),
+              child: const Text(
+                'Przejdź do płatności',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   void _updateQuantity(BuildContext context, int index, int newQuantity) {
     context.read<CartCubit>().updateQuantity(index, newQuantity);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Zaktualizowano ilość na $newQuantity')),
-    );
   }
 
   void _removeItem(BuildContext context, int index) {
     context.read<CartCubit>().removeItem(index);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Usunięto bilet z koszyka')),
-    );
+    // Success/error message will be shown by BlocListener
   }
 
-  void _checkout(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Przechodzenie do płatności...')),
+  Widget _buildScrollableContent(Widget child) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height -
+            AppBar().preferredSize.height -
+            MediaQuery.of(context).padding.top,
+        child: child,
+      ),
     );
   }
 }
 
 class QuantityControlsWidget extends StatefulWidget {
-  final int index;
-  final int initialQuantity;
-  final int maxQuantity;
-  final Function(int) onQuantityUpdate;
-  final VoidCallback onRemoveItem;
-
   const QuantityControlsWidget({
     super.key,
     required this.index,
     required this.initialQuantity,
-    required this.maxQuantity,
     required this.onQuantityUpdate,
     required this.onRemoveItem,
   });
+
+  final int index;
+  final int initialQuantity;
+  final void Function(int) onQuantityUpdate;
+  final VoidCallback onRemoveItem;
 
   @override
   State<QuantityControlsWidget> createState() => _QuantityControlsWidgetState();
@@ -339,7 +409,6 @@ class _QuantityControlsWidgetState extends State<QuantityControlsWidget> {
   @override
   void didUpdateWidget(QuantityControlsWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update when the initial quantity changes (after successful update from cubit)
     if (widget.initialQuantity != oldWidget.initialQuantity) {
       _currentQuantity = widget.initialQuantity;
       _originalQuantity = widget.initialQuantity;
@@ -410,14 +479,10 @@ class _QuantityControlsWidgetState extends State<QuantityControlsWidget> {
                 ),
               ),
               IconButton(
-                onPressed: _currentQuantity < widget.maxQuantity
-                    ? () => _changeQuantity(_currentQuantity + 1)
-                    : null,
-                icon: Icon(
+                onPressed: () => _changeQuantity(_currentQuantity + 1),
+                icon: const Icon(
                   Icons.add_circle_outline,
-                  color: _currentQuantity < widget.maxQuantity
-                      ? Colors.green
-                      : Colors.grey,
+                  color: Colors.green,
                 ),
                 style: IconButton.styleFrom(
                   padding: const EdgeInsets.all(4),
@@ -425,14 +490,6 @@ class _QuantityControlsWidgetState extends State<QuantityControlsWidget> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'z ${widget.maxQuantity}',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
           ),
         ],
       ),

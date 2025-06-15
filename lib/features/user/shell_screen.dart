@@ -1,40 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
-import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
-import 'package:resellio/routes/customer_routes.dart';
 
 class CustomerShellScreen extends StatelessWidget {
   const CustomerShellScreen({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Resellio'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              context.read<CartCubit>().fetchCart();
-              const CustomerShoppingCartRoute().push<BuildContext>(context);
-            },
-          ),
-        ],
-      ),
-      body: navigationShell,
+      body: SafeArea(child: navigationShell),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: AppColors.primary,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Główna',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.home),
+          //   label: 'Główna',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Szukaj',
@@ -42,6 +24,10 @@ class CustomerShellScreen extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt),
             label: 'Moje bilety',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Koszyk',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

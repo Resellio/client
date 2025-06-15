@@ -8,20 +8,11 @@ part of 'customer_routes.dart';
 
 List<RouteBase> get $appRoutes => [
       $customerShellRouteData,
-      $customerShoppingCartRoute,
     ];
 
 RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
       factory: $CustomerShellRouteDataExtension._fromState,
       branches: [
-        StatefulShellBranchData.$branch(
-          routes: [
-            GoRouteData.$route(
-              path: '/app',
-              factory: $CustomerHomeRouteExtension._fromState,
-            ),
-          ],
-        ),
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
@@ -44,7 +35,21 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
               routes: [
                 GoRouteData.$route(
                   path: ':ticketId',
-                  factory: $TicketDetailRouteExtension._fromState,
+                  factory: $CustomerTicketDetailRouteExtension._fromState,
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranchData.$branch(
+          routes: [
+            GoRouteData.$route(
+              path: '/app/cart',
+              factory: $CustomerCartRouteExtension._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'checkout',
+                  factory: $CustomerCheckoutRouteExtension._fromState,
                 ),
               ],
             ),
@@ -64,24 +69,6 @@ RouteBase get $customerShellRouteData => StatefulShellRouteData.$route(
 extension $CustomerShellRouteDataExtension on CustomerShellRouteData {
   static CustomerShellRouteData _fromState(GoRouterState state) =>
       const CustomerShellRouteData();
-}
-
-extension $CustomerHomeRouteExtension on CustomerHomeRoute {
-  static CustomerHomeRoute _fromState(GoRouterState state) =>
-      const CustomerHomeRoute();
-
-  String get location => GoRouteData.$location(
-        '/app',
-      );
-
-  void go(BuildContext context) => context.go(location);
-
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  void replace(BuildContext context) => context.replace(location);
 }
 
 extension $CustomerEventsRouteExtension on CustomerEventsRoute {
@@ -140,13 +127,50 @@ extension $CustomerTicketsRouteExtension on CustomerTicketsRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $TicketDetailRouteExtension on TicketDetailRoute {
-  static TicketDetailRoute _fromState(GoRouterState state) => TicketDetailRoute(
+extension $CustomerTicketDetailRouteExtension on CustomerTicketDetailRoute {
+  static CustomerTicketDetailRoute _fromState(GoRouterState state) =>
+      CustomerTicketDetailRoute(
         ticketId: state.pathParameters['ticketId']!,
       );
 
   String get location => GoRouteData.$location(
         '/app/tickets/${Uri.encodeComponent(ticketId)}',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+extension $CustomerCartRouteExtension on CustomerCartRoute {
+  static CustomerCartRoute _fromState(GoRouterState state) =>
+      const CustomerCartRoute();
+
+  String get location => GoRouteData.$location(
+        '/app/cart',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+extension $CustomerCheckoutRouteExtension on CustomerCheckoutRoute {
+  static CustomerCheckoutRoute _fromState(GoRouterState state) =>
+      const CustomerCheckoutRoute();
+
+  String get location => GoRouteData.$location(
+        '/app/cart/checkout',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -165,29 +189,6 @@ extension $CustomerProfileRouteExtension on CustomerProfileRoute {
 
   String get location => GoRouteData.$location(
         '/app/profile',
-      );
-
-  void go(BuildContext context) => context.go(location);
-
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  void replace(BuildContext context) => context.replace(location);
-}
-
-RouteBase get $customerShoppingCartRoute => GoRouteData.$route(
-      path: '/app/cart',
-      factory: $CustomerShoppingCartRouteExtension._fromState,
-    );
-
-extension $CustomerShoppingCartRouteExtension on CustomerShoppingCartRoute {
-  static CustomerShoppingCartRoute _fromState(GoRouterState state) =>
-      const CustomerShoppingCartRoute();
-
-  String get location => GoRouteData.$location(
-        '/app/cart',
       );
 
   void go(BuildContext context) => context.go(location);

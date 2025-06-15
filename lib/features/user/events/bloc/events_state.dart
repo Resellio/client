@@ -48,6 +48,7 @@ class EventsState extends Equatable {
       minPriceFilter: minPriceFilter ?? this.minPriceFilter,
       maxPriceFilter: maxPriceFilter ?? this.maxPriceFilter,
       cityFilter: cityFilter ?? this.cityFilter,
+      categoryFilter: categoryFilter ?? this.categoryFilter,
     );
   }
 
