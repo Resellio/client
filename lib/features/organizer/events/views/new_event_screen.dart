@@ -45,6 +45,39 @@ class CreateEventRequest {
       };
 }
 
+class EditEventRequest {
+  EditEventRequest({
+    required this.name,
+    required this.description,
+    required this.startDate,
+    required this.endDate,
+    required this.minimumAge,
+    required this.categories,
+    this.eventStatus = 0,
+    required this.editAddress,
+  });
+
+  String name;
+  String description;
+  String startDate;
+  String endDate;
+  int minimumAge;
+  List<EventCategoryRequest> categories;
+  int eventStatus;
+  EventAddressRequest editAddress;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'description': description,
+        'startDate': startDate,
+        'endDate': endDate,
+        'minimumAge': minimumAge,
+        'categories': categories.map((c) => c.toJson()).toList(),
+        'eventStatus': eventStatus,
+        'editAddress': editAddress.toJson(),
+      };
+}
+
 class EventCategoryRequest {
   EventCategoryRequest({required this.categoryName});
   String categoryName;
