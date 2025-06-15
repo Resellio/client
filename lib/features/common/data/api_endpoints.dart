@@ -27,6 +27,7 @@ class ApiEndpoints {
   static String eventDetails(String eventId) => '$events/$eventId';
   static String organizerEventDetails(String eventId) =>
       '$organizerEvents/$eventId';
+  static String updateEvent(String eventId) => '$events/$eventId';
   static String ticketDetails(String ticketId) => '$tickets/$ticketId';
   static String resellTicket(String ticketId) => '$ticketsResell/$ticketId';
   static String addResellTicketToCart(String ticketId) =>
