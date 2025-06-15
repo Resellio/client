@@ -6,7 +6,6 @@ import 'package:resellio/features/admin/manage_organizers/bloc/organizers_cubit.
 import 'package:resellio/features/admin/manage_organizers/views/manage_organizers_screen.dart';
 import 'package:resellio/features/admin/profile/views/profile_screen.dart';
 import 'package:resellio/features/admin/shell_screen.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 
 part 'admin_routes.g.dart';
@@ -71,8 +70,7 @@ class AdminOrganizersRoute extends GoRouteData {
   Widget build(BuildContext context, GoRouterState state) {
     return BlocProvider(
       create: (context) =>
-          OrganizersCubit(context.read<ApiService>(), context.read<AuthCubit>())
-            ..fetchNextPage(),
+          OrganizersCubit(context.read<ApiService>())..fetchNextPage(),
       child: const AdminManageOrganizersScreen(),
     );
   }
