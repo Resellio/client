@@ -85,103 +85,101 @@ class _OrganizerUnverifiedScreenState extends State<OrganizerUnverifiedScreen> {
           ),
 
           SingleChildScrollView(
-            child: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 32),
-                        const ResellioLogo(size: 120),
-                        const SizedBox(height: 32),
-                        const Text(
-                          'Status',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 16, color: Colors.white),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 32),
+                      const ResellioLogo(size: 120),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'Status',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                      const Text(
+                        'W trakcie weryfikacji',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                        const Text(
-                          'W trakcie weryfikacji',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                      ),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'Twoje dane są weryfikowane przez administratora.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                      const SizedBox(height: 32),
+                      ResellioTextField(
+                        'Email',
+                        controller: _emailController,
+                        readOnly: true,
+                      ),
+                      const SizedBox(height: 16),
+                      ResellioTextField(
+                        'Imię',
+                        controller: _nameController,
+                        readOnly: true,
+                      ),
+                      const SizedBox(height: 16),
+                      ResellioTextField(
+                        'Nazwisko',
+                        controller: _surnameController,
+                        readOnly: true,
+                      ),
+                      const SizedBox(height: 16),
+                      ResellioTextField(
+                        'Nazwa firmy',
+                        controller: _displayNameController,
+                        readOnly: true,
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: () => context.read<AuthCubit>().logout(),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: AppColors.primaryDark,
                         ),
-                        const SizedBox(height: 32),
-                        const Text(
-                          'Twoje dane są weryfikowane przez administratora.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                        const SizedBox(height: 32),
-                        ResellioTextField(
-                          'Email',
-                          controller: _emailController,
-                          readOnly: true,
-                        ),
-                        const SizedBox(height: 16),
-                        ResellioTextField(
-                          'Imię',
-                          controller: _nameController,
-                          readOnly: true,
-                        ),
-                        const SizedBox(height: 16),
-                        ResellioTextField(
-                          'Nazwisko',
-                          controller: _surnameController,
-                          readOnly: true,
-                        ),
-                        const SizedBox(height: 16),
-                        ResellioTextField(
-                          'Nazwa firmy',
-                          controller: _displayNameController,
-                          readOnly: true,
-                        ),
-                        const SizedBox(height: 32),
-                        ElevatedButton(
-                          onPressed: () => context.read<AuthCubit>().logout(),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: AppColors.primaryDark,
-                          ),
-                          child: const Text('Wyloguj się'),
-                        ),
-                        ElevatedButton(
-                          // FIXME: temporary button to verify organizer
-                          onPressed: () async {
-                            print((context.read<AuthCubit>().state
-                                    as AuthorizedUnverifiedOrganizer)
-                                .user);
-                            final email = (context.read<AuthCubit>().state
-                                    as AuthorizedUnverifiedOrganizer)
-                                .user
-                                .email;
+                        child: const Text('Wyloguj się'),
+                      ),
+                      ElevatedButton(
+                        // FIXME: temporary button to verify organizer
+                        onPressed: () async {
+                          print((context.read<AuthCubit>().state
+                                  as AuthorizedUnverifiedOrganizer)
+                              .user);
+                          final email = (context.read<AuthCubit>().state
+                                  as AuthorizedUnverifiedOrganizer)
+                              .user
+                              .email;
 
-                            final response = await http.post(
-                              Uri.parse(
-                                  '${ApiEndpoints.baseUrl}/${ApiEndpoints.organizerVerify}'),
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: jsonEncode({
-                                'email': email,
-                              }),
-                            );
+                          final response = await http.post(
+                            Uri.parse(
+                                '${ApiEndpoints.baseUrl}/${ApiEndpoints.organizerVerify}'),
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: jsonEncode({
+                              'email': email,
+                            }),
+                          );
 
-                            if (response.statusCode != 200) {
-                              print(
-                                  'Failed to verify organizer (${response.body})');
-                            }
+                          if (response.statusCode != 200) {
+                            print(
+                                'Failed to verify organizer (${response.body})');
+                          }
 
-                            print(response.body);
-                          },
-                          child: const Text('Verify organizer'),
-                        ),
-                      ],
-                    ),
+                          print(response.body);
+                        },
+                        child: const Text('Verify organizer'),
+                      ),
+                    ],
                   ),
                 ),
               ),

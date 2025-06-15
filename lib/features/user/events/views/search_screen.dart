@@ -322,15 +322,13 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context, isAnyFilterActive),
-            Expanded(
-              child: _buildResultsContent(context),
-            ),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildHeader(context, isAnyFilterActive),
+          Expanded(
+            child: _buildResultsContent(context),
+          ),
+        ],
       ),
     );
   }

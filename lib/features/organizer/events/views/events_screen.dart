@@ -429,37 +429,35 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
   void _showEventActions(Event event) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.visibility),
-              title: const Text('Zobacz szczegóły'),
-              onTap: () {
-                Navigator.pop(context);
-                OrganizerEventDetailRoute(eventId: event.id).go(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edytuj'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Navigate to edit screen
-                ErrorSnackBar.show(context, 'Edycja - do implementacji');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Usuń', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _deleteEvent(event);
-              },
-            ),
-          ],
-        ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.visibility),
+            title: const Text('Zobacz szczegóły'),
+            onTap: () {
+              Navigator.pop(context);
+              OrganizerEventDetailRoute(eventId: event.id).go(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edytuj'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Navigate to edit screen
+              ErrorSnackBar.show(context, 'Edycja - do implementacji');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: const Text('Usuń', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context);
+              _deleteEvent(event);
+            },
+          ),
+        ],
       ),
     );
   }

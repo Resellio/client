@@ -9,7 +9,7 @@ class AdminShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: SafeArea(child: navigationShell),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(

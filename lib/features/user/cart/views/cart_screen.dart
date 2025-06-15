@@ -19,33 +19,31 @@ class CustomerCartScreen extends StatefulWidget {
 class _CustomerCartScreenState extends State<CustomerCartScreen> {
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Koszyk'),
-          foregroundColor: Colors.white,
-        ),
-        body: BlocBuilder<CartCubit, CartState>(
-          builder: (context, state) {
-            return switch (state) {
-              CartInitialState() =>
-                const Center(child: CircularProgressIndicator()),
-              CartLoadingState() =>
-                const Center(child: CircularProgressIndicator()),
-              CartLoadedState() when state.items.isEmpty => _buildEmptyCart(),
-              CartLoadedState() => _buildCartWithItems(context, state),
-              CartErrorState() => _buildCartError(context, state),
-            };
-          },
-        ),
-        bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
-          builder: (context, state) {
-            if (state is CartLoadedState && state.items.isNotEmpty) {
-              return _buildCheckoutBar(context, state);
-            }
-            return const SizedBox.shrink();
-          },
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Koszyk'),
+        foregroundColor: Colors.white,
+      ),
+      body: BlocBuilder<CartCubit, CartState>(
+        builder: (context, state) {
+          return switch (state) {
+            CartInitialState() =>
+              const Center(child: CircularProgressIndicator()),
+            CartLoadingState() =>
+              const Center(child: CircularProgressIndicator()),
+            CartLoadedState() when state.items.isEmpty => _buildEmptyCart(),
+            CartLoadedState() => _buildCartWithItems(context, state),
+            CartErrorState() => _buildCartError(context, state),
+          };
+        },
+      ),
+      bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
+        builder: (context, state) {
+          if (state is CartLoadedState && state.items.isNotEmpty) {
+            return _buildCheckoutBar(context, state);
+          }
+          return const SizedBox.shrink();
+        },
       ),
     );
   }

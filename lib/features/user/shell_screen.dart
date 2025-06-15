@@ -6,11 +6,10 @@ class CustomerShellScreen extends StatelessWidget {
   const CustomerShellScreen({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: SafeArea(child: navigationShell),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: AppColors.primary,
         items: const [
