@@ -17,8 +17,11 @@ class Cart {
 
     final resellTickets = json['resellTickets'] as List<dynamic>? ?? [];
     for (final ticket in resellTickets) {
-      items.add(ResellCartItem(
-          ResellCartTicket.fromJson(ticket as Map<String, dynamic>)),);
+      items.add(
+        ResellCartItem(
+          ResellCartTicket.fromJson(ticket as Map<String, dynamic>),
+        ),
+      );
     }
 
     return Cart(items: items);

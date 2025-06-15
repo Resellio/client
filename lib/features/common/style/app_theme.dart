@@ -22,8 +22,6 @@ class AppTheme {
           AppColors.primaryText, // Text/icons on surface color (Cards, Dialogs)
     );
 
-    final baseTextTheme = Typography.material2021().black;
-
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,

@@ -30,62 +30,62 @@ class WelcomeScreen extends StatelessWidget {
               );
         }
       },
-      child: Scaffold(
-        body: Stack(
-          children: [
-            const SizedBox.expand(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primaryDark,
-                      AppColors.primaryVeryDark,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Background decorative elements
-            const Positioned(
-              top: -50,
-              right: -50,
-              child: Opacity(
-                opacity: 0.1,
-                child: SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+      child: SafeArea(
+        child: Scaffold(
+          body: Stack(
+            children: [
+              const SizedBox.expand(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primaryDark,
+                        AppColors.primaryVeryDark,
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-            const Positioned(
-              bottom: -100,
-              left: -50,
-              child: Opacity(
-                opacity: 0.08,
-                child: SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+
+              // Background decorative elements
+              const Positioned(
+                top: -50,
+                right: -50,
+                child: Opacity(
+                  opacity: 0.1,
+                  child: SizedBox(
+                    width: 200,
+                    height: 200,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+              const Positioned(
+                bottom: -100,
+                left: -50,
+                child: Opacity(
+                  opacity: 0.08,
+                  child: SizedBox(
+                    width: 200,
+                    height: 200,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
 
-            SingleChildScrollView(
-              child: SafeArea(
+              SingleChildScrollView(
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -118,27 +118,27 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
 
-            Positioned(
-              top: 50,
-              right: 32,
-              child: IconButton(
-                onPressed: () => _showLoginBottomSheet(
-                  context,
-                  title: 'Dostęp administratora',
-                  icon: Icons.admin_panel_settings,
-                  onSignInWithGoogle:
-                      context.read<AuthCubit>().adminSignInWithGoogle,
-                ),
-                icon: const Icon(
-                  Icons.admin_panel_settings,
-                  color: Colors.white54,
-                  size: 24,
+              Positioned(
+                top: 50,
+                right: 32,
+                child: IconButton(
+                  onPressed: () => _showLoginBottomSheet(
+                    context,
+                    title: 'Dostęp administratora',
+                    icon: Icons.admin_panel_settings,
+                    onSignInWithGoogle:
+                        context.read<AuthCubit>().adminSignInWithGoogle,
+                  ),
+                  icon: const Icon(
+                    Icons.admin_panel_settings,
+                    color: Colors.white54,
+                    size: 24,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

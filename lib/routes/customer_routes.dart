@@ -94,6 +94,11 @@ class CustomerShellRouteData extends StatefulShellRouteData {
             apiService: context.read<ApiService>(),
           )..fetchCart(),
         ),
+        BlocProvider(
+          create: (context) => TicketsCubit(
+            apiService: context.read<ApiService>(),
+          )..loadTickets(),
+        ),
       ],
       child: CustomerShellScreen(navigationShell: navigationShell),
     );
@@ -156,15 +161,9 @@ class CustomerEventDetailRoute extends GoRouteData {
 
 class CustomerTicketsRoute extends GoRouteData {
   const CustomerTicketsRoute();
-
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return BlocProvider(
-      create: (context) => TicketsCubit(
-        apiService: context.read<ApiService>(),
-      ),
-      child: const CustomerTicketsScreen(),
-    );
+    return const CustomerTicketsScreen();
   }
 }
 
@@ -178,7 +177,7 @@ class CustomerTicketDetailRoute extends GoRouteData {
     return BlocProvider(
       create: (context) => TicketDetailsCubit(
         apiService: context.read<ApiService>(),
-      ),
+      )..loadTicketDetails(ticketId),
       child: CustomerTicketScreen(ticketId: ticketId),
     );
   }
