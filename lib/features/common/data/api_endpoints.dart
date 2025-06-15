@@ -24,11 +24,14 @@ class ApiEndpoints {
   static const String ticketsForResell = '$tickets/for-resell';
   
   static String eventDetails(String eventId) => '$events/$eventId';
-  static String organizerEventDetails(String eventId) => '$organizerEvents/$eventId';
+  static String organizerEventDetails(String eventId) =>
+      '$organizerEvents/$eventId';
   static String ticketDetails(String ticketId) => '$tickets/$ticketId';
   static String resellTicket(String ticketId) => '$ticketsResell/$ticketId';
-  static String addResellTicketToCart(String ticketId) => '$shoppingCarts/$ticketId';
-  static String removeResellTicketFromCart(String ticketId) => '$shoppingCarts/$ticketId';
+  static String addResellTicketToCart(String ticketId) =>
+      '$shoppingCarts/$ticketId';
+  static String removeResellTicketFromCart(String ticketId) =>
+      '$shoppingCarts/$ticketId';
   
   static String fullUrl(String endpoint) => '$baseUrl/$endpoint';
 }
