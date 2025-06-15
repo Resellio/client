@@ -148,39 +148,6 @@ class _OrganizerUnverifiedScreenState extends State<OrganizerUnverifiedScreen> {
                         ),
                         child: const Text('Wyloguj się'),
                       ),
-                      ElevatedButton(
-                        // FIXME: temporary button to verify organizer
-                        onPressed: () async {
-                          print((context.read<AuthCubit>().state
-                                  as AuthorizedUnverifiedOrganizer)
-                              .user);
-                          final email = (context.read<AuthCubit>().state
-                                  as AuthorizedUnverifiedOrganizer)
-                              .user
-                              .email;
-                          final response = await http.post(
-                            Uri.parse(
-                              ApiEndpoints.fullUrl(
-                                  ApiEndpoints.organizerVerify),
-                            ),
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: jsonEncode({
-                              'email': email,
-                            }),
-                          );
-
-                          if (response.statusCode != 200) {
-                            debugPrint(
-                              'Failed to verify organizer (${response.body})',
-                            );
-                          }
-
-                          debugPrint(response.body);
-                        },
-                        child: const Text('Verify organizer'),
-                      ),
                     ],
                   ),
                 ),

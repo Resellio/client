@@ -1,18 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/admin/manage_organizers/bloc/organizer.dart';
 import 'package:resellio/features/admin/manage_organizers/bloc/organizers_cubit.dart';
 import 'package:resellio/features/admin/manage_organizers/bloc/organizers_state.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
+import 'package:resellio/features/common/widgets/error_widget.dart';
+
+class RefreshIntent extends Intent {
+  const RefreshIntent();
+}
 
 class AdminManageOrganizersScreen extends StatelessWidget {
   const AdminManageOrganizersScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: AdminManageOrganizersContent(),
+    final GlobalKey<_AdminManageOrganizersContentState> contentKey =
+        GlobalKey();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Zarządzanie organizatorami'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              contentKey.currentState?._refresh();
+            },
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Odśwież listę (F5 lub Ctrl+R)',
+          ),
+        ],
+      ),
+      body: AdminManageOrganizersContent(key: contentKey),
     );
   }
 }
@@ -81,13 +102,6 @@ class _AdminManageOrganizersContentState
     super.dispose();
   }
 
-  void _loadInitialPage() {
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthorizedAdmin) {
-      context.read<OrganizersCubit>().fetchNextPage();
-    }
-  }
-
   void _refresh() {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthorizedAdmin) {
@@ -116,118 +130,193 @@ class _AdminManageOrganizersContentState
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<OrganizersCubit, OrganizersState>(
-      builder: (context, state) {
-        if (state.status == OrganizersStatus.initial ||
-            (state.status == OrganizersStatus.loading &&
-                state.organizers.isEmpty)) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state.status == OrganizersStatus.failure) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                Text(state.errorMessage ?? 'Błąd podczas ładowania'),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _refresh,
-                  child: const Text('Spróbuj ponownie'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (state.organizers.isEmpty) {
-          return const Center(
-            child: Text('Brak niezweryfikowanych organizatorów'),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async => _refresh(),
-          child: ListView.separated(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            itemCount: state.organizers.length +
-                (state.status == OrganizersStatus.loading ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= state.organizers.length) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
+    return Shortcuts(
+      shortcuts: const {
+        SingleActivator(LogicalKeyboardKey.f5): RefreshIntent(),
+        SingleActivator(LogicalKeyboardKey.keyR, control: true):
+            RefreshIntent(),
+      },
+      child: Actions(
+        actions: {
+          RefreshIntent: CallbackAction<RefreshIntent>(
+            onInvoke: (intent) {
+              _refresh();
+              return null;
+            },
+          ),
+        },
+        child: Focus(
+          autofocus: true,
+          child: BlocBuilder<OrganizersCubit, OrganizersState>(
+            builder: (context, state) {
+              if (state.status == OrganizersStatus.initial ||
+                  (state.status == OrganizersStatus.loading &&
+                      state.organizers.isEmpty)) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state.status == OrganizersStatus.failure) {
+                return CommonErrorWidget(
+                  message: state.errorMessage ??
+                      'Błąd podczas ładowania organizatorów',
+                  onRetry: _refresh,
+                  showBackButton: false,
                 );
               }
-
-              final organizer = state.organizers[index];
-              final isExpanded = _expandedOrganizers.contains(organizer.email);
-
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      Row(
+              if (state.organizers.isEmpty) {
+                final Widget emptyContent = ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                    const Center(
+                      child: Column(
                         children: [
-                          const Icon(Icons.account_circle, size: 40),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  organizer.displayName,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  organizer.email,
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                              ],
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Brak niezweryfikowanych organizatorów',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: () => _verifyOrganizer(organizer.email),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
+                          SizedBox(height: 8),
+                          Text(
+                            'Użyj przycisku odświeżania w górnym pasku',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
                             ),
-                            child: const Text('Verify'),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              isExpanded
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                            ),
-                            onPressed: () => _toggleExpanded(organizer.email),
                           ),
                         ],
                       ),
-                      if (isExpanded)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: _buildOrganizerDetails(organizer),
-                        ),
-                    ],
-                  ),
-                ),
+                    ),
+                  ],
+                );
+
+                if (Theme.of(context).platform == TargetPlatform.android ||
+                    Theme.of(context).platform == TargetPlatform.iOS) {
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      _refresh();
+                      await Future<void>.delayed(
+                        const Duration(milliseconds: 500),
+                      );
+                    },
+                    color: Theme.of(context).primaryColor,
+                    child: emptyContent,
+                  );
+                }
+
+                return emptyContent;
+              }
+              final Widget listContent = ListView.separated(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: state.organizers.length +
+                    (state.status == OrganizersStatus.loading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= state.organizers.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+
+                  final organizer = state.organizers[index];
+                  final isExpanded =
+                      _expandedOrganizers.contains(organizer.email);
+
+                  return Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.account_circle, size: 40),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      organizer.displayName,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      organizer.email,
+                                      style:
+                                          const TextStyle(color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () =>
+                                    _verifyOrganizer(organizer.email),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                child: const Text('Zweryfikuj'),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  isExpanded
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                ),
+                                onPressed: () =>
+                                    _toggleExpanded(organizer.email),
+                              ),
+                            ],
+                          ),
+                          if (isExpanded)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: _buildOrganizerDetails(organizer),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
               );
+
+              // Use RefreshIndicator only on mobile platforms
+              if (Theme.of(context).platform == TargetPlatform.android ||
+                  Theme.of(context).platform == TargetPlatform.iOS) {
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    _refresh();
+                    await Future<void>.delayed(
+                      const Duration(milliseconds: 500),
+                    );
+                  },
+                  color: Theme.of(context).primaryColor,
+                  child: listContent,
+                );
+              }
+              return listContent;
             },
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -243,12 +332,12 @@ class _AdminManageOrganizersContentState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'First Name: ${organizer.firstName}',
+            'Imię: ${organizer.firstName}',
             style: const TextStyle(fontSize: 14),
           ),
           const SizedBox(height: 4),
           Text(
-            'Last Name: ${organizer.lastName}',
+            'Nazwisko: ${organizer.lastName}',
             style: const TextStyle(fontSize: 14),
           ),
         ],
