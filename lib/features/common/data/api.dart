@@ -589,7 +589,7 @@ class ApiService {
     required String email,
   }) async {
     return makeRequest(
-      endpoint: ApiEndpoints.verifyOrganizer,
+      endpoint: ApiEndpoints.organizerVerify,
       method: 'POST',
       headers: {
         ...defaultHeaders,
