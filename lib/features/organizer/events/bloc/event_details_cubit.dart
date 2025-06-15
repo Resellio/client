@@ -41,4 +41,24 @@ class OrganizerEventDetailsCubit extends Cubit<EventDetailsState> {
       );
     }
   }
+
+  Future<void> updateEvent(
+    String eventId,
+    Map<String, dynamic> eventData,
+  ) async {
+    try {
+      await _apiService.updateEvent(
+        eventId: eventId,
+        eventData: eventData,
+      );
+      await loadOrganizerEventDetails(eventId);
+    } catch (err) {
+      emit(
+        state.copyWith(
+          status: EventDetailsStatus.failure,
+          errorMessage: err.toString(),
+        ),
+      );
+    }
+  }
 }
