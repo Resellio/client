@@ -5,6 +5,9 @@ class Ticket {
     required this.eventStartDate,
     required this.eventEndDate,
     required this.used,
+    required this.forResell,
+    this.resellPrice,
+    this.resellCurrency,
   });
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
@@ -14,6 +17,9 @@ class Ticket {
       eventStartDate: DateTime.parse(json['eventStartDate'] as String),
       eventEndDate: DateTime.parse(json['eventEndDate'] as String),
       used: json['used'] as bool,
+      forResell: json['forResell'] as bool,
+      resellPrice: json['resellPrice'] as double?,
+      resellCurrency: json['resellCurrency'] as String?,
     );
   }
 
@@ -22,7 +28,9 @@ class Ticket {
   final DateTime eventStartDate;
   final DateTime eventEndDate;
   final bool used;
-
+  final bool forResell;
+  final double? resellPrice;
+  final String? resellCurrency;
   Map<String, dynamic> toJson() {
     return {
       'ticketId': ticketId,
@@ -30,6 +38,9 @@ class Ticket {
       'eventStartDate': eventStartDate.toIso8601String(),
       'eventEndDate': eventEndDate.toIso8601String(),
       'used': used,
+      'forResell': forResell,
+      'resellPrice': resellPrice,
+      'resellCurrency': resellCurrency,
     };
   }
 }

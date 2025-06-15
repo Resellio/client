@@ -16,6 +16,7 @@ class TicketsCubit extends Cubit<TicketsState> {
   Future<void> loadTickets({
     String? eventName,
     bool? used,
+    bool? resell,
     bool refresh = false,
   }) async {
     if (refresh || state is TicketsInitialState) {
@@ -27,13 +28,18 @@ class TicketsCubit extends Cubit<TicketsState> {
       final currentState = state;
       final page = refresh || currentState is! TicketsLoadedState
           ? 0
-          : currentState.pageNumber + 1;
-      int? usage;
+          : currentState.pageNumber + 1;      int? usage;
       if (used != null) {
-        usage = used ? 0 : 1;
+        usage = used ? 0 : 1; // 0 = used, 1 = not used
+      }
+
+      int? resellParam;
+      if (resell != null) {
+        resellParam = resell ? 0 : 1; // 0 = on resell, 1 = not on resell
       }
       debugPrint(
-          'Tickets: Fetching page $page, current state: ${currentState.runtimeType}');
+        'Tickets: Fetching page $page, current state: ${currentState.runtimeType}',
+      );
       if (currentState is TicketsLoadedState) {
         debugPrint('Tickets: Current page number: ${currentState.pageNumber}');
       }
@@ -43,6 +49,7 @@ class TicketsCubit extends Cubit<TicketsState> {
         pageSize: _pageSize,
         eventName: eventName,
         usage: usage,
+        resell: resellParam,
       );
       if (response.success && response.data != null) {
         final ticketsResponse = TicketsResponse.fromJson(response.data!);
@@ -101,6 +108,7 @@ class TicketsCubit extends Cubit<TicketsState> {
   Future<void> loadMoreTickets({
     String? eventName,
     bool? used,
+    bool? resell,
   }) async {
     final currentState = state;
     if (currentState is TicketsLoadedState &&
@@ -109,6 +117,7 @@ class TicketsCubit extends Cubit<TicketsState> {
       await loadTickets(
         eventName: eventName,
         used: used,
+        resell: resell,
       );
     }
   }
@@ -116,10 +125,12 @@ class TicketsCubit extends Cubit<TicketsState> {
   Future<void> refreshTickets({
     String? eventName,
     bool? used,
+    bool? resell,
   }) async {
     await loadTickets(
       eventName: eventName,
       used: used,
+      resell: resell,
       refresh: true,
     );
   }

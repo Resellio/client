@@ -2,12 +2,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/cart/model/cart_item.dart';
+import 'package:resellio/features/user/cart/model/new_cart_ticket.dart';
+import 'package:resellio/features/user/cart/model/resell_cart_ticket.dart';
 
 class CartCubit extends Cubit<CartState> {
   CartCubit({required this.apiService}) : super(CartInitialState());
 
   final ApiService apiService;
-
   Future<void> fetchCart() async {
     if (state is CartLoadingState) {
       return;
@@ -18,11 +19,19 @@ class CartCubit extends Cubit<CartState> {
       final cartResponse = await apiService.getCart();
       final cartData = cartResponse.data;
       final newTickets = (cartData?['newTickets'] as List<dynamic>? ?? [])
-          .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => NewCartItem(
+                NewCartTicket.fromJson(item as Map<String, dynamic>)),
+          )
           .toList();
       final resellTickets = (cartData?['resellTickets'] as List<dynamic>? ?? [])
-          .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => ResellCartItem(
+              ResellCartTicket.fromJson(item as Map<String, dynamic>),
+            ),
+          )
           .toList();
+
       final items = [...newTickets, ...resellTickets];
       final totalPrice = _calculateTotalPrice(items);
       emit(CartLoadedState(items: items, totalPrice: totalPrice));
@@ -41,6 +50,40 @@ class CartCubit extends Cubit<CartState> {
       return true;
     } catch (err) {
       return false;
+    }
+  }
+
+  Future<({bool success, String? errorMessage})> addResellTicketToCart(
+    String ticketId,
+  ) async {
+    try {
+      final response =
+          await apiService.addResellTicketToCart(ticketId: ticketId);
+      if (response.success) {
+        await fetchCart();
+        return (success: true, errorMessage: null);
+      }
+      return (success: false, errorMessage: null);
+    } catch (err) {
+      // TODO: ładniej
+      if (err.toString().contains('[400]') &&
+          err.toString().toLowerCase().contains("isn't currently available")) {
+        return (
+          success: false,
+          errorMessage: 'Ten bilet nie jest już dostępny'
+        );
+      }
+      if (err.toString().contains('[403]') &&
+          err
+              .toString()
+              .toLowerCase()
+              .contains("can't buy ticket sold from your account")) {
+        return (
+          success: false,
+          errorMessage: 'Nie możesz kupić swojego biletu'
+        );
+      }
+      return (success: false, errorMessage: null);
     }
   }
 
@@ -69,14 +112,12 @@ class CartCubit extends Cubit<CartState> {
 
     final item = currentState.items[index];
 
-    // Only new cart items can have their quantity updated
     if (item is! NewCartItem) {
       emit(CartErrorState(message: 'Cannot update quantity for resell items'));
       return;
     }
 
     if (newQuantity <= 0) {
-      // If quantity is 0 or negative, remove the item
       await removeItem(index);
       return;
     }
@@ -87,19 +128,16 @@ class CartCubit extends Cubit<CartState> {
       final quantityDiff = newQuantity - currentQuantity;
 
       if (quantityDiff > 0) {
-        // Add more tickets
         await apiService.addTicket(
           ticketTypeId: ticketTypeId,
           quantity: quantityDiff,
         );
       } else if (quantityDiff < 0) {
-        // Remove some tickets
         await apiService.removeTicket(
           ticketTypeId: ticketTypeId,
           quantity: -quantityDiff,
         );
       }
-      // If quantityDiff == 0, no change needed
 
       await fetchCart();
     } catch (err) {
@@ -120,22 +158,25 @@ class CartCubit extends Cubit<CartState> {
 
     final item = currentState.items[index];
 
-    // Extract ticketTypeId and quantity based on cart item type
-    String ticketTypeId;
-    int quantity;
+    try {
+      if (item is ResellCartItem) {
+        await apiService.removeResellTicketFromCart(
+          ticketId: item.ticket.ticketId,
+        );
+      } else if (item is NewCartItem) {
+        await apiService.removeTicket(
+          ticketTypeId: item.ticket.ticketTypeId,
+          quantity: item.ticket.quantity,
+        );
+      } else {
+        emit(CartErrorState(message: 'Unknown cart item type'));
+        return;
+      }
 
-    if (item is ResellCartItem) {
-      ticketTypeId = item.ticket.ticketId;
-      quantity = 1;
-    } else if (item is NewCartItem) {
-      ticketTypeId = item.ticket.ticketTypeId;
-      quantity = item.ticket.quantity;
-    } else {
-      emit(CartErrorState(message: 'Unknown cart item type'));
-      return;
+      await fetchCart();
+    } catch (err) {
+      emit(CartErrorState(message: 'Failed to remove item: $err'));
     }
-
-    await removeTicket(ticketTypeId, quantity);
   }
 
   double _calculateTotalPrice(List<CartItem> items) {

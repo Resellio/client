@@ -401,6 +401,15 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> addResellTicketToCart({
+    required String ticketId,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.shoppingCarts}/$ticketId',
+      method: 'POST',
+    );
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> removeTicket({
     required String ticketTypeId,
     required int quantity,
@@ -412,6 +421,15 @@ class ApiService {
         'ticketTypeId': ticketTypeId,
         'amount': quantity,
       }),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> removeResellTicketFromCart({
+    required String ticketId,
+  }) async {
+    return makeRequest(
+      endpoint: '${ApiEndpoints.shoppingCarts}/$ticketId',
+      method: 'DELETE',
     );
   }
 
@@ -492,6 +510,24 @@ class ApiService {
         'resellPrice': resellPrice,
         'resellCurrency': resellCurrency,
       }),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getTicketsForResell({
+    required String eventId,
+    required int page,
+    required int pageSize,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'eventId': eventId,
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+
+    return makeRequest(
+      endpoint: '${ApiEndpoints.tickets}/for-resell',
+      method: 'GET',
+      queryParameters: queryParams,
     );
   }
 

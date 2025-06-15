@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/bloc/categories_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/organizer/events/bloc/events_cubit.dart';
