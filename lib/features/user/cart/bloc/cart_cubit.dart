@@ -107,14 +107,12 @@ class CartCubit extends Cubit<CartState> {
     }
 
     if (index < 0 || index >= currentState.items.length) {
-      emit(CartErrorState(message: 'Invalid item index'));
       return;
     }
 
     final item = currentState.items[index];
 
     if (item is! NewCartItem) {
-      emit(CartErrorState(message: 'Cannot update quantity for resell items'));
       return;
     }
 
@@ -139,10 +137,35 @@ class CartCubit extends Cubit<CartState> {
           quantity: -quantityDiff,
         );
       }
-
       await fetchCart();
+
+      final updatedState = state;
+      if (updatedState is CartLoadedState) {
+        emit(
+          CartLoadedState(
+            items: updatedState.items,
+            totalPrice: updatedState.totalPrice,
+            successMessage: 'Zaktualizowano ilość na $newQuantity',
+          ),
+        );
+      }
     } catch (err) {
-      emit(CartErrorState(message: 'Failed to update quantity: $err'));
+      var errorMessage = 'Nie udało się zaktualizować ilości';
+
+      if (err.toString().contains('[400]') ||
+          err.toString().toLowerCase().contains('insufficient')) {
+        errorMessage = 'Brak wystarczającej liczby biletów';
+      } else if (err.toString().contains('[404]')) {
+        errorMessage = 'Bilety nie są już dostępne';
+      }
+
+      emit(
+        CartLoadedState(
+          items: currentState.items,
+          totalPrice: currentState.totalPrice,
+          errorMessage: errorMessage,
+        ),
+      );
     }
   }
 
@@ -153,7 +176,6 @@ class CartCubit extends Cubit<CartState> {
     }
 
     if (index < 0 || index >= currentState.items.length) {
-      emit(CartErrorState(message: 'Invalid item index'));
       return;
     }
 
@@ -169,14 +191,28 @@ class CartCubit extends Cubit<CartState> {
           ticketTypeId: item.ticket.ticketTypeId,
           quantity: item.ticket.quantity,
         );
-      } else {
-        emit(CartErrorState(message: 'Unknown cart item type'));
-        return;
-      }
+      } else {}
 
       await fetchCart();
+
+      final updatedState = state;
+      if (updatedState is CartLoadedState) {
+        emit(
+          CartLoadedState(
+            items: updatedState.items,
+            totalPrice: updatedState.totalPrice,
+            successMessage: 'Usunięto bilet z koszyka',
+          ),
+        );
+      }
     } catch (err) {
-      emit(CartErrorState(message: 'Failed to remove item: $err'));
+      emit(
+        CartLoadedState(
+          items: currentState.items,
+          totalPrice: currentState.totalPrice,
+          errorMessage: 'Nie udało się usunąć elementu z koszyka',
+        ),
+      );
     }
   }
 

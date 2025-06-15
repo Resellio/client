@@ -310,6 +310,7 @@ class ApiService {
       queryParameters: queryParams,
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> getEventDetails({
     required String eventId,
   }) async {
@@ -318,6 +319,7 @@ class ApiService {
       method: 'GET',
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> getOrganizerEventDetails({
     required String token,
     required String eventId,
@@ -402,6 +404,7 @@ class ApiService {
       }),
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> addResellTicketToCart({
     required String ticketId,
   }) async {
@@ -424,6 +427,7 @@ class ApiService {
       }),
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> removeResellTicketFromCart({
     required String ticketId,
   }) async {
@@ -488,6 +492,7 @@ class ApiService {
       queryParameters: queryParams,
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> getTicketDetails({
     required String ticketId,
   }) async {
@@ -496,6 +501,7 @@ class ApiService {
       method: 'GET',
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> resellTicket({
     required String ticketId,
     required double resellPrice,
@@ -510,6 +516,7 @@ class ApiService {
       }),
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> getTicketsForResell({
     required String eventId,
     required int page,

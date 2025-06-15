@@ -24,25 +24,73 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
         title: const Text('Koszyk'),
         foregroundColor: Colors.white,
       ),
-      body: BlocBuilder<CartCubit, CartState>(
-        builder: (context, state) {
-          return RefreshIndicator(
-            onRefresh: () async {
-              await context.read<CartCubit>().fetchCart();
-            },
-            child: switch (state) {
-              CartInitialState() => _buildScrollableContent(
-                  const Center(child: CircularProgressIndicator())),
-              CartLoadingState() => _buildScrollableContent(
-                  const Center(child: CircularProgressIndicator())),
-              CartLoadedState() when state.items.isEmpty =>
-                _buildScrollableContent(_buildEmptyCart()),
-              CartLoadedState() => _buildCartWithItems(context, state),
-              CartErrorState() =>
-                _buildScrollableContent(_buildCartError(context, state)),
-            },
-          );
+      body: BlocListener<CartCubit, CartState>(
+        listener: (context, state) {
+          if (state is CartErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
+                backgroundColor: Colors.red[600],
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          } else if (state is CartLoadedState) {
+            if (state.errorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.error, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(state.errorMessage!)),
+                    ],
+                  ),
+                  backgroundColor: Colors.red[600],
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            } else if (state.successMessage != null) {
+              SuccessSnackBar.show(context, state.successMessage!);
+            }
+          }
         },
+        child: BlocBuilder<CartCubit, CartState>(
+          builder: (context, state) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                await context.read<CartCubit>().fetchCart();
+              },
+              child: switch (state) {
+                CartInitialState() => _buildScrollableContent(
+                    const Center(child: CircularProgressIndicator()),
+                  ),
+                CartLoadingState() => _buildScrollableContent(
+                    const Center(child: CircularProgressIndicator()),
+                  ),
+                CartLoadedState() when state.items.isEmpty =>
+                  _buildScrollableContent(_buildEmptyCart()),
+                CartLoadedState() => _buildCartWithItems(context, state),
+                CartSuccessState() => _buildCartWithItems(
+                    context,
+                    CartLoadedState(
+                      items: state.items,
+                      totalPrice: state.totalPrice,
+                    ),
+                  ),
+                CartErrorState() =>
+                  _buildScrollableContent(_buildCartError(context, state)),
+              },
+            );
+          },
+        ),
       ),
       bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
         builder: (context, state) {
@@ -193,7 +241,6 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
               QuantityControlsWidget(
                 index: index,
                 initialQuantity: (item as NewCartItem).ticket.quantity,
-                maxQuantity: item.ticket.quantity,
                 onQuantityUpdate: (newQuantity) =>
                     _updateQuantity(context, index, newQuantity),
                 onRemoveItem: () => _removeItem(context, index),
@@ -310,14 +357,11 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
 
   void _updateQuantity(BuildContext context, int index, int newQuantity) {
     context.read<CartCubit>().updateQuantity(index, newQuantity);
-
-    SuccessSnackBar.show(context, 'Zaktualizowano ilość na $newQuantity');
   }
 
   void _removeItem(BuildContext context, int index) {
     context.read<CartCubit>().removeItem(index);
-
-    SuccessSnackBar.show(context, 'Usunięto bilet z koszyka');
+    // Success/error message will be shown by BlocListener
   }
 
   Widget _buildScrollableContent(Widget child) {
@@ -338,14 +382,12 @@ class QuantityControlsWidget extends StatefulWidget {
     super.key,
     required this.index,
     required this.initialQuantity,
-    required this.maxQuantity,
     required this.onQuantityUpdate,
     required this.onRemoveItem,
   });
 
   final int index;
   final int initialQuantity;
-  final int maxQuantity;
   final void Function(int) onQuantityUpdate;
   final VoidCallback onRemoveItem;
 
@@ -437,14 +479,10 @@ class _QuantityControlsWidgetState extends State<QuantityControlsWidget> {
                 ),
               ),
               IconButton(
-                onPressed: _currentQuantity < widget.maxQuantity
-                    ? () => _changeQuantity(_currentQuantity + 1)
-                    : null,
-                icon: Icon(
+                onPressed: () => _changeQuantity(_currentQuantity + 1),
+                icon: const Icon(
                   Icons.add_circle_outline,
-                  color: _currentQuantity < widget.maxQuantity
-                      ? Colors.green
-                      : Colors.grey,
+                  color: Colors.green,
                 ),
                 style: IconButton.styleFrom(
                   padding: const EdgeInsets.all(4),
@@ -452,14 +490,6 @@ class _QuantityControlsWidgetState extends State<QuantityControlsWidget> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'z ${widget.maxQuantity}',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
           ),
         ],
       ),
