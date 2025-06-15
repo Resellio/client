@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:resellio/features/common/data/api.dart';
@@ -22,7 +23,6 @@ class TicketsCubit extends Cubit<TicketsState> {
     } else if (state is TicketsLoadedState) {
       emit((state as TicketsLoadedState).copyWith(isLoadingMore: true));
     }
-
     try {
       final currentState = state;
       final page = refresh || currentState is! TicketsLoadedState
@@ -30,7 +30,12 @@ class TicketsCubit extends Cubit<TicketsState> {
           : currentState.pageNumber + 1;
       int? usage;
       if (used != null) {
-        usage = used ? 0 : 1; // Odwrócona logika jeśli API ma odwrotne wartości
+        usage = used ? 0 : 1;
+      }
+      debugPrint(
+          'Tickets: Fetching page $page, current state: ${currentState.runtimeType}');
+      if (currentState is TicketsLoadedState) {
+        debugPrint('Tickets: Current page number: ${currentState.pageNumber}');
       }
 
       final response = await apiService.getTickets(
@@ -39,9 +44,15 @@ class TicketsCubit extends Cubit<TicketsState> {
         eventName: eventName,
         usage: usage,
       );
-
       if (response.success && response.data != null) {
         final ticketsResponse = TicketsResponse.fromJson(response.data!);
+        final bool hasReachedMax = !ticketsResponse.hasNextPage ||
+            ticketsResponse.pageNumber >=
+                ticketsResponse.paginationDetails.maxPageNumber;
+
+        debugPrint(
+          'Tickets response - pageNumber: ${ticketsResponse.pageNumber}, maxPageNumber: ${ticketsResponse.paginationDetails.maxPageNumber}, hasNextPage: ${ticketsResponse.hasNextPage}, hasReachedMax: $hasReachedMax',
+        );
 
         if (refresh || currentState is! TicketsLoadedState) {
           emit(
@@ -49,21 +60,20 @@ class TicketsCubit extends Cubit<TicketsState> {
               tickets: ticketsResponse.data,
               pageNumber: ticketsResponse.pageNumber,
               pageSize: ticketsResponse.pageSize,
-              hasNextPage: ticketsResponse.hasNextPage,
+              hasNextPage: !hasReachedMax,
               hasPreviousPage: ticketsResponse.hasPreviousPage,
               paginationDetails: ticketsResponse.paginationDetails,
               isLoadingMore: false,
             ),
           );
         } else {
-          // Load more - append to existing tickets
           final existingTickets = currentState.tickets;
           emit(
             TicketsLoadedState(
               tickets: [...existingTickets, ...ticketsResponse.data],
               pageNumber: ticketsResponse.pageNumber,
               pageSize: ticketsResponse.pageSize,
-              hasNextPage: ticketsResponse.hasNextPage,
+              hasNextPage: !hasReachedMax,
               hasPreviousPage: ticketsResponse.hasPreviousPage,
               paginationDetails: ticketsResponse.paginationDetails,
               isLoadingMore: false,
@@ -79,10 +89,10 @@ class TicketsCubit extends Cubit<TicketsState> {
       }
     } on ApiException catch (e) {
       emit(TicketsErrorState(message: e.message));
-    } catch (e) {
+    } catch (err) {
       emit(
         TicketsErrorState(
-          message: 'Wystąpił nieoczekiwany błąd: $e',
+          message: 'Wystąpił nieoczekiwany błąd: $err',
         ),
       );
     }
