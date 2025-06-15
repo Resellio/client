@@ -305,6 +305,40 @@ class ApiService {
     throw ApiException.http(response.statusCode, response.body);
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> getUnverifiedOrganizers({
+    required String token,
+    int page = 0,
+    int pageSize = 10,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.organizersUnverified,
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+      method: 'GET',
+      queryParameters: {
+        'page': page,
+        'pageSize': pageSize,
+      },
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> verifyOrganizer({
+    required String token,
+    required String email,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.verifyOrganizer,
+      method: 'POST',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'email': email}),
+    );
+  }
+
   void dispose() {
     client.close();
   }
