@@ -79,10 +79,6 @@ class _CustomerTicketsScreenState extends State<CustomerTicketsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Moje bilety'),
-        foregroundColor: Colors.white,
-      ),
       body: Column(
         children: [
           _buildSearchAndFilter(),

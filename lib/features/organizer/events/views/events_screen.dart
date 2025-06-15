@@ -245,6 +245,7 @@ class _OrganizerEventsContentState extends State<OrganizerEventsContent> {
           }
         },
         backgroundColor: AppColors.primary,
+        tooltip: 'Dodaj wydarzenie',
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
