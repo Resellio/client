@@ -333,13 +333,14 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
+
   Widget _buildScrollableContent(Widget child) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: SizedBox(
         height: MediaQuery.of(context).size.height -
-               MediaQuery.of(context).padding.top -
-               200, // Approximate header height
+            MediaQuery.of(context).padding.top -
+            200, // Approximate header height
         child: child,
       ),
     );
@@ -354,61 +355,64 @@ class _EventSearchScreenContentState extends State<EventSearchScreenContent> {
           },
           child: switch (state.status) {
             EventsStatus.initial => _buildScrollableContent(
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(),
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               ),
-            ),
             EventsStatus.failure => _buildScrollableContent(
-              CommonErrorWidget(
-                message: state.errorMessage ??
-                    'Wystąpił błąd podczas ładowania wydarzeń',
-                onRetry: _triggerSearch,
-                showBackButton: false,
-                retryText: 'Odśwież',
-              ),
-            ),            EventsStatus.loading when state.events.isEmpty => _buildScrollableContent(
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(),
+                CommonErrorWidget(
+                  message: state.errorMessage ??
+                      'Wystąpił błąd podczas ładowania wydarzeń',
+                  onRetry: _triggerSearch,
+                  showBackButton: false,
+                  retryText: 'Odśwież',
                 ),
               ),
-            ),
-            EventsStatus.success when state.events.isEmpty => _buildScrollableContent(
-              Center(
-                child: _buildPlaceholder(
-                  icon: Icons.sentiment_dissatisfied_outlined,
-                  message:
-                      'Nie znaleziono wydarzeń pasujących\ndo wybranych kryteriów.',
+            EventsStatus.loading when state.events.isEmpty =>
+              _buildScrollableContent(
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               ),
-            ),
+            EventsStatus.success when state.events.isEmpty =>
+              _buildScrollableContent(
+                Center(
+                  child: _buildPlaceholder(
+                    icon: Icons.sentiment_dissatisfied_outlined,
+                    message:
+                        'Nie znaleziono wydarzeń pasujących\ndo wybranych kryteriów.',
+                  ),
+                ),
+              ),
             EventsStatus.loading || EventsStatus.success => ListView.separated(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: state.events.length +
-                  (state.status == EventsStatus.loading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index >= state.events.length) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator()),
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: state.events.length +
+                    (state.status == EventsStatus.loading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= state.events.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final event = state.events[index];
+                  return EventCard(
+                    event: event,
+                    onTap: () =>
+                        CustomerEventDetailRoute(eventId: event.id).go(context),
                   );
-                }
-                final event = state.events[index];
-                return EventCard(
-                  event: event,
-                  onTap: () =>
-                      CustomerEventDetailRoute(eventId: event.id).go(context),
-                );
-              },
-              separatorBuilder: (context, index) {
-                return const SizedBox(height: 12);
-              },
-            ),
+                },
+                separatorBuilder: (context, index) {
+                  return const SizedBox(height: 12);
+                },
+              ),
           },
         );
       },

@@ -157,11 +157,9 @@ class _OrganizerUnverifiedScreenState extends State<OrganizerUnverifiedScreen> {
                           final email = (context.read<AuthCubit>().state
                                   as AuthorizedUnverifiedOrganizer)
                               .user
-                              .email;
-
-                          final response = await http.post(
+                              .email;                          final response = await http.post(
                             Uri.parse(
-                                '${ApiEndpoints.baseUrl}/${ApiEndpoints.organizerVerify}'),
+                                ApiEndpoints.fullUrl(ApiEndpoints.organizerVerify),),
                             headers: {
                               'Content-Type': 'application/json',
                             },
@@ -171,11 +169,11 @@ class _OrganizerUnverifiedScreenState extends State<OrganizerUnverifiedScreen> {
                           );
 
                           if (response.statusCode != 200) {
-                            print(
-                                'Failed to verify organizer (${response.body})');
+                            debugPrint(
+                                'Failed to verify organizer (${response.body})',);
                           }
 
-                          print(response.body);
+                          debugPrint(response.body);
                         },
                         child: const Text('Verify organizer'),
                       ),

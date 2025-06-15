@@ -31,13 +31,15 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
               await context.read<CartCubit>().fetchCart();
             },
             child: switch (state) {
-              CartInitialState() =>
-                _buildScrollableContent(const Center(child: CircularProgressIndicator())),
-              CartLoadingState() =>
-                _buildScrollableContent(const Center(child: CircularProgressIndicator())),
-              CartLoadedState() when state.items.isEmpty => _buildScrollableContent(_buildEmptyCart()),
+              CartInitialState() => _buildScrollableContent(
+                  const Center(child: CircularProgressIndicator())),
+              CartLoadingState() => _buildScrollableContent(
+                  const Center(child: CircularProgressIndicator())),
+              CartLoadedState() when state.items.isEmpty =>
+                _buildScrollableContent(_buildEmptyCart()),
               CartLoadedState() => _buildCartWithItems(context, state),
-              CartErrorState() => _buildScrollableContent(_buildCartError(context, state)),
+              CartErrorState() =>
+                _buildScrollableContent(_buildCartError(context, state)),
             },
           );
         },
@@ -322,9 +324,9 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height - 
-               AppBar().preferredSize.height - 
-               MediaQuery.of(context).padding.top,
+        height: MediaQuery.of(context).size.height -
+            AppBar().preferredSize.height -
+            MediaQuery.of(context).padding.top,
         child: child,
       ),
     );

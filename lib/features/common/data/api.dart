@@ -310,22 +310,20 @@ class ApiService {
       queryParameters: queryParams,
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> getEventDetails({
     required String eventId,
   }) async {
     return makeRequest(
-      endpoint: '${ApiEndpoints.events}/$eventId',
+      endpoint: ApiEndpoints.eventDetails(eventId),
       method: 'GET',
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> getOrganizerEventDetails({
     required String token,
     required String eventId,
   }) async {
     return makeRequest(
-      endpoint: '${ApiEndpoints.organizerEvents}/$eventId',
+      endpoint: ApiEndpoints.organizerEventDetails(eventId),
       method: 'GET',
     );
   }
@@ -404,12 +402,11 @@ class ApiService {
       }),
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> addResellTicketToCart({
     required String ticketId,
   }) async {
     return makeRequest(
-      endpoint: '${ApiEndpoints.shoppingCarts}/$ticketId',
+      endpoint: ApiEndpoints.addResellTicketToCart(ticketId),
       method: 'POST',
     );
   }
@@ -427,12 +424,11 @@ class ApiService {
       }),
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> removeResellTicketFromCart({
     required String ticketId,
   }) async {
     return makeRequest(
-      endpoint: '${ApiEndpoints.shoppingCarts}/$ticketId',
+      endpoint: ApiEndpoints.removeResellTicketFromCart(ticketId),
       method: 'DELETE',
     );
   }
@@ -492,23 +488,21 @@ class ApiService {
       queryParameters: queryParams,
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> getTicketDetails({
     required String ticketId,
   }) async {
     return makeRequest(
-      endpoint: '${ApiEndpoints.tickets}/$ticketId',
+      endpoint: ApiEndpoints.ticketDetails(ticketId),
       method: 'GET',
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> resellTicket({
     required String ticketId,
     required double resellPrice,
     required String resellCurrency,
   }) async {
     return makeRequest(
-      endpoint: '${ApiEndpoints.tickets}/resell/$ticketId',
+      endpoint: ApiEndpoints.resellTicket(ticketId),
       method: 'POST',
       body: jsonEncode({
         'resellPrice': resellPrice,
@@ -516,7 +510,6 @@ class ApiService {
       }),
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> getTicketsForResell({
     required String eventId,
     required int page,
@@ -529,7 +522,7 @@ class ApiService {
     };
 
     return makeRequest(
-      endpoint: '${ApiEndpoints.tickets}/for-resell',
+      endpoint: ApiEndpoints.ticketsForResell,
       method: 'GET',
       queryParameters: queryParams,
     );
