@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:resellio/features/admin/home/views/home_screen.dart';
+import 'package:resellio/features/admin/manage_organizers/bloc/organizers_cubit.dart';
 import 'package:resellio/features/admin/manage_organizers/views/manage_organizers_screen.dart';
 import 'package:resellio/features/admin/profile/views/profile_screen.dart';
 import 'package:resellio/features/admin/shell_screen.dart';
+import 'package:resellio/features/auth/bloc/auth_cubit.dart';
+import 'package:resellio/features/common/data/api.dart';
 
 part 'admin_routes.g.dart';
 
@@ -65,7 +69,12 @@ class AdminOrganizersRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const AdminManageOrganizersScreen();
+    return BlocProvider(
+      create: (context) =>
+          OrganizersCubit(context.read<ApiService>(), context.read<AuthCubit>())
+            ..fetchNextPage(),
+      child: const AdminManageOrganizersScreen(),
+    );
   }
 }
 
