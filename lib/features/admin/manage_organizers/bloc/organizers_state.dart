@@ -1,16 +1,9 @@
-import 'package:resellio/features/admin/manage_organizers/bloc/organizer.dart';
 import 'package:equatable/equatable.dart';
+import 'package:resellio/features/admin/manage_organizers/bloc/organizer.dart';
 
 enum OrganizersStatus { initial, loading, success, failure }
 
 class OrganizersState extends Equatable {
-  final OrganizersStatus status;
-  final List<Organizer> organizers;
-  final int currentPage;
-  final bool hasReachedMax;
-  final int? totalResults;
-  final String? errorMessage;
-
   const OrganizersState({
     this.status = OrganizersStatus.initial,
     this.organizers = const [],
@@ -19,6 +12,13 @@ class OrganizersState extends Equatable {
     this.totalResults,
     this.errorMessage,
   });
+
+  final OrganizersStatus status;
+  final List<Organizer> organizers;
+  final int currentPage;
+  final bool hasReachedMax;
+  final int? totalResults;
+  final String? errorMessage;
 
   OrganizersState copyWith({
     OrganizersStatus? status,

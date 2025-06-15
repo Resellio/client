@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/auth/bloc/auth_state.dart';
-import 'package:resellio/features/common/model/event.dart';
 import 'package:resellio/features/common/style/app_colors.dart';
 import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/common/widgets/event_card.dart';

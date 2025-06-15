@@ -2,17 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resellio/features/admin/manage_organizers/bloc/organizer.dart';
 import 'package:resellio/features/admin/manage_organizers/bloc/organizers_state.dart';
-import 'package:resellio/features/auth/bloc/auth_cubit.dart';
 import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/common/data/api_exceptions.dart';
 import 'package:resellio/features/common/model/paginated.dart';
 
 class OrganizersCubit extends Cubit<OrganizersState> {
-  OrganizersCubit(this._apiService, this._authCubit)
-      : super(const OrganizersState());
+  OrganizersCubit(this._apiService) : super(const OrganizersState());
 
   final ApiService _apiService;
-  final AuthCubit _authCubit;
   final int _pageSize = 100;
   Future<void> fetchAllOrganizers() async {
     if (state.status == OrganizersStatus.loading) {
@@ -23,13 +20,12 @@ class OrganizersCubit extends Cubit<OrganizersState> {
     emit(state.copyWith(status: OrganizersStatus.loading));
 
     try {
-      List<Organizer> allOrganizers = [];
-      int currentPage = 0;
-      bool hasMoreData = true;
+      final List<Organizer> allOrganizers = [];
+      var currentPage = 0;
+      var hasMoreData = true;
 
       while (hasMoreData) {
         final response = await _apiService.getUnverifiedOrganizers(
-          token: _authCubit.token,
           page: currentPage,
           pageSize: _pageSize,
         );
@@ -90,7 +86,6 @@ class OrganizersCubit extends Cubit<OrganizersState> {
 
     try {
       final response = await _apiService.getUnverifiedOrganizers(
-        token: _authCubit.token,
         page: pageToFetch,
         pageSize: _pageSize,
       );
@@ -144,8 +139,7 @@ class OrganizersCubit extends Cubit<OrganizersState> {
     emit(state.copyWith(status: OrganizersStatus.loading));
 
     try {
-      final response = await _apiService.verifyOrganizer(
-        token: _authCubit.token,
+      await _apiService.verifyOrganizer(
         email: email,
       );
 
@@ -185,13 +179,15 @@ class OrganizersCubit extends Cubit<OrganizersState> {
   }
 
   Future<void> refresh() async {
-    emit(state.copyWith(
-      status: OrganizersStatus.initial,
-      organizers: [],
-      currentPage: 0,
-      hasReachedMax: false,
-      totalResults: 0,
-    ));
+    emit(
+      state.copyWith(
+        status: OrganizersStatus.initial,
+        organizers: [],
+        currentPage: 0,
+        hasReachedMax: false,
+        totalResults: 0,
+      ),
+    );
     await fetchAllOrganizers();
   }
 }

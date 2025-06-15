@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:resellio/features/auth/bloc/auth_cubit.dart';
-import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/organizer/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/organizer/events/views/edit_event_screen.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
@@ -45,100 +44,94 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
     }
   }
 
-  void _showDeleteConfirmation() {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.warning_outlined,
-                  color: Color(0xFFEF4444),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Usuń wydarzenie',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-          content: const Text(
-            'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja nie może zostać cofnięta.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF64748B),
-              height: 1.5,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Anuluj',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteEvent();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Usuń',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _deleteEvent() {
-    // TODO: Implement delete API call
-    SuccessSnackBar.show(context, 'Wydarzenie zostało pomyślnie usunięte');
-    Navigator.of(context).pop();
-  }
+  // void _showDeleteConfirmation() {
+  //   showDialog<void>(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(16),
+  //         ),
+  //         title: Row(
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.all(8),
+  //               decoration: BoxDecoration(
+  //                 color: const Color(0xFFEF4444).withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //               child: const Icon(
+  //                 Icons.warning_outlined,
+  //                 color: Color(0xFFEF4444),
+  //                 size: 24,
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             const Text(
+  //               'Usuń wydarzenie',
+  //               style: TextStyle(
+  //                 fontSize: 20,
+  //                 fontWeight: FontWeight.w600,
+  //                 color: Color(0xFF1E293B),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         content: const Text(
+  //           'Czy na pewno chcesz usunąć to wydarzenie? Ta akcja nie może zostać cofnięta.',
+  //           style: TextStyle(
+  //             fontSize: 16,
+  //             color: Color(0xFF64748B),
+  //             height: 1.5,
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             style: TextButton.styleFrom(
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 20,
+  //                 vertical: 12,
+  //               ),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //             ),
+  //             child: const Text(
+  //               'Anuluj',
+  //               style: TextStyle(
+  //                 color: Color(0xFF64748B),
+  //                 fontWeight: FontWeight.w500,
+  //               ),
+  //             ),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //               _deleteEvent();
+  //             },
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: const Color(0xFFEF4444),
+  //               foregroundColor: Colors.white,
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 20,
+  //                 vertical: 12,
+  //               ),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //               elevation: 0,
+  //             ),
+  //             child: const Text(
+  //               'Usuń',
+  //               style: TextStyle(fontWeight: FontWeight.w600),
+  //             ),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
