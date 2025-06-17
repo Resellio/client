@@ -34,6 +34,13 @@ RouteBase get $organizerShellRouteData => StatefulShellRouteData.$route(
                 GoRouteData.$route(
                   path: ':eventId',
                   factory: $OrganizerEventDetailRouteExtension._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'message',
+                      factory: $OrganizerMessageToParticipantsRouteExtension
+                          ._fromState,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -117,6 +124,27 @@ extension $OrganizerEventDetailRouteExtension on OrganizerEventDetailRoute {
 
   String get location => GoRouteData.$location(
         '/org/events/${Uri.encodeComponent(eventId)}',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+extension $OrganizerMessageToParticipantsRouteExtension
+    on OrganizerMessageToParticipantsRoute {
+  static OrganizerMessageToParticipantsRoute _fromState(GoRouterState state) =>
+      OrganizerMessageToParticipantsRoute(
+        eventId: state.pathParameters['eventId']!,
+      );
+
+  String get location => GoRouteData.$location(
+        '/org/events/${Uri.encodeComponent(eventId)}/message',
       );
 
   void go(BuildContext context) => context.go(location);

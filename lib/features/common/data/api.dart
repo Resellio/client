@@ -604,6 +604,21 @@ class ApiService {
     );
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> sendMessageToParticipants({
+    required String eventId,
+    required String subject,
+    required String message,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.messageToParticipants(eventId),
+      method: 'POST',
+      body: jsonEncode({
+        'subject': subject,
+        'message': message,
+      }),
+    );
+  }
+
   void dispose() {
     client.close();
   }

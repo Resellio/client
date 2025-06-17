@@ -7,6 +7,7 @@ import 'package:resellio/features/common/data/api.dart';
 import 'package:resellio/features/organizer/events/bloc/events_cubit.dart';
 import 'package:resellio/features/organizer/events/views/event_details.dart';
 import 'package:resellio/features/organizer/events/views/events_screen.dart';
+import 'package:resellio/features/organizer/events/views/message_to_participants_screen.dart';
 import 'package:resellio/features/organizer/events/views/new_event_screen.dart';
 import 'package:resellio/features/organizer/home/views/home_screen.dart';
 import 'package:resellio/features/organizer/profile/views/profile_screen.dart';
@@ -27,7 +28,14 @@ part 'organizer_routes.g.dart';
           path: '/org/events',
           routes: [
             TypedGoRoute<OrganizerNewEventRoute>(path: 'new'),
-            TypedGoRoute<OrganizerEventDetailRoute>(path: ':eventId'),
+            TypedGoRoute<OrganizerEventDetailRoute>(
+              path: ':eventId',
+              routes: [
+                TypedGoRoute<OrganizerMessageToParticipantsRoute>(
+                  path: 'message',
+                ),
+              ],
+            ),
           ],
         ),
       ],
@@ -114,6 +122,19 @@ class OrganizerNewEventRoute extends GoRouteData {
   Widget build(BuildContext context, GoRouterState state) {
     return OrganizerNewEventScreen(
       apiService: context.read<ApiService>(),
+    );
+  }
+}
+
+class OrganizerMessageToParticipantsRoute extends GoRouteData {
+  const OrganizerMessageToParticipantsRoute({required this.eventId});
+
+  final String eventId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return MessageToParticipantsScreen(
+      eventId: eventId,
     );
   }
 }

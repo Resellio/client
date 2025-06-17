@@ -6,6 +6,7 @@ import 'package:resellio/features/organizer/events/bloc/event_details_cubit.dart
 import 'package:resellio/features/organizer/events/views/edit_event_screen.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 import 'package:resellio/features/user/events/views/event_details.dart';
+import 'package:resellio/routes/organizer_routes.dart';
 
 class OrganizerEventDetailsScreen extends StatelessWidget {
   const OrganizerEventDetailsScreen({super.key, required this.id});
@@ -151,6 +152,27 @@ class _OrganizerEventDetailsViewState extends State<OrganizerEventDetailsView> {
         shadowColor: Colors.black.withOpacity(0.1),
         surfaceTintColor: Colors.transparent,
         actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              onPressed: () {
+                final state = context.read<OrganizerEventDetailsCubit>().state;
+                if (state.status == EventDetailsStatus.success &&
+                    state.event != null) {
+                  OrganizerMessageToParticipantsRoute(
+                    eventId: state.event!.id,
+                  ).go(context);
+                }
+              },
+              icon: const Icon(Icons.mail_outline, color: Color(0xFF10B981)),
+              iconSize: 20,
+              tooltip: 'Wyślij wiadomość do uczestników',
+            ),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
