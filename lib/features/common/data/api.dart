@@ -209,12 +209,24 @@ class ApiService {
       }),
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> organizerAboutMe(
     String token,
   ) async {
     return makeRequest(
       endpoint: ApiEndpoints.organizerAboutMe,
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> customerAboutMe(
+    String token,
+  ) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.customerAboutMe,
       method: 'GET',
       headers: {
         ...defaultHeaders,
@@ -601,6 +613,21 @@ class ApiService {
       endpoint: ApiEndpoints.organizerVerify,
       method: 'POST',
       body: jsonEncode({'email': email}),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> sendMessageToParticipants({
+    required String eventId,
+    required String subject,
+    required String message,
+  }) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.messageToParticipants(eventId),
+      method: 'POST',
+      body: jsonEncode({
+        'subject': subject,
+        'message': message,
+      }),
     );
   }
 

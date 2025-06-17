@@ -12,11 +12,12 @@ class ApiEndpoints {
   static const String adminGoogleLogin = '$admins/google-login';
   static const String customerGoogleLogin = '$customers/google-login';
   static const String organizerGoogleLogin = '$organizers/google-login';
-
   static const String organizerEvents = '$events/organizer';
   static const String organizerAboutMe = '$organizers/about-me';
   static const String organizerVerify = '$organizers/verify';
   static const String organizersUnverified = '$organizers/unverified';
+
+  static const String customerAboutMe = '$customers/about-me';
 
   static const String checkout = '$shoppingCarts/checkout';
   static const String checkoutDue = '$shoppingCarts/due';
@@ -34,6 +35,8 @@ class ApiEndpoints {
       '$shoppingCarts/$ticketId';
   static String removeResellTicketFromCart(String ticketId) =>
       '$shoppingCarts/$ticketId';
+  static String messageToParticipants(String eventId) =>
+      '$events/$eventId/message-to-participants';
 
   static String fullUrl(String endpoint) => '$baseUrl/$endpoint';
 }
