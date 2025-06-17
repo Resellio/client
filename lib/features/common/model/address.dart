@@ -31,7 +31,7 @@ class Address extends Equatable {
   String get fullAddress {
     final buffer = StringBuffer()
       ..write('$street $houseNumber')
-      ..write(flatNumber != null ? '/$flatNumber' : '')
+      ..write((flatNumber != null && flatNumber != 0) ? '/$flatNumber' : '')
       ..write(', $city');
     return buffer.toString();
   }

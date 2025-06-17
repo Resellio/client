@@ -6,7 +6,6 @@ import 'package:resellio/features/common/model/address.dart';
 import 'package:resellio/features/common/model/event.dart';
 import 'package:resellio/features/common/widgets/error_widget.dart';
 import 'package:resellio/features/user/cart/bloc/cart_cubit.dart';
-import 'package:resellio/features/user/cart/bloc/cart_state.dart';
 import 'package:resellio/features/user/events/bloc/event_details_cubit.dart';
 import 'package:resellio/features/user/events/bloc/event_details_state.dart';
 import 'package:resellio/features/user/events/model/resell_ticket.dart';
@@ -414,7 +413,7 @@ class TicketType {
   final int amountAvailable;
 }
 
-class _TicketCard extends StatelessWidget {
+class _TicketCard extends StatefulWidget {
   const _TicketCard({
     required this.ticket,
     required this.eventId,
@@ -424,11 +423,17 @@ class _TicketCard extends StatelessWidget {
   final String eventId;
 
   @override
+  State<_TicketCard> createState() => _TicketCardState();
+}
+
+class _TicketCardState extends State<_TicketCard> {
+  bool _isLoading = false;
+  @override
   Widget build(BuildContext context) {
-    final isAvailable = ticket.amountAvailable > 0;
+    final isAvailable = widget.ticket.amountAvailable > 0;
     final priceFormatter = NumberFormat.currency(
       locale: 'pl_PL',
-      symbol: ticket.currency,
+      symbol: widget.ticket.currency,
       decimalDigits: 2,
     );
 
@@ -450,14 +455,14 @@ class _TicketCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ticket.description,
+                    widget.ticket.description,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    priceFormatter.format(ticket.price),
+                    priceFormatter.format(widget.ticket.price),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
@@ -474,7 +479,7 @@ class _TicketCard extends StatelessWidget {
                   ] else ...[
                     const SizedBox(height: 4),
                     Text(
-                      'Dostępne: ${ticket.amountAvailable}',
+                      'Dostępne: ${widget.ticket.amountAvailable}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -485,23 +490,17 @@ class _TicketCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            BlocBuilder<CartCubit, CartState>(
-              builder: (context, cartState) {
-                final isLoading = cartState is CartLoadingState;
-
-                return ElevatedButton(
-                  onPressed: (isAvailable && !isLoading)
-                      ? () => _addToCart(context, ticket)
-                      : null,
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(isAvailable ? 'Dodaj do koszyka' : 'Niedostępne'),
-                );
-              },
+            ElevatedButton(
+              onPressed: (isAvailable && !_isLoading)
+                  ? () => _addToCart(context, widget.ticket)
+                  : null,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isAvailable ? 'Dodaj do koszyka' : 'Niedostępne'),
             ),
           ],
         ),
@@ -510,26 +509,38 @@ class _TicketCard extends StatelessWidget {
   }
 
   Future<void> _addToCart(BuildContext context, TicketType ticket) async {
-    final success =
-        await context.read<CartCubit>().addTicketToCart(ticket.id, 1);
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (!context.mounted) {
-      return;
-    }
+    try {
+      final success =
+          await context.read<CartCubit>().addTicketToCart(ticket.id, 1);
 
-    if (success) {
-      context
-          .read<EventDetailsCubit>()
-          .updateTicketAvailabilityLocally(ticket.id, 1);
-      SuccessSnackBar.show(
-        context,
-        'Dodano bilet do koszyka: ${ticket.description}',
-      );
-    } else {
-      ErrorSnackBar.show(
-        context,
-        'Nie udało się dodać biletu do koszyka: ${ticket.description}',
-      );
+      if (!context.mounted) {
+        return;
+      }
+
+      if (success) {
+        context
+            .read<EventDetailsCubit>()
+            .updateTicketAvailabilityLocally(ticket.id, 1);
+        SuccessSnackBar.show(
+          context,
+          'Dodano bilet do koszyka: ${ticket.description}',
+        );
+      } else {
+        ErrorSnackBar.show(
+          context,
+          'Nie udało się dodać biletu do koszyka: ${ticket.description}',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }
@@ -700,16 +711,22 @@ class _ResellTicketsSection extends StatelessWidget {
   }
 }
 
-class _ResellTicketCard extends StatelessWidget {
+class _ResellTicketCard extends StatefulWidget {
   const _ResellTicketCard({required this.ticket});
 
   final ResellTicket ticket;
 
   @override
+  State<_ResellTicketCard> createState() => _ResellTicketCardState();
+}
+
+class _ResellTicketCardState extends State<_ResellTicketCard> {
+  bool _isLoading = false;
+  @override
   Widget build(BuildContext context) {
     final priceFormatter = NumberFormat.currency(
       locale: 'pl_PL',
-      symbol: ticket.currency,
+      symbol: widget.ticket.currency,
       decimalDigits: 2,
     );
 
@@ -749,23 +766,23 @@ class _ResellTicketCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    ticket.description,
+                    widget.ticket.description,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    priceFormatter.format(ticket.price),
+                    priceFormatter.format(widget.ticket.price),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                  if (ticket.seats.isNotEmpty) ...[
+                  if (widget.ticket.seats.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      'Miejsca: ${ticket.seats}',
+                      'Miejsca: ${widget.ticket.seats}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -776,22 +793,16 @@ class _ResellTicketCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            BlocBuilder<CartCubit, CartState>(
-              builder: (context, cartState) {
-                final isLoading = cartState is CartLoadingState;
-
-                return ElevatedButton(
-                  onPressed:
-                      !isLoading ? () => _addToCart(context, ticket) : null,
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Dodaj do koszyka'),
-                );
-              },
+            ElevatedButton(
+              onPressed:
+                  !_isLoading ? () => _addToCart(context, widget.ticket) : null,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Dodaj do koszyka'),
             ),
           ],
         ),
@@ -800,25 +811,37 @@ class _ResellTicketCard extends StatelessWidget {
   }
 
   Future<void> _addToCart(BuildContext context, ResellTicket ticket) async {
-    final result =
-        await context.read<CartCubit>().addResellTicketToCart(ticket.id);
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (!context.mounted) {
-      return;
-    }
+    try {
+      final result =
+          await context.read<CartCubit>().addResellTicketToCart(ticket.id);
 
-    if (result.success) {
-      SuccessSnackBar.show(
-        context,
-        'Dodano bilet do koszyka: ${ticket.description}',
-      );
-    } else {
-      final errorMessage = result.errorMessage ??
-          'Nie udało się dodać biletu do koszyka: ${ticket.description}';
-      ErrorSnackBar.show(
-        context,
-        errorMessage,
-      );
+      if (!context.mounted) {
+        return;
+      }
+
+      if (result.success) {
+        SuccessSnackBar.show(
+          context,
+          'Dodano bilet do koszyka: ${ticket.description}',
+        );
+      } else {
+        final errorMessage = result.errorMessage ??
+            'Nie udało się dodać biletu do koszyka: ${ticket.description}';
+        ErrorSnackBar.show(
+          context,
+          errorMessage,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }
