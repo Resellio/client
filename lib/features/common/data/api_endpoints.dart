@@ -34,6 +34,8 @@ class ApiEndpoints {
       '$shoppingCarts/$ticketId';
   static String removeResellTicketFromCart(String ticketId) =>
       '$shoppingCarts/$ticketId';
+  static String messageToParticipants(String eventId) =>
+      '$events/$eventId/message-to-participants';
 
   static String fullUrl(String endpoint) => '$baseUrl/$endpoint';
 }
