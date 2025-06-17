@@ -209,6 +209,7 @@ class ApiService {
       }),
     );
   }
+
   Future<ApiResponse<Map<String, dynamic>>> organizerAboutMe(
     String token,
   ) async {
