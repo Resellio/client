@@ -209,12 +209,24 @@ class ApiService {
       }),
     );
   }
-
   Future<ApiResponse<Map<String, dynamic>>> organizerAboutMe(
     String token,
   ) async {
     return makeRequest(
       endpoint: ApiEndpoints.organizerAboutMe,
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> customerAboutMe(
+    String token,
+  ) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.customerAboutMe,
       method: 'GET',
       headers: {
         ...defaultHeaders,
