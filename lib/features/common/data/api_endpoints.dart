@@ -15,6 +15,7 @@ class ApiEndpoints {
 
   static const String organizerEvents = '$events/organizer';
   static const String organizerAboutMe = '$organizers/about-me';
+  static const String customerAboutMe = '$customers/about-me';
   static const String organizerVerify = '$organizers/verify';
   static const String organizersUnverified = '$organizers/unverified';
 

@@ -1,23 +1,23 @@
 import 'package:resellio/features/organizer/profile/bloc/about_me.dart';
 
-enum ProfileStatus { initial, loading, success, failure }
+enum OrganizerProfileStatus { initial, loading, success, failure }
 
-class ProfileState {
-  const ProfileState({
-    this.status = ProfileStatus.initial,
+class OrganizerProfileState {
+  const OrganizerProfileState({
+    this.status = OrganizerProfileStatus.initial,
     this.aboutMe,
     this.errorMessage,
   });
-  final ProfileStatus status;
-  final Aboutme? aboutMe;
+  final OrganizerProfileStatus status;
+  final OrganizerAboutme? aboutMe;
   final String? errorMessage;
 
-  ProfileState copyWith({
-    ProfileStatus? status,
-    Aboutme? aboutMe,
+  OrganizerProfileState copyWith({
+    OrganizerProfileStatus? status,
+    OrganizerAboutme? aboutMe,
     String? errorMessage,
   }) {
-    return ProfileState(
+    return OrganizerProfileState(
       status: status ?? this.status,
       aboutMe: aboutMe ?? this.aboutMe,
       errorMessage: errorMessage ?? this.errorMessage,

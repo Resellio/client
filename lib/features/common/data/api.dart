@@ -92,7 +92,7 @@ class ApiService {
       debugPrint('FormatException: $e');
       throw ApiException.invalidResponse();
     } on http.ClientException catch (e) {
-      debugPrint('ClientException: $e');
+      debugPrint('fException: $e');
       throw ApiException.networkError();
     } catch (err) {
       debugPrint('Unknown Error in makeRequest: $err');
@@ -215,6 +215,19 @@ class ApiService {
   ) async {
     return makeRequest(
       endpoint: ApiEndpoints.organizerAboutMe,
+      method: 'GET',
+      headers: {
+        ...defaultHeaders,
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> customerAboutMe(
+    String token,
+  ) async {
+    return makeRequest(
+      endpoint: ApiEndpoints.customerAboutMe,
       method: 'GET',
       headers: {
         ...defaultHeaders,

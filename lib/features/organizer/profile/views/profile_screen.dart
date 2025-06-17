@@ -12,17 +12,17 @@ class OrganizerProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) =>
-          ProfileCubit(context.read(), context.read<AuthCubit>())
+          OrganizerProfileCubit(context.read(), context.read<AuthCubit>())
             ..fetchAboutMe(),
       child: Scaffold(
         appBar: AppBar(title: const Text('Profil organizatora')),
-        body: BlocBuilder<ProfileCubit, ProfileState>(
+        body: BlocBuilder<OrganizerProfileCubit, OrganizerProfileState>(
           builder: (context, state) {
-            if (state.status == ProfileStatus.loading) {
+            if (state.status == OrganizerProfileStatus.loading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (state.status == ProfileStatus.failure) {
+            if (state.status == OrganizerProfileStatus.failure) {
               return Center(child: Text('Błąd: ${state.errorMessage}'));
             }
 
