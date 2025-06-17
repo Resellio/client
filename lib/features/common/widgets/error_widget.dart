@@ -80,6 +80,7 @@ class CommonErrorWidget extends StatelessWidget {
 
 class ErrorSnackBar {
   static void show(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -91,6 +92,7 @@ class ErrorSnackBar {
         ),
         backgroundColor: Colors.red[600],
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -98,6 +100,7 @@ class ErrorSnackBar {
 
 class SuccessSnackBar {
   static void show(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -109,7 +112,7 @@ class SuccessSnackBar {
         ),
         backgroundColor: Colors.green[600],
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

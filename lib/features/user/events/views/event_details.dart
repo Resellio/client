@@ -794,7 +794,8 @@ class _ResellTicketCardState extends State<_ResellTicketCard> {
             ),
             const SizedBox(width: 16),
             ElevatedButton(
-              onPressed: !_isLoading ? () => _addToCart(context, widget.ticket) : null,
+              onPressed:
+                  !_isLoading ? () => _addToCart(context, widget.ticket) : null,
               child: _isLoading
                   ? const SizedBox(
                       height: 16,
